@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="form-group">
+<table>
+    <form method="post">
+    <tr>
+        <th>ISIN/ID</th>
+        <th>Name</th>
+        <th>Current</th>
+        <th>Low</th>
+        <th>High</th>
+        <th>Cur.</th>
+        <th><button type="submit" class="upd_button">Update</button></th>
+    </tr>
+        {% for asset in assets %}
+        <tr>
+        <td><input type="text" readonly name="AssetID" placeholder=""
+            size=12 class="input" value="{{ asset['AssetID'] }}">
+        </input></td>
+        <td><input type="text" readonly name="AssetName" placeholder=""
+            class="input" value="{{ asset['AssetName'] }}">
+        </input></td>
+        <td><input type="text" readonly name="Current" placeholder=""
+            size=8 class="input" value="{{ asset['LastPrice'] }}">
+        </input></td>
+        <td><input type="number" name="TargetPriceLow" placeholder=""
+            size=8 class="input" max="999999" min="0" step="0.01" 
+            value="{{ request.form['TargetPriceLow'] or asset['TargetPriceLow'] }}">
+        </input></td>
+        <td><input type="number" name="TargetPriceHigh" placeholder=""
+            size=8 class="input" max="999999" min="0" step="0.01" 
+            value="{{ request.form['TargetPriceHigh'] or asset['TargetPriceHigh'] }}">
+        </input></td>
+        <td><input type="text" name="Currency" placeholder=""
+            size=3 class="input" 
+            value="{{ request.form['Currency'] or asset['Currency'] }}">
+        </input></td>
+        </tr>
+        {% endfor %}
+    </form>
+</table>
+</div>
+
+{% endblock %}

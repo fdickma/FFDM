@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <!-- {% block title %} {{ serverName }} {% endblock %} -->
+    <div>
+    <table class="table table-striped">
+    <tr>
+        <th class="watchtable">Asset</th>
+        <th class="p-1 text-right primary">&Delta;(20&#8709;)</th>
+        <th class="p-1 text-right primary">&Delta;(€)</th>
+        <th class="p-1 text-right primary">Value</th>
+        <th class="p-1 text-right primary">20&#8709;</th>
+        <th class="p-1 text-right primary">200&#8709;</th>
+        <th class="p-1 text-right primary">Trend</th>
+        <th class="p-1 text-right primary">r61,8</th>
+        <th class="p-1 text-right primary">e38,2</th>
+        <th class="p-1 text-right primary">MaxDD</th>
+    </tr>
+    {% for asset in watchlist %}
+        <tr>
+            <td class="watchtable">
+                <b><a target="_blank" rel="noopener noreferrer"
+                    href="https://www.boerse.de/aktien/Aktie/{{ asset['AssetID'] }}">
+                    {{ asset['AssetName'] }}</a></b>
+            </td>
+            <td align="right" class="p-1">
+            {% if asset['Delta'] >= 0: %}
+                <span class="text-success">
+                    <b>{{ format_percent(asset['Delta']) }}%</b>
+                </span>
+            {% else %}
+                <span class="text-danger">
+                    <b>{{ format_percent(asset['Delta']) }}%</b>
+                </span>
+            {% endif %}
+            </td>
+            <td align="right" class="p-1">
+                {% if asset['DeltaPrice'] == 0: %}
+                    <span style="font-size: 60%;">
+                        <b></b>
+                    </span>
+                {% elif asset['DeltaPrice'] > 0: %}
+                    <span class="text-success" style="font-size: 60%;">
+                        <b>{{ format_snumber(asset['DeltaPrice']) }}</b>
+                    </span>
+                {% else %}
+                    <span class="text-danger" style="font-size: 60%;">
+                        <b>{{ format_snumber(asset['DeltaPrice']) }}</b>
+                    </span>
+                {% endif %}
+            </td>
+            <td align="right" class="p-1">
+                {% if asset['LastPrice'] >= 0: %}
+                    <span>
+                        <b>{{ format_number(asset['LastPrice']) }}</b>
+                    </span>
+                {% else %}
+                    <span>
+                        <b>{{ format_number(asset['LastPrice']) }}</b>
+                    </span>
+                {% endif %}
+            </td>
+            <td align="right" class="p-1">
+                {% if asset['Avg20Price'] >= 0: %}
+                    <span>
+                        <b>{{ format_number(asset['Avg20Price']) }}</b>
+                    </span>
+                {% else %}
+                    <span>
+                        <b>{{ format_number(asset['Avg20Price']) }}</b>
+                    </span>
+                {% endif %}
+            </td>
+            <td align="center">
+                {% if asset['Avg200Diff'] >= 0: %}
+                    <span class="text-success">&#8599;</span>
+                {% else %}
+                    <span class="text-danger">&#8600;</span>
+                {% endif %}
+            </td>
+            <td align="center">
+                {% if asset['Trend'] >= 0: %}
+                    <span class="text-success">&#8599;</span>
+                {% else %}
+                    <span class="text-danger">&#8600;</span>
+                {% endif %}
+            </td>
+            <td align="right" class="p-1 fs-6">
+                {% if asset['Fib_r618'] >= 0: %}
+                    <span>
+                        <b>{{ format_number(asset['Fib_r618']) }}</b>
+                    </span>
+                {% else %}
+                    <span>
+                        <b>{{ format_number(asset['Fib_r618']) }}</b>
+                    </span>
+                {% endif %}
+            </td>
+            <td align="right" class="p-1 fs-6">
+                {% if asset['Fib_e382'] >= 0: %}
+                    <span>
+                        <b>{{ format_number(asset['Fib_e382']) }}</b>
+                    </span>
+                {% else %}
+                    <span>
+                        <b>{{ format_number(asset['Fib_e382']) }}</b>
+                    </span>
+                {% endif %}
+            </td>
+            <td align="right" class="p-1">
+                <span>
+                    <b>{{ format_percent(asset['MaxDD']) }}%</b>
+                </span>
+            </td>
+            </tr>
+    {% endfor %}
+    </table>
+    <p></p>
+    <table class="table table-striped">
+    <tr>
+        <th class="watchtable">Asset</th>
+        <th class="p-1 text-right primary">&Delta;(20&#8709;)</th>
+        <th class="p-1 text-right primary">&Delta;(€)</th>
+        <th class="p-1 text-right primary">Value</th>
+        <th class="p-1 text-right primary">20&#8709;</th>
+        <th class="p-1 text-right primary">200&#8709;</th>
+        <th class="p-1 text-right primary">Trend</th>
+        <th class="p-1 text-right primary">r61,8</th>
+        <th class="p-1 text-right primary">e38,2</th>
+        <th class="p-1 text-right primary">MaxDD</th>
+    </tr>
+    {% for asset in investlist %}
+        <tr>
+            <td class="watchtable">
+                <b><a target="_blank" rel="noopener noreferrer"
+                    href="https://www.boerse.de/aktien/Aktie/{{ asset['AssetID'] }}">
+                    {{ asset['AssetName'] }}</a></b>
+            </td>
+            <td align="right" class="p-1">
+            {% if asset['Delta'] >= 0: %}
+                <span class="text-success">
+                    <b>{{ format_percent(asset['Delta']) }}%</b>
+                </span>
+            {% else %}
+                <span class="text-danger">
+                    <b>{{ format_percent(asset['Delta']) }}%</b>
+                </span>
+            {% endif %}
+            </td>
+            <td align="right" class="p-1">
+                {% if asset['DeltaPrice'] == 0: %}
+                    <span class="text-success" style="font-size: 60%;">
+                        <b></b>
+                    </span>
+                {% elif asset['DeltaPrice'] > 0: %}
+                    <span class="text-success" style="font-size: 60%;">
+                        <b>{{ format_snumber(asset['DeltaPrice']) }}</b>
+                    </span>
+                {% else %}
+                    <span class="text-danger" style="font-size: 60%;">
+                        <b>{{ format_snumber(asset['DeltaPrice']) }}</b>
+                    </span>
+                {% endif %}
+            </td>
+            <td align="right" class="p-1">
+                {% if asset['LastPrice'] >= 0: %}
+                    <span>
+                        <b>{{ format_number(asset['LastPrice']) }}</b>
+                    </span>
+                {% else %}
+                    <span>
+                        <b>{{ format_number(asset['LastPrice']) }}</b>
+                    </span>
+                {% endif %}
+            </td>
+            <td align="right" class="p-1">
+                {% if asset['Avg20Price'] >= 0: %}
+                    <span>
+                        <b>{{ format_number(asset['Avg20Price']) }}</b>
+                    </span>
+                {% else %}
+                    <span>
+                        <b>{{ format_number(asset['Avg20Price']) }}</b>
+                    </span>
+                {% endif %}
+            </td>
+            <td align="center">
+                {% if asset['Avg200Diff'] >= 0: %}
+                    <span class="text-success">&#8599;</span>
+                {% else %}
+                    <span class="text-danger">&#8600;</span>
+                {% endif %}
+            </td>
+            <td align="center">
+                {% if asset['Trend'] >= 0: %}
+                    <span class="text-success">&#8599;</span>
+                {% else %}
+                    <span class="text-danger">&#8600;</span>
+                {% endif %}
+            </td>
+            <td align="right" class="p-1 fs-6">
+                {% if asset['Fib_r618'] >= 0: %}
+                    <span>
+                        <b>{{ format_number(asset['Fib_r618']) }}</b>
+                    </span>
+                {% else %}
+                    <span>
+                        <b>{{ format_number(asset['Fib_r618']) }}</b>
+                    </span>
+                {% endif %}
+            </td>
+            <td align="right" class="p-1 fs-6">
+                {% if asset['Fib_e382'] >= 0: %}
+                    <span>
+                        <b>{{ format_number(asset['Fib_e382']) }}</b>
+                    </span>
+                {% else %}
+                    <span>
+                        <b>{{ format_number(asset['Fib_e382']) }}</b>
+                    </span>
+                {% endif %}
+            </td>
+            <td align="right" class="p-1">
+                <span>
+                    <b>{{ format_percent(asset['MaxDD']) }}%</b>
+                </span>
+            </td>
+            </tr>
+    {% endfor %}
+    </table>
+    </div>
+    
+{% endblock %}
+

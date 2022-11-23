@@ -1,0 +1,14 @@
+#!/bin/bash
+echo "Starting FFDM"
+procs=$(ps aux | grep "[g]unicorn3" | awk '{print $2}')
+#echo ${#procs}
+if [ ! ${#procs} -eq 0 ]; then
+    echo "Killing old FFDM processes..."
+    kill $(ps aux | grep "[g]unicorn3" | awk '{print $2}')
+    #sleep 2
+fi
+#exit
+cd /mnt/system/home/frank/Finance/_ffdm
+python3 ffdm.py -u
+screen -dmS ffdm_app gunicorn3 --reload --workers=1 --timeout 180 --bind 0.0.0.0:8812 --keyfile ssl/ffdm_key.pem --certfile ssl/ffdm_cert.pem ffdm_app:app
+cd

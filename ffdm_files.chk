@@ -1,0 +1,11 @@
+SPK/spk.CSV-rw-r--r-- 1 frank frank 54182  9. Nov 15:17 SPK/spk.CSV
+DKB/DKBcreditcard.csv-rw-r--r-- 1 frank frank 1261 18. Apr 2021  DKB/DKBcreditcard.csv
+DKB/DKBdepot.csv-rw-r--r-- 1 frank frank 845 17. Apr 2021  DKB/DKBdepot.csv
+DKB/DKBcash.csv-rw-r--r-- 1 frank frank 1966 13. Mai 2021  DKB/DKBcash.csv
+-rw-r--r-- 1 frank frank 421  6. Nov 17:26 /home/frank/Nextcloud/FFDM/initdata/TargetPrices.csv
+-rw-r--r-- 1 frank frank 129  6. Nov 17:27 /home/frank/Nextcloud/FFDM/initdata/VLplans.csv
+-rw-r--r-- 1 frank frank 265  6. Nov 16:30 /home/frank/Nextcloud/FFDM/initdata/Accounts.csv
+-rw-r--r-- 1 frank frank 1060  6. Nov 17:40 /home/frank/Nextcloud/FFDM/initdata/AssetReferences.csv
+-rw-r--r-- 1 frank frank 106 24. Okt 10:12 /home/frank/Nextcloud/FFDM/initdata/AssetTypes.csv
+-rw-r--r-- 1 frank frank 191  6. Nov 16:30 /home/frank/Nextcloud/FFDM/initdata/Depots.csv
+-rw-r--r-- 1 frank frank 1410965  6. Nov 17:42 /home/frank/Nextcloud/FFDM/initdata/AssetPrices.csv

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="form-group">
+<form method="post">
+    <table>
+    <tr>
+        <th>Parameter</th>
+        <th>Setting</th>
+        <th><button type="submit" class="upd_button">Update</button></th>
+    </tr>
+    {% for key,account in confdat.iterrows() %}
+    <tr>
+        <td><input type="text" hidden readonly name="Section" placeholder=""
+            size=10 class="input" value="{{ account['Section'] }}">
+            </input>
+            <input type="text" readonly name="Parameter" placeholder=""
+            size=10 class="input" value="{{ account['Param'] }}">
+        </input></td>
+        <td><input type="text" name="Setting" placeholder=""
+            size=60 class="input" value="{{ account['Setting'] }}">
+        </input></td>
+    </tr>
+    {% endfor %}
+    </table>
+</form>
+</div>
+
+{% endblock %}

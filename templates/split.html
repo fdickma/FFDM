@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="form-group">
+<table>
+    <form method="post">
+    <tr>
+        <th>ISIN/ID</th>
+        <th>Name</th>
+        <th>Factor</th>
+        <th>Time/Value</th>
+        <th><button type="submit" class="upd_button">Split</button></th>
+    </tr>
+        {% for asset in assets %}
+        <tr>
+        <td><input type="text" readonly name="AssetID" placeholder=""
+            size=12 class="input" value="{{ asset['AssetID'] }}">
+        </input></td>
+        <td><input type="text" readonly name="AssetName" placeholder=""
+            class="input" value="{{ asset['AssetName'] }}">
+        </input></td>
+        <td><input type="number" name="Split" placeholder=""
+            size=3 class="input" max="999999" min="0" step="0.01" 
+            value="1">
+        </input></td>
+        <td><select name="SplitDate" style="width:250px;">
+            {% for price in get_prices(asset['AssetID']) %}
+                <option value="{{ price['PriceTime'] }} -- {{ price['AssetPrice'] }}">
+                {{ price['PriceTime'] }} -- {{ '%0.2f' % price['AssetPrice']|float }}
+                </option>
+            {% endfor %}    
+        </select></td>
+        </tr>
+        {% endfor %}
+    </form>
+</table>
+</div>
+
+{% endblock %}

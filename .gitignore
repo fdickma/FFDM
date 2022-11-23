@@ -1,0 +1,12 @@
+.vscode/
+.idea/
+logs
+*.log
+tagbotft*.ini
+*.sqlite
+result_data*.*
+__pycache__/
+*.pdf
+ffdm_prices_backup.csv
+*.zip
+testing/

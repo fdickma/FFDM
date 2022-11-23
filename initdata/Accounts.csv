@@ -1,0 +1,4 @@
+"Bank";"AccountNr";"EntryDate";"Reference";"Amount";"Currency"
+"Cash";"88888";"20.06.20";"Startbetrag";"100,00";"EUR"
+"SPK";"DE11222555000123456789";"14.01.19";"Startbetrag";"400,00";"EUR"
+"SPK";"DE11222555000987654321";"14.01.19";"Startbetrag";"1000,00";"EUR"

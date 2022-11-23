@@ -1,0 +1,468 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <!-- {% block title %} {{ serverName }} {% endblock %} -->
+    <div class="row">
+    <div class="top_column">
+    <table class="table fintab_top">
+    <tr>
+        <th>Position</th>
+        <th>Value</th>
+        <th>Slice</th>
+        <th>Earn</th>
+        <th>Growth</th>
+    </tr>
+    {% for position in overview %}
+
+        {% if position['Return'] > -0.1 and position['Return'] < 0.1 %}
+            <tr class="row-neutral">
+        {% elif position['Return'] >= 0.1 %}
+            <tr class="row-success">
+        {% else %}
+            <tr class="row-danger">
+        {% endif %}
+            <td>
+                <span><b>{{ position['Position'] }}</b></span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_dec(position['Amount']) }}</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_percent(position['Slice']) }}%</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_dec(position['Earn']) }}</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_percent(position['Return']) }}%</b>
+                </span>
+            </td>
+            </tr>
+    {% endfor %}
+    </table>
+    </div>
+
+    <div class="top_column">
+    <table class="table fintab_top">
+    <tr>
+        <th>Year</th>
+        <th>Income</th>
+        <th>Spend</th>
+        <th>Invest</th>
+        <th>Saving</th>
+    </tr>
+    {% for month in monthly %}
+        {% if month['Income'] >= 0: %}
+            <tr class="row-success">
+        {% else %}
+            <tr class="row-danger">
+        {% endif %}      
+            <td>
+                <span><b>{{ month['Year'] }}</b></span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_dec(month['Income']) }}</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_dec(month['Spend']) }}</b>
+                </span>
+            </td>
+            {% if month['Invest'] >= 0: %}
+                <td align="right">
+            {% else %}
+                <td align="right" class="row-danger">
+            {% endif %}
+                <span><b>{{ format_dec(month['Invest']) }}</b></span>
+            </td>
+            {% if month['Saving'] >= 0: %}
+                <td align="right">
+            {% else %}
+                <td align="right" class="row-danger">
+            {% endif %}
+                <span><b>{{ format_dec(month['Saving']) }}</b></span>
+            </td>
+            </tr>
+    {% endfor %}
+    </table>
+    </div>
+
+    <div class="top_column">
+    <table class="table fintab_top">
+    <tr>
+        <th>Tot. Earn</th>
+        <th>Perf.</th>
+        <th>Total(Y)</th>
+        <th>Depot(Y)</th>
+    </tr>
+    {% for p_kpi in perf %}
+    {% if p_kpi['TotalEarnings'] >= 0: %}
+        <tr class="row-success">
+    {% else %}
+        <tr class="row-danger">
+    {% endif %}
+        {% if p_kpi['TotalEarnings'] >= 0: %}
+            <td align="center">
+        {% else %}
+            <td align="center" class="row-danger">
+        {% endif %}
+            <span class="kpi">
+            <b>{{ format_number(p_kpi['TotalEarnings']) }}</b></span>
+            </td>
+        {% if p_kpi['TotalPerformance'] >= 0: %}
+            <td align="center">
+        {% else %}
+            <td align="center" class="row-danger">
+        {% endif %}
+            <span  class="kpi">
+            <b>{{ format_number(p_kpi['TotalPerformance']) }}%</b></span>
+            </td>
+        {% if p_kpi['YearPerformance'] >= 0: %}
+            <td align="center">
+        {% else %}
+            <td align="center" class="row-danger">
+        {% endif %}
+            <span  class="kpi">
+            <b>{{ format_snumber(p_kpi['YearPerformance']) }}%</b></span>
+            </td>
+        {% if p_kpi['YearCorePerformance'] >= 0: %}
+            <td align="center">
+        {% else %}
+            <td align="center" class="row-danger">
+        {% endif %}
+            <span  class="kpi">
+            <b>{{ format_snumber(p_kpi['YearCorePerformance']) }}%</b></span>
+            </td>
+        </tr>
+    {% endfor %}
+    </table>
+    
+    <table class="table fintab_top">
+    <tr>
+        <th>US$</th>
+        <th>Gold($)</th>
+        <th>Bitcoin($)</th>
+    </tr>
+    {% for uval in usd %}
+        <tr>
+        <td align="center">
+            <span><b>{{ format_number(uval['USD']) }}</b></span>
+        </td>
+        <td align="center">
+            <span><b>{{ format_number(uval['Gold']) }}</b></span>
+        </td>
+        <td align="center">
+            <span><b>{{ format_number(uval['BTC']) }}</b></span>
+        </td>
+        </tr>
+    {% endfor %}
+    </table>
+
+    <table class="table fintab_top">
+    <tr>
+        <th>Bank</th>
+        <th>Account</th>
+        <th>Balance</th>
+    </tr>
+    {% for bal in balance %}
+    {% if bal['Amount'] >= 0: %}
+        <tr class="row-success">
+    {% else %}
+        <tr class="row-danger">
+    {% endif %}
+            <td align="left">
+                <span><b>{{ bal['Bank'] }}</b></span>
+            </td>
+            <td align="left">
+                <span><b>{{ bal['AccountNr'] }}</b></span>
+            </td>
+            <td align="right">
+                <span><b>{{ format_eur(bal['Amount']) }}</b></span>
+            </td>
+            </tr>
+    {% endfor %}
+    </table>
+    </div>
+    </div>
+
+    <div class="row">
+    <div class="column">
+    <table class="table fintab_bottom">
+    <tr>
+        <th>Asset</th>
+        <th>#</th>
+        <th>Value</th>
+        <th>Growth</th>
+        <th>Div.</th>
+        <th>Ret.</th>
+    </tr>
+    {% for asset in depot %}
+        {% if asset['Return'] > -0.2 and asset['Return'] < 0.2 %}
+            <tr class="row-neutral">
+        {% elif asset['Return'] >= 0.2 %}
+            <tr class="row-success">
+        {% else %}
+            <tr class="row-danger">
+        {% endif %}
+            <td align="left">
+                <span><b>{{ asset['AssetName'] }}</b></span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_shares(asset['AssetAmount']) }}</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>    
+                    <b>{{ format_dec(asset['Value']) }}</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_percent(asset['Return']) }}%</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_dec(asset['Dividend']) }}</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_percent(asset['DivReturn']) }}%</b>
+                </span>
+            </td>
+            </tr>
+        {% endfor %}
+        </table>            
+    </div>
+
+    <div class="column">
+    <table class="table fintab_bottom">
+    <tr>
+        <th>Year</th>
+        <th>Tot.Inc.</th>
+        <th>Income</th>
+        <th>Div.</th>
+        <th>Int.</th>
+        <th>Rent</th>
+        <th>Cash</th>
+        <th>Invest</th>
+        <th>Saving</th>
+        <th>Sav.Rate</th>
+    </tr>
+    {% for year in yearly %}
+    {% if year['Saving'] >= 0: %}
+        <tr class="row-success">
+    {% else %}
+        <tr class="row-danger">
+    {% endif %}
+            <td align="left">
+                <span><b>{{ year['Year'] }}</b></span>
+            </td>
+            {% if year['TotalIncome'] >= 0: %}
+            <td align="right">
+            {% else %}
+            <td align="right" class="row-danger">
+            {% endif %}
+            <span><b>{{ format_dec(year['TotalIncome']) }}</b></span>
+            </td>
+            {% if year['Income'] >= 0: %}
+            <td align="right">
+            {% else %}
+            <td align="right" class="row-danger">
+            {% endif %}
+            <span><b>{{ format_dec(year['Income']) }}</b></span>
+            </td>
+            {% if year['Dividend'] >= 0: %}
+            <td align="right">
+            {% else %}
+            <td align="right" class="row-danger">
+            {% endif %}
+            <span><b>{{ format_dec(year['Dividend']) }}</b></span>
+            </td>
+            {% if year['Interest'] >= 0: %}
+            <td align="right">
+            {% else %}
+            <td align="right" class="row-danger">
+            {% endif %}
+            <span><b>{{ format_dec(year['Interest']) }}</b></span>
+            </td>
+            {% if year['Rent'] >= 0: %}
+            <td align="right">
+            {% else %}
+            <td align="right" class="row-danger">
+            {% endif %}
+            <span><b>{{ format_dec(year['Rent']) }}</b></span>
+            </td>
+            {% if year['Cashflow'] >= 0: %}
+            <td align="right">
+            {% else %}
+            <td align="right" class="row-danger">
+            {% endif %}
+            <span><b>{{ format_dec(year['Cashflow']) }}</b></span>
+            </td>
+            {% if year['Invest'] >= 0: %}
+            <td align="right">
+            {% else %}
+            <td align="right" class="row-danger">
+            {% endif %}
+            <span><b>{{ format_dec(year['Invest']) }}</b></span>
+            </td>
+            {% if year['Saving'] >= 0: %}
+            <td align="right">
+            {% else %}
+            <td align="right" class="row-danger">
+            {% endif %}
+            <span><b>{{ format_dec(year['Saving']) }}</b></span>
+            </td>
+            {% if year['SavingRate'] >= 0: %}
+            <td align="right">
+            {% else %}
+            <td align="right" class="row-danger">
+            {% endif %}
+            <span><b>{{ format_percent(year['SavingRate']) }}%</b></span>
+            </td>
+            </tr>
+        {% endfor %}
+        </table>            
+
+        <div class="fintab_b_left">
+        <table class="table fintab_bottom">
+        <tr>
+            <th>Year</th>
+            <th>Saving</th>
+            <th>Cash</th>
+            <th>Invest</th>
+            <th>Div.</th>
+            <th>Int.</th>
+            <th>Rent</th>
+        </tr>
+        {% for year in cumyear %}
+        {% if year['Saving'] > -0.2 and year['Saving'] < 0.2 %}
+            <tr class="row-neutral">
+        {% elif year['Saving'] >= 0 %}
+            <tr class="row-success">
+        {% else %}
+            <tr class="row-danger">
+        {% endif %}
+            <td align="left">
+                <span>
+                    <b>{{ year['Year'] }}</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_dec(year['Saving']) }}</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_dec(year['Cashflow']) }}</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_dec(year['Invest']) }}</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_dec(year['Dividend']) }}</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_dec(year['Interest']) }}</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_dec(year['Rent']) }}</b>
+                </span>
+            </td>
+            </tr>
+        {% endfor %}
+        </table>
+
+        <table class="table fintab_bottom">
+        <tr>
+            <th>Year</th>
+            <th>Total</th>
+            <th>Cash</th>
+            <th>Card</th>
+            <th>Amazon</th>
+        </tr>
+        {% for year in spend %}
+            <tr>
+            <td align="left">
+                <span>
+                    <b>{{ year['Year'] }}</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_dec(year['Total']) }}</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_dec(year['Cash']) }}</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_dec(year['Card']) }}</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_dec(year['Amazon']) }}</b>
+                </span>
+            </td>
+            </tr>
+        {% endfor %}
+        </table>
+    
+    </div>
+
+    <div class="fintab_b_right">
+        <table class="table fintab_bottom">
+        <tr>
+            <th>Quarter</th>
+            <th>Cashflow</th>
+        </tr>
+        {% for quarter in quarterly %}
+        {% if quarter['Cashflow'] >= 0: %}
+            <tr class="row-success">
+        {% else %}
+            <tr class="row-danger">
+        {% endif %}
+            <td align="left">
+                <span>
+                    <b>{{ quarter['Quarter'] }}</b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_dec(quarter['Cashflow']) }}</b>
+                </span>
+            </td>
+            </tr>
+        {% endfor %}
+        </table>
+
+    </div>
+    
+    </div>
+{% endblock %}
+

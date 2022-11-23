@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" type="text/css" href="/static/ffdm.css">
+
+    <title>{% block title %} {{ serverName }} {% endblock %}</title>
+    <meta http-equiv="Cache-control" content="no-cache">
+
+    <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico" />
+    <link rel="icon" sizes="16x16" type="image/x-icon" href="/static/favicon16x16.ico" />
+    <link rel="icon" sizes="32x32" type="image/x-icon" href="/static/favicon32x32.ico" />
+    <link rel="icon" type="image/x-icon" sizes="256x256" href="/static/favicon256x256.ico" />
+    <link rel="icon" type="image/x-icon" sizes="128x128" href="/static/favicon128x128.ico" />
+    <link rel="icon" type="image/x-icon" sizes="64x64" href="/static/favicon.ico" />
+  </head>
+  <body>
+  
+ <div class="navbar">
+    <a href="{{url_for('index')}}"><img src="/static/applogo128.png" class="logo"></img></a>
+    <a href="{{url_for('watchlist')}}">Watchlist</a>
+    <a href="{{url_for('finance')}}">Finance</a>
+  <div class="dropdown">
+    <button class="dropbtn">Updates
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-content">
+      <a href="{{url_for('acc')}}">Accounts</a>
+      <a href="{{url_for('web')}}">Web</a>
+      <a href="{{url_for('unlock')}}">Unlock</a>
+    </div>
+  </div>
+  <div class="dropdown">
+    <button class="dropbtn">Assets
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-content">
+      <a href="{{url_for('assets')}}">Assets</a>
+      <a href="{{url_for('targets')}}">Target Values</a>
+      <a href="{{url_for('vlplans')}}">VL Plans</a>
+      <a href="{{url_for('split')}}">Stock Split</a>
+    </div>
+  </div>
+  <div class="dropdown">
+    <button class="dropbtn">Edit
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-content">
+      <a href="{{url_for('settings')}}">Settings</a>
+    </div>
+  </div>
+  <a class="nav_date" style="color:white;">{{ get_time() }}</a>
+</div> 
+
+    <div class="container">
+        {% for message in get_flashed_messages() %}
+            <div class="alert alert-danger">{{ message }}</div>
+        {% endfor %}
+        {% block content %} {% endblock %}
+    </div>
+
+  </body>
+</html>
