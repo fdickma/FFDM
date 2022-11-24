@@ -58,7 +58,7 @@ table, th, td {
   margin:0px;
   padding:0px;
   font-size: 100%;
-  font-size: 1.2vw;
+  font-size: 1.1vw;
   background:none;
   padding: -2px -2px -2px -2px;
   margin: -3px -3px -3px -3px;
@@ -224,11 +224,10 @@ ul li {
 }
 
 .upd_button{
-    width:60px;
     color:white;
     background-color: inherit;
-    padding: 0px 0px 0px 0px;
-    margin: 0px 0px 0px 0px;
+    padding: 0px 4px 0px 4px;
+    margin: 0px 4px 0px 4px;
     font-size: 100%;
     font-size: 1.25vw;
     text-align: center;
@@ -250,7 +249,7 @@ ul li {
     padding: 0px 0px 0px 0px;
     margin: 0px 0px 0px 0px;
     font-size: 90%;
-    font-size: 1.25vw;
+    font-size: 1.1vw;
     text-align: center;
     font-weight:bold;
     border: none;
@@ -269,7 +268,7 @@ ul li {
     padding: 0px 2px 0px 2px;
     margin: 0px 2px 0px 2px;
     font-size: 90%;
-    font-size: 1.25vw;
+    font-size: 1.1vw;
     text-align: center;
     font-weight:bold;
     border: none;
@@ -485,17 +484,17 @@ body {
 
     .input {
       font-size: 80%;
-      font-size: 1.9vw;
+      font-size: 1.2vw;
     }
     
     .del_button {
       font-size: 80%;
-      font-size: 1.7vw;
+      font-size: 1.2vw;
     }
 
     .add_button {
       font-size: 80%;
-      font-size: 1.7vw;
+      font-size: 1.2vw;
     }
 
     .upd_button {

@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
+    {% set last_update = get_lastupdtime()[:16] %}
     <!-- {% block title %} {{ serverName }} {% endblock %} -->
     <div>
     <table class="table table-striped">
@@ -35,18 +36,24 @@
             {% endif %}
             </td>
             <td align="right" class="p-1">
-                {% if asset['DeltaPrice'] == 0: %}
-                    <span style="font-size: 60%;">
-                        <b></b>
-                    </span>
-                {% elif asset['DeltaPrice'] > 0: %}
-                    <span class="text-success" style="font-size: 60%;">
-                        <b>{{ format_snumber(asset['DeltaPrice']) }}</b>
-                    </span>
+                {% if asset['PriceTime'][:16] == last_update %}
+                    {% if asset['DeltaPrice'] == 0: %}
+                        <span style="font-size: 60%;">
+                            <b></b>
+                        </span>
+                    {% elif asset['DeltaPrice'] > 0: %}
+                        <span class="text-success" style="font-size: 60%;">
+                            <b>{{ format_snumber(asset['DeltaPrice']) }}</b>
+                        </span>
+                    {% else %}
+                        <span class="text-danger" style="font-size: 60%;">
+                            <b>{{ format_snumber(asset['DeltaPrice']) }}</b>
+                        </span>
+                    {% endif %}
                 {% else %}
                     <span class="text-danger" style="font-size: 60%;">
-                        <b>{{ format_snumber(asset['DeltaPrice']) }}</b>
-                    </span>
+                        <b>Err!</b>
+                    </span>                
                 {% endif %}
             </td>
             <td align="right" class="p-1">
@@ -148,18 +155,24 @@
             {% endif %}
             </td>
             <td align="right" class="p-1">
-                {% if asset['DeltaPrice'] == 0: %}
-                    <span class="text-success" style="font-size: 60%;">
-                        <b></b>
-                    </span>
-                {% elif asset['DeltaPrice'] > 0: %}
-                    <span class="text-success" style="font-size: 60%;">
-                        <b>{{ format_snumber(asset['DeltaPrice']) }}</b>
-                    </span>
+                {% if asset['PriceTime'][:16] == last_update %}
+                    {% if asset['DeltaPrice'] == 0: %}
+                        <span style="font-size: 60%;">
+                            <b></b>
+                        </span>
+                    {% elif asset['DeltaPrice'] > 0: %}
+                        <span class="text-success" style="font-size: 60%;">
+                            <b>{{ format_snumber(asset['DeltaPrice']) }}</b>
+                        </span>
+                    {% else %}
+                        <span class="text-danger" style="font-size: 60%;">
+                            <b>{{ format_snumber(asset['DeltaPrice']) }}</b>
+                        </span>
+                    {% endif %}
                 {% else %}
                     <span class="text-danger" style="font-size: 60%;">
-                        <b>{{ format_snumber(asset['DeltaPrice']) }}</b>
-                    </span>
+                        <b>Err!</b>
+                    </span>                
                 {% endif %}
             </td>
             <td align="right" class="p-1">

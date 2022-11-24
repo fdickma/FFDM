@@ -8,6 +8,7 @@ import glob
 import sys
 import datetime
 import time
+import csv
 import locale
 import pandas as pd
 import numpy as np
@@ -65,13 +66,103 @@ def assets():
         if len(requestDF) < 1:
             flash('Error!')
         else:
-            requestDF.to_csv(myDir+"initdata/AssetReferences.csv", \
-                            sep=';', index = False)
-            subprocess.run(["python3 init_db.py"], shell=True, check=True)
-
             return redirect(url_for('assets'))
 
     return render_template('assets.html', assets=assets, serverName=serverName)
+
+@app.route('/inita', methods=('GET', 'POST'))
+def inita():
+    try:
+        accountsDF = pd.read_csv(myDir+"initdata/Accounts.csv", \
+                            sep=';')
+        accountsDF['EntryDate'] = pd.to_datetime(accountsDF['EntryDate']).dt.date
+        try:
+            accountsDF['Amount'] = accountsDF['Amount']\
+                    .str.replace(",", ".").astype(float)
+        except:
+            accountsDF['Amount'] = accountsDF['Amount']\
+                    .astype(float)            
+    except:
+        return redirect(url_for('error'))
+    
+    if request.method == 'POST':
+
+        requestDF = pd.DataFrame()
+        init_data = request.form.to_dict(flat=False)
+        for a in init_data:
+            column = []
+            for value in init_data[a]:
+                if len(str(value)) > 0:
+                    column.append(value)
+                else:
+                    column.append("None")
+            requestDF[a] = column
+        requestDF = requestDF[((requestDF['Bank'] != "None") & \
+            (requestDF['EntryDate'] != "None") & \
+            (requestDF['Amount'] != "None") & \
+            (requestDF['Reference'] != "None") & \
+            (requestDF['AccountNr'] != "None"))]
+        requestDF['EntryDate'] = pd.to_datetime(requestDF['EntryDate'])\
+                            .dt.strftime("%d.%m.%y")
+        requestDF['Amount'] = requestDF['Amount'].astype(float)\
+                            .map('{:.2f}'.format).str.replace(".", ",", regex=False)
+
+        if len(requestDF) < 1:
+            flash('Error!')
+        else:
+            requestDF.to_csv(myDir+"initdata/Accounts.csv", sep=';', \
+                            index = False, quoting=csv.QUOTE_ALL, quotechar='"')
+            return redirect(url_for('inita'))
+
+    return render_template('inita.html', accounts=accountsDF, serverName=serverName)
+
+@app.route('/initd', methods=('GET', 'POST'))
+def initd():
+    try:
+        depotsDF = pd.read_csv(myDir+"initdata/Depots.csv", \
+                            sep=';')
+        try:
+            depotsDF['AssetAmount'] = depotsDF['AssetAmount']\
+                    .str.replace(",", ".").astype(float)
+            depotsDF['AssetBuyPrice'] = depotsDF['AssetBuyPrice']\
+                    .str.replace(",", ".").astype(float)
+        except:
+            depotsDF['AssetAmount'] = depotsDF['AssetAmount']\
+                    .astype(float)            
+            depotsDF['AssetBuyPrice'] = depotsDF['AssetBuyPrice']\
+                    .astype(float)
+    except:
+        return redirect(url_for('error'))
+    
+    if request.method == 'POST':
+
+        requestDF = pd.DataFrame()
+        init_data = request.form.to_dict(flat=False)
+        for a in init_data:
+            column = []
+            for value in init_data[a]:
+                if len(str(value)) > 0:
+                    column.append(value)
+                else:
+                    column.append("None")
+            requestDF[a] = column
+        requestDF = requestDF[((requestDF['BankRef'] != "None") & \
+            (requestDF['AssetAmount'] != "None") & \
+            (requestDF['BankRef'] != "None") & \
+            (requestDF['AssetID'] != "None"))]
+        requestDF['AssetAmount'] = requestDF['AssetAmount']\
+                            .str.replace(".", ",", regex=False)
+        requestDF['AssetBuyPrice'] = requestDF['AssetBuyPrice'].astype(float)\
+                            .map('{:.2f}'.format).str.replace(".", ",", regex=False)
+
+        if len(requestDF) < 1:
+            flash('Error!')
+        else:
+            requestDF.to_csv(myDir+"initdata/Depots.csv", sep=';', \
+                            index = False, quoting=csv.QUOTE_ALL, quotechar='"')
+            return redirect(url_for('initd'))
+
+    return render_template('initd.html', depots=depotsDF, serverName=serverName)
 
 @app.route('/vlplans', methods=('GET', 'POST'))
 def vlplans():
@@ -99,10 +190,6 @@ def vlplans():
         if len(requestDF) < 1:
             flash('Error!')
         else:
-            requestDF.to_csv(myDir+"initdata/VLplans.csv", \
-                            sep=';', index = False)
-            subprocess.run(["python3 init_db.py"], shell=True, check=True)
-
             return redirect(url_for('vlplans'))
 
     return render_template('vlplans.html', vlplans=vlplans, serverName=serverName)
@@ -116,9 +203,12 @@ def settings():
         config.read(myDir + "ffdm.ini")
         confdatf = pd.DataFrame(config.items('Filter'), columns=['Param', 'Setting'])
         confdatf['Section'] = 'Filter'
+        confdata = pd.DataFrame(config.items('Server'), columns=['Param', 'Setting'])
+        confdata['Section'] = 'Server'
+        confdat = pd.concat([confdatf, confdata])
         confdata = pd.DataFrame(config.items('Accounts'), columns=['Param', 'Setting'])
         confdata['Section'] = 'Accounts'
-        confdat = pd.concat([confdatf, confdata])
+        confdat = pd.concat([confdat, confdata])
     except:
         return redirect(url_for('error'))
 
@@ -216,9 +306,6 @@ def targets():
         if len(requestDF) < 1:
             flash('Error!')
         else:
-            requestDF.to_csv(myDir+"initdata/TargetPrices.csv", \
-                            sep=';', index = False)
-            subprocess.run(["python3 init_db.py"], shell=True, check=True)
             return redirect(url_for('targets'))
 
     return render_template('targets.html', assets=assets, serverName=serverName)
@@ -280,10 +367,10 @@ def watchlist():
                 (SELECT AssetID FROM qDepotOverview) ORDER BY Delta DESC')\
                 .fetchall()
         conn.close()
-        return render_template('watchlist.html', watchlist=watchlist, \
-                                investlist=investlist, serverName=serverName)
     except:
         return redirect(url_for('error'))
+    return render_template('watchlist.html', watchlist=watchlist, \
+                            investlist=investlist, serverName=serverName)
 
 @app.route('/') 
 def index():
@@ -424,6 +511,17 @@ def my_utility_processor():
         except:
             return "No time..."
 
+    def get_lastupdtime():
+        try:    
+            conn = get_db_connection()
+            DataDate = conn.execute('SELECT PriceTime FROM AssetPrices ORDER BY PriceTime \
+                        DESC LIMIT 1').fetchall()
+            dtime = str(DataDate[0][0])
+            conn.close()
+            return dtime
+        except:
+            return "No time..."
+
     def get_prices(AssetID):
         try:    
             conn = get_db_connection()
@@ -439,7 +537,7 @@ def my_utility_processor():
     return dict(format_snumber=format_snumber, format_number=format_number,\
                 format_percent=format_percent, format_dec=format_dec,\
                 format_eur=format_eur, format_shares=format_shares, get_time=get_time, 
-                get_prices=get_prices)
+                get_prices=get_prices, get_lastupdtime=get_lastupdtime)
 
 @app.errorhandler(404) 
 def invalid_route(e): 

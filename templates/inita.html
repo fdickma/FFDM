@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<script src="/static/ffdm.js"></script>
+<div class="form-group">
+<form method="post">
+<table id="InitTable">
+    <tr>
+        <th>Bank</th>
+        <th>AccountNr</th>
+        <th>EntryDate</th>
+        <th>Reference</th>
+        <th>Amount</th>
+        <th>Currency</th>
+        <th><button type="submit" class="upd_button">Update</button></th>
+    </tr>
+        {% set count = [] %}
+        {% for key, entry in accounts.iterrows() %}
+        <tr>
+        <td><input type="text" name="Bank" placeholder="" class="input" 
+            size=6 value="{{ request.form['Bank'] or entry['Bank'] }}">
+        </input></td>
+        <td><input type="text" name="AccountNr" placeholder="" class="input" 
+            size=20 value="{{ request.form['AccountNr'] or entry['AccountNr'] }}">
+        </input></td>
+        <td><input type="date" name="EntryDate" placeholder="" class="input" 
+            size=10 value="{{ request.form['EntryDate'] or entry['EntryDate'] }}">
+        </input></td>
+        <td><input type="text" name="Reference" placeholder="" class="input" 
+            size=15 value="{{ request.form['Reference'] or entry['Reference'] }}">
+        </input></td>
+        <td><input type="number" name="Amount" placeholder="" class="input" 
+            size=8 max="99999" min="0" step="0.001" default="0" 
+            value="{{ request.form['Amount'] or entry['Amount'] }}">
+        </input></td>
+        <td><input type="text" name="Currency" placeholder="" class="input" 
+            size=4 value="{{ request.form['Currency'] or entry['Currency'] }}">
+        </input></td>
+        <td><button id="del_line{{ loop.index|string }}" class="del_button" 
+            onclick="return delInitA({{ loop.index|string }})" style="padding:0px">
+            Delete</button></td>
+        </tr>
+        {% if count.append(loop.index) %}{% endif %}
+        {% endfor %}
+        {% set row = count[-1] + 1 %}
+        <tr><td style="text-align:center;">
+            <button id="add" class="add_button" type="button"
+            onclick="addInitA({{ row|string }})">Add</button>
+        </td></tr>
+    </table>
+</form>
+</div>
+
+{% endblock %}

@@ -66,8 +66,6 @@ def watchlist_asset(assets, proc_num):
                         & (__main__.assetpriceDF['AssetID']==a)]['AssetPrice'].iloc[0])
             if lastprice == None:
                 lastprice = 0
-            pricetime = (__main__.assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
-                        [(__main__.assetpriceDF['AssetID']==a)]["PriceTime"].max())
             pricetimesDF = (__main__.assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
                         [(__main__.assetpriceDF['AssetID']==a)])
             
@@ -185,7 +183,7 @@ def watchlist_asset(assets, proc_num):
             e_382 = round(minprice - ((maxprice - minprice) * 0.382),4)
             trend = -1
             
-        watchlist = pd.Series([a,aname,delta,deltaprice,lastprice,prevprice,\
+        watchlist = pd.Series([a,aname,delta,deltaprice,lastprice,pricetime,prevprice,\
                     price20av,price200av,lowtarget,hightarget,minprice,maxprice,\
                     lowprice,r_618,e_382,trend])
         watchlistDF = pd.concat([watchlistDF, watchlist.to_frame().T], axis = 0, \
@@ -409,7 +407,7 @@ if __name__ == '__main__':
                 if len(q) > 0:
                     watchlistDF = q
     
-    watchlistDF.columns = ['AssetID','AssetName','Delta','DeltaPrice','LastPrice',\
+    watchlistDF.columns = ['AssetID','AssetName','Delta','DeltaPrice','LastPrice','PriceTime',\
                         'PrevPrice','Avg20Price','Avg200Price','TargetLow','TargetHigh',\
                         'MinPrice','MaxPrice','LowPrice','Fib_e382','Fib_r618','Trend']
     # Additional key performance indicators
