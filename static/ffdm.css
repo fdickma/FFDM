@@ -225,9 +225,10 @@ ul li {
 
 .upd_button{
     color:white;
-    background-color: inherit;
-    padding: 0px 4px 0px 4px;
-    margin: 0px 4px 0px 4px;
+    background-color: #003366;
+    border-radius: 4px;
+    padding: 0px 8px;
+    margin: 0px 0px;
     font-size: 100%;
     font-size: 1.25vw;
     text-align: center;
@@ -237,46 +238,47 @@ ul li {
 }
 
 .upd_button:hover{
-    background-color: #003366;
+    background-color: #025db7;
     color:white;
 }
 
 .add_button{
-    width:60px;
-    color:black;
-    background-color:#f2f2f2;
-    display:inline-block;
-    padding: 0px 0px 0px 0px;
-    margin: 0px 0px 0px 0px;
+    color:white;
+    background-color:#0d6a01;
+    border-radius: 4px;
+    display:block;
+    padding: 0px 12px;
+    margin: 0px 0px;
     font-size: 90%;
     font-size: 1.1vw;
     text-align: center;
     font-weight:bold;
     border: none;
-    vertical-align:middle;
+    margin:0 auto;
 }
 
 .add_button:hover{
-    background-color: #003366;
+    background-color: #019804;
     color:white;
 }
-
+  
 .del_button{
-    width:56px;
-    color:black;
-    background-color:#f2f2f2;
-    padding: 0px 2px 0px 2px;
-    margin: 0px 2px 0px 2px;
+    color:white;
+    background-color:#7e0101;
+    border-radius: 4px;
+    display:block;
+    padding: 0px 8px;
+    margin: 0px 0px;
     font-size: 90%;
     font-size: 1.1vw;
     text-align: center;
     font-weight:bold;
     border: none;
-    vertical-align:middle;
+    margin:0 auto;
 }
 
 .del_button:hover{
-    background-color: #003366;
+    background-color: #b90303;
     color:white;
 }
 
@@ -301,10 +303,26 @@ ul li {
 }
 
 .mainlogo{
-  margin:20px 20px 20px 20px;
+  margin:20px 40px 20px 40px;
   border-radius:6px;
-  padding: 10px 10px 10px 10px;
+  padding: 10px 20px 10px 20px;
   border:none;
+  width: 256px;
+  height:auto;
+}
+
+.split-select{
+  width:290px;
+  color:black;
+  display:block;
+  padding: 0px 4px;
+  margin: 0px 0px;
+  font-size: 90%;
+  font-size: 1.1vw;
+  text-align: left;
+  font-weight:bold;
+  border: none;
+  margin:0 auto;
 }
 
 .navbar {
@@ -469,6 +487,15 @@ body {
        height:56px
      }
 
+     .mainlogo{
+      margin:20px 40px 20px 40px;
+      border-radius:6px;
+      padding: 10px 20px 10px 20px;
+      border:none;
+      width: 128px;
+      height:auto;
+    }
+
     .logo_button{
       width: 32px;
       height:32px;
@@ -484,23 +511,28 @@ body {
 
     .input {
       font-size: 80%;
-      font-size: 1.2vw;
+      font-size: 1.5vw;
     }
     
     .del_button {
       font-size: 80%;
-      font-size: 1.2vw;
+      font-size: 1.5vw;
     }
 
     .add_button {
       font-size: 80%;
-      font-size: 1.2vw;
+      font-size: 1.5vw;
     }
 
     .upd_button {
       vertical-align:middle;
       font-size: 100%;
       font-size: 1.7vw;
+    }
+
+    .split-select{
+      width:200px;
+      font-size: 1.5vw;
     }
 
     .navbar a {

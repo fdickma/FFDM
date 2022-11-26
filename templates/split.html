@@ -24,7 +24,7 @@
             size=3 class="input" max="999999" min="0" step="0.01" 
             value="1">
         </input></td>
-        <td><select name="SplitDate" style="width:250px;">
+        <td><select name="SplitDate" class="split-select">
             {% for price in get_prices(asset['AssetID']) %}
                 <option value="{{ price['PriceTime'] }} -- {{ price['AssetPrice'] }}">
                 {{ price['PriceTime'] }} -- {{ '%0.2f' % price['AssetPrice']|float }}

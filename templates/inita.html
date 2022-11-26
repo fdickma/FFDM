@@ -37,7 +37,7 @@
             size=4 value="{{ request.form['Currency'] or entry['Currency'] }}">
         </input></td>
         <td><button id="del_line{{ loop.index|string }}" class="del_button" 
-            onclick="return delInitA({{ loop.index|string }})" style="padding:0px">
+            onclick="return delInitA({{ loop.index|string }})">
             Delete</button></td>
         </tr>
         {% if count.append(loop.index) %}{% endif %}
