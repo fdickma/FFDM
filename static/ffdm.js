@@ -43,7 +43,6 @@ function addEntry(e) {
     DELbutton.setAttribute("class", "del_button");
     var btn_str2 = "return delEntry(" + e.toString() + ")";
     DELbutton.setAttribute("onclick", btn_str2);
-    DELbutton.setAttribute("style", "padding:0px");
     var x = document.getElementById("AssetsTable").insertRow(e);
     var type_c = x.insertCell(0);
     var id_c = x.insertCell(1);
@@ -139,7 +138,6 @@ function addVL(e) {
     DELbutton.setAttribute("class", "del_button");
     var btn_str2 = "return delVL(" + e.toString() + ")";
     DELbutton.setAttribute("onclick", btn_str2);
-    DELbutton.setAttribute("style", "padding:0px");
     var x = document.getElementById("VLEditTable").insertRow(e);
     var plan_c = x.insertCell(0);
     var bank_c = x.insertCell(1);
@@ -232,7 +230,6 @@ function addInitA(e) {
     DELbutton.setAttribute("class", "del_button");
     var btn_str2 = "return delInitA(" + e.toString() + ")";
     DELbutton.setAttribute("onclick", btn_str2);
-    DELbutton.setAttribute("style", "padding:0px");
     var x = document.getElementById("InitTable").insertRow(e);
     var bank_c = x.insertCell(0);
     var acc_c = x.insertCell(1);
@@ -319,7 +316,6 @@ function addInitD(e) {
     DELbutton.setAttribute("class", "del_button");
     var btn_str2 = "return delInitD(" + e.toString() + ")";
     DELbutton.setAttribute("onclick", btn_str2);
-    DELbutton.setAttribute("style", "padding:0px");
     var x = document.getElementById("InitTable").insertRow(e);
     var bank_c = x.insertCell(0);
     var acc_c = x.insertCell(1);
