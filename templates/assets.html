@@ -15,7 +15,7 @@
         <th><button type="submit" class="upd_button">Update</button></th>
     </tr>
         {% set count = [] %}
-        {% for asset in assets %}
+        {% for key, asset in assets.iterrows() %}
         <tr>
         <td><input type="text" name="AssetType" placeholder="STK" class="input" 
             size=3 value="{{ request.form['AssetType'] or asset['AssetType'] }}">

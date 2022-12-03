@@ -18,7 +18,7 @@
         <th><button type="submit" class="upd_button">Update</button></th>
     </tr>
         {% set count = [] %}
-        {% for plan in vlplans %}
+        {% for key, plan in vlplans.iterrows() %}
         <tr>
         <td><input type="text" name="PlanID" placeholder="STK" class="input" 
             size=2 value="{{ request.form['PlanID'] or plan['PlanID'] }}">
@@ -44,7 +44,7 @@
         </input></td>
         <td><input type="number" name="Pieces" placeholder="" class="input" 
             size=8 max="99999" min="0" step="0.001"
-            value="{{ request.form['Pieces'] or plan['Pieces'] }}">
+            value="{{ request.form['Pieces'] or plan['Pieces'] | round(3)}}">
         </input></td>
         <td><input type="text" name="Currency" placeholder="" class="input" 
             size=3 value="{{ request.form['Currency'] or plan['Currency'] }}">

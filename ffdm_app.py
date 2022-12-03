@@ -43,13 +43,12 @@ locale.setlocale(locale.LC_ALL, 'de_DE.utf-8')
 @app.route('/assets', methods=('GET', 'POST'))
 def assets():
     try:
-        conn = get_db_connection()
-        assets = conn.execute('SELECT * FROM AssetReferences ORDER BY \
-                                AssetType ASC, AssetName COLLATE NOCASE ASC;').fetchall()
-        conn.close()
+        assetsDF = pd.read_csv(myDir+"initdata/AssetReferences.csv", \
+                            sep=';')
+        assetsDF = assetsDF.sort_values(by=['AssetType','AssetName'], ascending=True)
     except:
         return redirect(url_for('error'))
-
+    
     if request.method == 'POST':
         requestDF = pd.DataFrame()
         assets_data = request.form.to_dict(flat=False)
@@ -66,9 +65,11 @@ def assets():
         if len(requestDF) < 1:
             flash('Error!')
         else:
+            requestDF.to_csv(myDir+"initdata/AssetReferences.csv", sep=';', \
+                index = False, quoting=csv.QUOTE_ALL, quotechar='"')
             return redirect(url_for('assets'))
 
-    return render_template('assets.html', assets=assets, serverName=serverName)
+    return render_template('assets.html', assets=assetsDF, serverName=serverName)
 
 @app.route('/inita', methods=('GET', 'POST'))
 def inita():
@@ -167,10 +168,14 @@ def initd():
 @app.route('/vlplans', methods=('GET', 'POST'))
 def vlplans():
     try:
-        conn = get_db_connection()
-        vlplans = conn.execute('SELECT * FROM VLplans ORDER BY \
-                                StartDate ASC;').fetchall()
-        conn.close()
+        vlplansDF = pd.read_csv(myDir+"initdata/VLplans.csv", \
+                            sep=';')
+        try:
+            vlplansDF['Amount'] = vlplansDF['Amount']\
+                    .str.replace(",", ".").astype(float)
+        except:
+            vlplansDF['Amount'] = vlplansDF['Amount']\
+                    .astype(float)            
     except:
         return redirect(url_for('error'))
 
@@ -185,14 +190,15 @@ def vlplans():
             requestDF[a] = column
         requestDF = requestDF[requestDF['AssetID'].str.len() > 0]
 
-        print(requestDF)
-
         if len(requestDF) < 1:
             flash('Error!')
         else:
+            print()
+            requestDF.to_csv(myDir+"initdata/VLplans.csv", sep=';', \
+                            index = False, quoting=csv.QUOTE_ALL, quotechar='"')
             return redirect(url_for('vlplans'))
 
-    return render_template('vlplans.html', vlplans=vlplans, serverName=serverName)
+    return render_template('vlplans.html', vlplans=vlplansDF, serverName=serverName)
 
 @app.route('/settings', methods=('GET', 'POST'))
 def settings():
@@ -269,20 +275,24 @@ def unlock():
 @app.route('/targets', methods=('GET', 'POST'))
 def targets():
     try:
+        assetsDF = pd.read_csv(myDir+"initdata/TargetPrices.csv", \
+                            sep=';')
+        asset_cols = list(assetsDF.columns)
+        namesDF = pd.read_csv(myDir+"initdata/AssetReferences.csv", \
+                            sep=';')
         conn = get_db_connection()
-        assets = conn.execute('SELECT qWatchlist.AssetID, qWatchlist.AssetName, \
-                            qWatchlist.LastPrice, TargetPriceHigh, TargetPriceLow, \
-                            Currency FROM qWatchList LEFT JOIN \
-                            TargetPrices ON qWatchlist.AssetID = TargetPrices.AssetID \
-                            ORDER BY qWatchlist.AssetName COLLATE NOCASE \
-                            ASC;').fetchall()
-        asset_cols = conn.execute('PRAGMA table_info(TargetPrices);').fetchall()
-        cols = pd.DataFrame(asset_cols)[1][1:].to_list()
+        prices = conn.execute('SELECT qWatchlist.AssetID, qWatchlist.AssetName, \
+                            qWatchlist.LastPrice FROM qWatchList').fetchall()
         conn.close()
-    except Exception as e:
-        print(e)
+        pricesDF = pd.DataFrame(prices, columns=['AssetID', 'AssetName', 'AssetPrice'])
+        assetsDF['AssetName'] = assetsDF['AssetID']\
+                    .map(pricesDF.set_index('AssetID')['AssetName'])
+        assetsDF['LastPrice'] = assetsDF['AssetID']\
+                    .map(pricesDF.set_index('AssetID')['AssetPrice'])
+        assetsDF = assetsDF.sort_values(by=['AssetName'], ascending=True)
+    except:
         return redirect(url_for('error'))
-
+    
     if request.method == 'POST':
 
         requestDF = pd.DataFrame()
@@ -291,12 +301,11 @@ def targets():
             column = []
             for value in assets_data[a]:
                 column.append(value)
-            if a in cols:
+            if a in asset_cols:
                 requestDF[a] = column
-        print(requestDF)
+        
         requestDF[['TargetPriceLow', 'TargetPriceHigh']] = \
             requestDF[['TargetPriceLow', 'TargetPriceHigh']].fillna(0)
-
         requestDF.loc[requestDF["Currency"] == "None", "Currency"] = DefaultCurrency
         requestDF.loc[requestDF["Currency"] == "", "Currency"] = DefaultCurrency
         requestDF.loc[requestDF["TargetPriceLow"] == "", "TargetPriceLow"] = 0
@@ -306,9 +315,11 @@ def targets():
         if len(requestDF) < 1:
             flash('Error!')
         else:
+            requestDF.to_csv(myDir+"initdata/TargetPrices.csv", sep=';', \
+                index = False, quoting=csv.QUOTE_ALL, quotechar='"')
             return redirect(url_for('targets'))
 
-    return render_template('targets.html', assets=assets, serverName=serverName)
+    return render_template('targets.html', assets=assetsDF, serverName=serverName)
 
 @app.route('/split', methods=('GET', 'POST'))
 def split():

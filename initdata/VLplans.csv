@@ -1,2 +1,2 @@
-PlanID;Bank;AccountNr;AssetID;StartDate;EndDate;Amount;Pieces;Currency
-1;Deka;108845306;DE0008474503;2016-07-01;;40.0;35.085;EUR
+"PlanID";"Bank";"AccountNr";"AssetID";"StartDate";"EndDate";"Amount";"Pieces";"Currency"
+"1";"Deka";"108845306";"DE0008474503";"2016-07-01";"";"40.0";"35.085";"EUR"

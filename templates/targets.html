@@ -14,7 +14,7 @@
         <th>Cur.</th>
         <th><button type="submit" class="upd_button">Update</button></th>
     </tr>
-        {% for asset in assets %}
+        {% for key, asset in assets.iterrows() %}
         <tr>
         <td><input type="text" readonly name="AssetID" placeholder=""
             size=12 class="input" value="{{ asset['AssetID'] }}">
@@ -23,15 +23,15 @@
             class="input" value="{{ asset['AssetName'] }}">
         </input></td>
         <td><input type="text" readonly name="Current" placeholder=""
-            size=8 class="input" value="{{ asset['LastPrice'] }}">
+            size=8 class="input" value="{{ asset['LastPrice'] | round(3) }}">
         </input></td>
         <td><input type="number" name="TargetPriceLow" placeholder=""
             size=8 class="input" max="999999" min="0" step="0.01" 
-            value="{{ request.form['TargetPriceLow'] or asset['TargetPriceLow'] }}">
+            value="{{ request.form['TargetPriceLow'] or asset['TargetPriceLow'] | round(3) }}">
         </input></td>
         <td><input type="number" name="TargetPriceHigh" placeholder=""
             size=8 class="input" max="999999" min="0" step="0.01" 
-            value="{{ request.form['TargetPriceHigh'] or asset['TargetPriceHigh'] }}">
+            value="{{ request.form['TargetPriceHigh'] or asset['TargetPriceHigh'] | round(3) }}">
         </input></td>
         <td><input type="text" name="Currency" placeholder=""
             size=3 class="input" 

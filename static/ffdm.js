@@ -342,3 +342,8 @@ function delInitD(e) {
         return false
     }
 }
+
+function validate(form) {
+
+    return confirm('Do you really want to apply?');
+}
