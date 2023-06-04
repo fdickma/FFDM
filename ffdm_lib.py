@@ -13,7 +13,14 @@ import time
 import csv
 import os
 import locale
+import glob
 import configparser
+import requests
+import ast
+import yfinance as yf
+import pandas as pd
+import numpy as np
+from dateutil.relativedelta import relativedelta
 
 # Return a float or integer depending on an existing dot
 def check_float(num):
@@ -325,9 +332,7 @@ def writeConfig(filename, section, changes):
     config.read(myDir + filename)
     for chn in changes:
         chn.insert(0, section)
-        #print(chn)
         config.set(chn[0], chn[1], chn[2].replace('%','%%'))
-    #print(config.items(section))
     with open(myDir + filename, 'w') as configfile:
         config.write(configfile)
     configfile.close()
@@ -409,5 +414,223 @@ def format_snumber(number):
     return p_number
 
 def format_percent(number):
-    
     return round(number, 1)
+
+def get_of_ticker(isin):
+    myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
+    ticker_dir = myDir + "of_ticker" + "/"
+    ticker_file = ticker_dir + isin + ".csv"
+    if not os.path.exists(ticker_dir):
+        os.makedirs(ticker_dir)
+    if os.path.exists(ticker_file):
+        data = pd.read_csv(ticker_file)        
+    else:
+        response = requests.post(url='https://api.openfigi.com/v3/mapping',
+                            headers={'Content-Type': 'text/json'},
+                            json=[{
+                                'idType': 'ID_ISIN',
+                                'idValue': isin
+                            }])
+        full_data = str(response.json())
+        full_data = full_data.replace("{'data': [", '')
+        full_data = full_data.replace("]}", '')
+        full_data = full_data.replace("]", '')
+        full_data = full_data.replace("[", '')
+        full_data = full_data.replace("'", '"')
+        data = ast.literal_eval(full_data)
+        if type(data) is tuple:
+            pd.DataFrame(data).to_csv(ticker_file, header=True, index=False)
+        else:
+            return None
+    data = pd.read_csv(ticker_file)
+    for idx, entry in data.iterrows():
+        return entry['ticker']
+
+def get_yf_ticker(isin):
+    url = 'https://query1.finance.yahoo.com/v1/finance/search'
+
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.109 Safari/537.36',
+    }
+
+    params = dict(
+        q=isin,
+        quotesCount=1,
+        newsCount=0,
+        listsCount=0,
+        quotesQueryId='tss_match_phrase_query'
+    )
+
+    resp = requests.get(url=url, headers=headers, params=params)
+    data = resp.json()
+    if 'quotes' in data and len(data['quotes']) > 0:
+        return data['quotes'][0]['symbol']
+    else:
+        return None
+        
+def get_existing_ticker(isin):
+    aDF = get_assets()
+    usd_values = [['EUR=X', 'EUR'], ['CHF=X', 'CHF'], ['JPY=X', 'JPY'], \
+                ['BTC-USD', 'BTC'], ['GC=F', 'Gold'], ['GBP=X', 'GBP'], \
+                ['HKD=X', 'HKD']]
+    cyDF = pd.DataFrame(usd_values, columns =['Ticker', 'AssetID'])
+    try:
+        return cyDF[(cyDF['AssetID'] == isin)]['Ticker'].iloc[0]
+    except:
+        try:
+            return aDF[(aDF['AssetID'] == isin)]['Ticker'].iloc[0]
+        except:
+            return None
+        
+def get_ticker(isin):   
+    ticker = get_existing_ticker(isin)
+    if ticker != None and str(ticker) != "nan":
+        return ticker
+    ticker = get_of_ticker(isin)
+    if ticker is None:
+        ticker = get_yf_ticker(isin)
+    return ticker
+
+def convert_date(now):
+    return str(now.year) + "-" + str(now.month) + "-" + str(now.day)
+
+def get_ticker_info(ticker, file):
+    ticker_object = yf.Ticker(ticker)
+    try:
+        temp = pd.DataFrame.from_dict(ticker_object.info, orient="index")
+        temp.to_csv(file, header=True)
+    except:
+        return
+
+def get_ticker_currency(ticker, file):
+    if os.path.exists(file):
+        tdf = pd.read_csv(file, index_col=None, header=0)
+        attr_col = tdf.columns[0]
+        val_col = tdf.columns[1]
+        currency = tdf[(tdf[attr_col] == 'currency')][val_col].iloc[0]
+        return str(currency).upper()
+    else:
+        return 'USD'
+
+def dl_ticker_data(isin, ticker, years):
+    if ticker != None:
+        now_date = datetime.datetime.now()
+        end_d = convert_date(now_date)
+        start_year = int(end_d[0:4]) - years
+        myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
+        ticker_dir = myDir + "assetdata/"
+        if not os.path.exists(ticker_dir):
+            os.makedirs(ticker_dir)
+        li = []
+        data_missing = list()
+        for tyear in range(0, years + 1, 1):
+            ticker_file = ticker_dir + isin + "_" + str(start_year + tyear) + ".csv"
+            if os.path.exists(ticker_file):
+                df = pd.read_csv(ticker_file, index_col=None, header=0)
+                li.append(df)
+            else:
+                data_missing.append(start_year + tyear)
+        infofile = ticker_dir + isin + "_info.csv"
+        if not os.path.exists(infofile):
+            get_ticker_info(ticker, infofile)
+        currency = get_ticker_currency(ticker, infofile)
+        if len(data_missing) > 0:
+            start_year = min(data_missing)
+        else:
+            start_year = end_d[0:4]
+        start_d = str(start_year) + "-01-01"
+        if len(li) > 0:
+            ticker_data = pd.concat(li, axis=0, ignore_index=True)
+        else:
+            dload = yf.download(ticker, 
+                    start=start_d, 
+                    end=end_d, 
+                    progress=True)
+            dload['AssetID'] = isin
+            dload['Currency'] = currency
+            li = []
+            df = pd.DataFrame(dload)
+            for i, x in df.groupby(df.index.year):
+                ticker_file = ticker_dir + isin + "_" + str(i) + ".csv"
+                x.to_csv(ticker_file, header=True)
+                df = pd.read_csv(ticker_file, index_col=None, header=0)
+                li.append(df)
+            ticker_data = pd.concat(li, axis=0, ignore_index=True)
+    else:
+        return None
+
+def get_currencies():
+    # Main currencies
+    usd_values = [['EUR=X', 'EUR'], ['CHF=X', 'CHF'], ['JPY=X', 'JPY'], \
+                ['BTC-USD', 'BTC'], ['GC=F', 'Gold'], ['GBP=X', 'GBP'], \
+                ['HKD=X', 'HKD']]
+    for v in usd_values:
+        dl_ticker_data(v[1], v[0], 5)
+    return
+
+def get_assets():
+    myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
+    file = myDir+"initdata/AssetReferences.csv"
+    assetsrefDF = pd.read_csv(file, header=0, sep=";")
+    return assetsrefDF
+
+def isin_data(isin, last_update):
+    ticker = get_ticker(isin)
+    print(ticker)
+    past_years = 5
+    if len(ticker) == 0:
+        return None
+    now_date = datetime.datetime.now()    
+    last_update_date = datetime.datetime.strptime(last_update, '%Y-%m-%d')
+    last_update_date += datetime.timedelta(days=1)
+    print(last_update_date)
+    # print(bool(len(pd.bdate_range(last_update_date, now_date))))
+    end_d = convert_date(now_date)
+    start_year = int(end_d[0:4]) - past_years
+    myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
+    isin_dir = myDir + "assetdata/"
+    if not os.path.exists(isin_dir):
+        os.makedirs(ticker_dir)
+    infofile = isin_dir + isin + "_info.csv"
+    if not os.path.exists(infofile):
+        get_ticker_info(ticker, infofile)
+    currency = get_ticker_currency(ticker, infofile)
+    start_d = str(last_update[0:4]) + "-01-01"
+    filetime = os.path.getmtime(isin_dir + isin + "_" + str(end_d)[:4] + ".csv")
+    day_date = str(now_date)[:10]
+    lastfile = time.strftime("%Y-%m-%d",time.localtime(filetime))
+    if lastfile >= day_date:
+        return
+    dload = yf.download(ticker, 
+            start=start_d, 
+            end=end_d, 
+            progress=True)
+    dload['AssetID'] = isin
+    dload['Currency'] = currency
+    li = []
+    df = pd.DataFrame(dload)
+    for i, x in df.groupby(df.index.year):
+        isin_file = isin_dir + isin + "_" + str(i) + ".csv"
+        x.to_csv(isin_file, header=True)
+
+def missing_ticker_data():
+    print("Retrieve missing ticker data")
+    myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
+    asset_files = list(glob.glob(myDir+"assetdata/*.[cC][sS][vV]"))
+    asset_list = []
+    li = []
+    for f in asset_files:
+        if "_info." in f:
+            continue
+        else:
+            x = os.path.basename(f).split(".")[0].split("_")[0]
+            if x not in asset_list:
+                asset_list.append(x)
+            li.append(pd.read_csv(f, header=0))
+    frame = pd.concat(li, axis=0, ignore_index=True)
+    for a in asset_list:
+        aDF = frame[(frame["AssetID"] == a)]
+        last = aDF.sort_values(['Date']).drop_duplicates('Date', keep='last')\
+            ['Date'].max()
+        isin_data(a, last)
+    return

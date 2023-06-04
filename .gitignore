@@ -10,3 +10,6 @@ __pycache__/
 ffdm_prices_backup.csv
 *.zip
 testing/
+of_ticker/
+assetdata/
+currencies/

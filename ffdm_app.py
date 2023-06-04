@@ -13,6 +13,7 @@ import locale
 import pandas as pd
 import numpy as np
 import configparser
+import ffdm_lib as fl
 import init_db as init_run
 
 # Import config data
@@ -65,6 +66,14 @@ def assets():
         if len(requestDF) < 1:
             flash('Error!')
         else:
+            for i, asset in requestDF.iterrows():
+                if asset['Ticker'] == "None" or asset['Ticker'] is None \
+                or len(asset['Ticker']) == 0 or str(asset['Ticker']) == "nan":
+                    newTicker = fl.get_ticker(asset['AssetID'])
+                    if newTicker is not None:
+                        requestDF.loc[(requestDF.AssetID == asset['AssetID']), \
+                            'Ticker'] = newTicker
+
             requestDF.to_csv(myDir+"initdata/AssetReferences.csv", sep=';', \
                 index = False, quoting=csv.QUOTE_ALL, quotechar='"')
             return redirect(url_for('assets'))
@@ -245,6 +254,16 @@ def settings():
 
     return render_template('settings.html', confdat=confdat, serverName=serverName)
 
+# Update ticker data
+@app.route('/tdu')
+def tdu():
+    try:
+        subprocess.run(["python3 ffdm.py -d"], shell=True, check=True)
+    except:
+        return redirect(url_for('error'))
+
+    return redirect(request.referrer)
+
 @app.route('/acc')
 def acc():
     try:
@@ -285,11 +304,22 @@ def targets():
                             qWatchlist.LastPrice FROM qWatchList').fetchall()
         conn.close()
         pricesDF = pd.DataFrame(prices, columns=['AssetID', 'AssetName', 'AssetPrice'])
+
+        # Filter all non active assets
+        assetsDF = assetsDF[assetsDF['AssetID'].isin(namesDF['AssetID'])]
+
+        # Add all new assets
+        if len(namesDF[~namesDF['AssetID'].isin(assetsDF['AssetID'])]) > 0:
+            newonesDF = namesDF[~namesDF['AssetID'].isin(assetsDF['AssetID'])] 
+            assetsDF = pd.concat([assetsDF, newonesDF]).fillna(0)
+            assetsDF['Currency'] = assetsDF['Currency'].replace(0,DefaultCurrency) 
+     
         assetsDF['AssetName'] = assetsDF['AssetID']\
                     .map(pricesDF.set_index('AssetID')['AssetName'])
         assetsDF['LastPrice'] = assetsDF['AssetID']\
                     .map(pricesDF.set_index('AssetID')['AssetPrice'])
         assetsDF = assetsDF.sort_values(by=['AssetName'], ascending=True)
+
     except:
         return redirect(url_for('error'))
     
@@ -517,6 +547,7 @@ def my_utility_processor():
             DataDate = conn.execute('SELECT PriceTime FROM AssetPrices ORDER BY PriceTime \
                         DESC LIMIT 1').fetchall()
             dtime = str(DataDate[0][0]).replace(' ', ' / ')[:18]
+            dtime = dtime + " (" + DefaultCurrency + ")"
             conn.close()
             return dtime
         except:
@@ -525,8 +556,8 @@ def my_utility_processor():
     def get_lastupdtime():
         try:    
             conn = get_db_connection()
-            DataDate = conn.execute('SELECT PriceTime FROM AssetPrices ORDER BY PriceTime \
-                        DESC LIMIT 1').fetchall()
+            DataDate = conn.execute('SELECT PriceTime FROM AssetPrices \
+                        ORDER BY PriceTime DESC LIMIT 1').fetchall()
             dtime = str(DataDate[0][0])
             conn.close()
             return dtime

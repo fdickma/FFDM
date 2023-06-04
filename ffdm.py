@@ -74,8 +74,8 @@ def readAssetRef():
     AssetData = []
     connection = sqlite3.connect(myDir + DB)
     assetrefDF = pd.DataFrame(connection.execute("SELECT AssetID, AssetType,\
-            AssetName, BankRef, NetRef1, NetRef2 FROM AssetReferences").fetchall(), \
-            columns=["AssetID","AssetType","AssetName","BankRef","NetRef1","NetRef2"])
+            AssetName, Ticker, NetRef1, NetRef2 FROM AssetReferences").fetchall(), \
+            columns=["AssetID","AssetType","AssetName","Ticker","NetRef1","NetRef2"])
     connection.close()
     return assetrefDF
 
@@ -93,8 +93,8 @@ def get_Fnet_data(a_type, a_id, refFnet):
                 +" | grep -m 1 '[0-9] EUR' | grep -o [0-9.,]*"
     if a_type == "COM" and a_id == "Gold":
         link = "https://www.finanzen.net/rohstoffe/goldpreis" \
-                +" | egrep -m1 '([[:digit:]]{0,3}\.)?([[:digit:]]{0,3}\.)?"\
-                +"[[:digit:]]{1,3}\,[[:digit:]]{2}\EUR' | " \
+                +" | grep -E -m1 '([[:digit:]]{0,3}\.)?([[:digit:]]{0,3}\.)?"\
+                +"[[:digit:]]{1,3},[[:digit:]]{2}EUR' | " \
                 +"grep -o [0-9.,]*"
     if a_type == "CUR" and a_id == "USD":
         link = "https://www.finanzen.net/devisen/realtimekurs/dollarkurs" \
@@ -161,11 +161,11 @@ def assetDataScraping(asset):
     a_id = asset['AssetID']
     refFnet = asset['NetRef1']
     refARD = asset['NetRef2']
-    #return_price = retrieveWebData(get_Fnet_data(a_type, a_id, refFnet))
-    return_price = retrieveWebData(get_ARD_data(a_type, a_id, refARD))
+    return_price = retrieveWebData(get_Fnet_data(a_type, a_id, refFnet))
+    #return_price = retrieveWebData(get_ARD_data(a_type, a_id, refARD))
     if return_price <= 0:
-        #return_price = retrieveWebData(get_ARD_data(a_type, a_id, refARD))
-        return_price = retrieveWebData(get_Fnet_data(a_type, a_id, refFnet))
+        return_price = retrieveWebData(get_ARD_data(a_type, a_id, refARD))
+        #return_price = retrieveWebData(get_Fnet_data(a_type, a_id, refFnet))
         #print(return_price)
     return return_price
 
@@ -217,7 +217,6 @@ def hashList(List):
     
 def assetsUpdate():
     assetrefDF = readAssetRef()
-    #targetlist = readAssetFile(TargetFile)
     print(myDir+'initdata/AssetPrices.csv')
     priceDF = pd.read_csv(myDir+'initdata/AssetPrices.csv', header=0, sep=";")
     
@@ -277,7 +276,16 @@ def targetTest():
 
 def accountsUpdate():
     print('Re-initilize data')
+    fl.get_currencies()
     subprocess.run(["python3 " + myDir + "init_db.py"], shell=True, check=True)
+
+def tickerDataUpdate():
+    assetDF = fl.get_assets()
+    for a in assetDF.AssetID:
+        if assetDF[(assetDF['AssetID'] == a)]['AssetType'].iloc[0] != 'CUR':
+            ticker = assetDF[(assetDF['AssetID'] == a)]['Ticker'].iloc[0]
+            print(a, ticker)
+            fl.dl_ticker_data(a, ticker, 5)
 
 if __name__ == '__main__':
     
@@ -303,6 +311,8 @@ if __name__ == '__main__':
         '-t', '--test', help='Dry run', action='store_true')
     parser.add_argument(
         '-w', '--web', help='Get web data', action='store_true')
+    parser.add_argument(
+        '-d', '--tdu', help='Update ticker data', action='store_true')
     parser.add_argument(
         '-l', '--lock', help='Set lock file', action='store_true')
     parser.add_argument(
@@ -334,6 +344,15 @@ if __name__ == '__main__':
         createLock()
         print('Checking target prices.')
         targetTest()
+        deleteLock()
+        sys.exit(0)
+
+    if args.tdu:
+        if checkLock(): sys.exit()
+        createLock()
+        print('Update ticker data.')
+        tickerDataUpdate()
+        accountsUpdate()
         deleteLock()
         sys.exit(0)
 

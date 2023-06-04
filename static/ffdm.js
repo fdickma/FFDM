@@ -20,7 +20,7 @@ function addEntry(e) {
     Bankinputbox = document.createElement("input");
     Bankinputbox.setAttribute("type", "text");
     Bankinputbox.setAttribute("size", "12");
-    Bankinputbox.setAttribute("name", "BankRef");
+    Bankinputbox.setAttribute("name", "Ticker");
     Bankinputbox.setAttribute("value", "");
     Bankinputbox.setAttribute("class", "input");
     Fnetinputbox = document.createElement("input");

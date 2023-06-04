@@ -9,7 +9,7 @@
         <th>Type</th>
         <th>ISIN/ID</th>
         <th>Name</th>
-        <th>BankID</th>
+        <th>Ticker</th>
         <th>Finanzen.net</th>
         <th>ARD-Boerse</th>
         <th><button type="submit" class="upd_button">Update</button></th>
@@ -21,19 +21,19 @@
             size=3 value="{{ request.form['AssetType'] or asset['AssetType'] }}">
         </input></td>
         <td><input type="text" name="AssetID" placeholder="" class="input" 
-            size=10 value="{{ request.form['AssetID'] or asset['AssetID'] }}">
+            size=12 value="{{ request.form['AssetID'] or asset['AssetID'] }}">
         </input></td>
         <td><input type="text" name="AssetName" placeholder="" class="input" 
-            size=14 value="{{ request.form['AssetName'] or asset['AssetName'] }}">
+            size=16 value="{{ request.form['AssetName'] or asset['AssetName'] }}">
         </input></td>
-        <td><input type="text" name="BankRef" placeholder="" class="input" 
-            size=12 value="{{ request.form['BankRef'] or asset['BankRef'] }}">
+        <td><input type="text" name="Ticker" placeholder="" class="input" 
+            size=12 value="{{ request.form['Ticker'] or asset['Ticker'] }}">
         </input></td>
         <td><input type="text" name="NetRef1" placeholder="" class="input" 
-            size=12 value="{{ request.form['NetRef1'] or asset['NetRef1'] }}">
+            size=15 value="{{ request.form['NetRef1'] or asset['NetRef1'] }}">
         </input></td>
         <td><input type="text" name="NetRef2" placeholder="" class="input" 
-            size=12 value="{{ request.form['NetRef2'] or asset['NetRef2'] }}">
+            size=15 value="{{ request.form['NetRef2'] or asset['NetRef2'] }}">
         </input></td>
         <td style="justify-content: center;">
             <button id="del_line{{ loop.index|string }}" class="del_button" 
@@ -44,7 +44,7 @@
         {% endfor %}
         {% set row = count[-1] + 1 %}
         <tr><td style="text-align:center;">
-            <button id="add" class="add_button" type="add_button"
+            <button id="add" class="add_button" type="button"
             onclick="addEntry({{ row|string }})">Add</button>
         </td></tr>
     </table>

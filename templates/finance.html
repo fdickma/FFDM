@@ -22,7 +22,12 @@
             <tr class="row-danger">
         {% endif %}
             <td>
-                <span><b>{{ position['Position'] }}</b></span>
+                <span><b>
+                    {{ position['Position'] }} 
+                    {% if position['Items'] > 1 %}
+                        ({{ position['Items'] }})
+                    {% endif %}
+                </b></span>
             </td>
             <td align="right">
                 <span>
@@ -99,10 +104,10 @@
     <div class="top_column">
     <table class="table fintab_top">
     <tr>
-        <th>Tot. Earn</th>
-        <th>Perf.</th>
-        <th>Total(Y)</th>
-        <th>Depot(Y)</th>
+        <th>Tot. Perf.</th>
+        <th>&#8709;Total(Y)</th>
+        <th>&#8709;Depot(Y)</th>
+        <th>Div. Perf.</th>
     </tr>
     {% for p_kpi in perf %}
     {% if p_kpi['TotalEarnings'] >= 0: %}
@@ -110,14 +115,6 @@
     {% else %}
         <tr class="row-danger">
     {% endif %}
-        {% if p_kpi['TotalEarnings'] >= 0: %}
-            <td align="center">
-        {% else %}
-            <td align="center" class="row-danger">
-        {% endif %}
-            <span class="kpi">
-            <b>{{ format_number(p_kpi['TotalEarnings']) }}</b></span>
-            </td>
         {% if p_kpi['TotalPerformance'] >= 0: %}
             <td align="center">
         {% else %}
@@ -132,7 +129,7 @@
             <td align="center" class="row-danger">
         {% endif %}
             <span  class="kpi">
-            <b>{{ format_snumber(p_kpi['YearPerformance']) }}%</b></span>
+            <b>{{ format_percent(p_kpi['YearPerformance']) }}%</b></span>
             </td>
         {% if p_kpi['YearCorePerformance'] >= 0: %}
             <td align="center">
@@ -140,7 +137,15 @@
             <td align="center" class="row-danger">
         {% endif %}
             <span  class="kpi">
-            <b>{{ format_snumber(p_kpi['YearCorePerformance']) }}%</b></span>
+            <b>{{ format_percent(p_kpi['YearCorePerformance']) }}%</b></span>
+            </td>
+        {% if p_kpi['DividendPerformance'] >= 0: %}
+            <td align="center">
+        {% else %}
+            <td align="center" class="row-danger">
+        {% endif %}
+            <span class="kpi">
+            <b>{{ format_number(p_kpi['DividendPerformance']) }}%</b></span>
             </td>
         </tr>
     {% endfor %}
@@ -198,8 +203,9 @@
     <div class="column">
     <table class="table fintab_bottom">
     <tr>
-        <th>Asset</th>
         <th>#</th>
+        <th>Asset</th>
+        <th>Pcs.</th>
         <th>Value</th>
         <th>Growth</th>
         <th>Div.</th>
@@ -213,6 +219,9 @@
         {% else %}
             <tr class="row-danger">
         {% endif %}
+            <td align="left">
+                <span><b>{{loop.index}}</b></span>
+            </td>
             <td align="left">
                 <span><b>{{ asset['AssetName'] }}</b></span>
             </td>

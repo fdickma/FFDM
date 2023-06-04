@@ -121,28 +121,35 @@ def watchlist_asset(assets, proc_num):
             else:
                 recalc = True
 
+        price20time = datetime.datetime.strptime(str(pricetime)[:-9], '%Y-%m-%d')\
+                    - timedelta(days=19)
+
+        price200time = datetime.datetime.strptime(str(pricetime)[:-9], '%Y-%m-%d')\
+                    - timedelta(days=199)
+        
         if len(__main__.oldwlist) == 0 or recalc == True:
             try:
+
                 price20av = round((__main__.assetpriceDF[['PriceTime','AssetID',\
                             'AssetPrice']]\
-                            [(__main__.assetpriceDF['PriceTime']>__main__.price20time) \
+                            [(__main__.assetpriceDF['PriceTime']>price20time) \
                             & (__main__.assetpriceDF['AssetID']==a)]['AssetPrice'])\
                             .values.mean(),4)
                 price200av = round((__main__.assetpriceDF[['PriceTime','AssetID',\
                             'AssetPrice']]\
-                            [(__main__.assetpriceDF['PriceTime']>__main__.price200time) \
+                            [(__main__.assetpriceDF['PriceTime']>price200time) \
                             & (__main__.assetpriceDF['AssetID']==a)]['AssetPrice'])\
                             .values.mean(),4)
-                maxprice = round((__main__.assetpriceDF[['PriceTime','AssetID',\
+                maxprice = (__main__.assetpriceDF[['PriceTime','AssetID',\
                             'AssetPrice']]\
                             [(__main__.assetpriceDF['AssetID']==a)]['AssetPrice'])\
-                            .values.max(),4)
+                            .values.max()
                 maxdate = (__main__.assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
                             [(__main__.assetpriceDF['AssetPrice']==maxprice) \
                             & (__main__.assetpriceDF['AssetID']==a)]['PriceTime']).iloc[0]
                 lowprice = (__main__.assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
                     [(__main__.assetpriceDF['AssetID']==a)]['AssetPrice']).values.min()
-                if maxdate < __main__.pricetime:
+                if maxdate < pricetime:
                     minprice = round((__main__.assetpriceDF[['PriceTime','AssetID',\
                                 'AssetPrice']]\
                                 [(__main__.assetpriceDF['PriceTime']>maxdate) & \
@@ -182,7 +189,9 @@ def watchlist_asset(assets, proc_num):
             r_618 = round(minprice + ((maxprice - minprice) * 0.618),4)
             e_382 = round(minprice - ((maxprice - minprice) * 0.382),4)
             trend = -1
-            
+        if e_382 < 0:
+            e_382 = 0.0
+
         watchlist = pd.Series([a,aname,delta,deltaprice,lastprice,pricetime,prevprice,\
                     price20av,price200av,lowtarget,hightarget,minprice,maxprice,\
                     lowprice,r_618,e_382,trend])
@@ -190,6 +199,129 @@ def watchlist_asset(assets, proc_num):
                     ignore_index=True)
 
     return watchlistDF
+
+def get_currency(id):
+    myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
+    file1 = myDir + 'assetdata/' + id + '_info.csv'
+    file2 = myDir + 'currencies/' + id + '_info.csv'
+    if os.path.exists(file1):
+        tdf = pd.read_csv(file1, index_col=None, header=0)
+        attr_col = tdf.columns[0]
+        val_col = tdf.columns[1]
+        currency = tdf[(tdf[attr_col] == 'currency')][val_col].iloc[0]
+        return str(currency).upper()
+    elif os.path.exists(file2):
+        tdf = pd.read_csv(file2, index_col=None, header=0)
+        attr_col = tdf.columns[0]
+        val_col = tdf.columns[1]
+        currency = tdf[(tdf[attr_col] == 'currency')][val_col].iloc[0]
+        return str(currency).upper()
+    else:
+        return 'USD'
+
+def get_currency_data(currency):
+    currDF = pd.DataFrame(__main__.connection.execute("SELECT * \
+                FROM CurrencyRates WHERE AssetID='"+currency + "'").fetchall(), \
+                columns=["Date","AssetID","Currency","Div"])
+    return currDF
+
+def build_assetprices(DefaultCurrency):
+    
+    fl.missing_ticker_data()
+    
+    histpDF = pd.DataFrame(__main__.connection.execute("SELECT * \
+                FROM HistoryPrices").fetchall(), columns=["Date","Open",\
+                "High","Low","Close","Adj Close","Volume","AssetID","Currency"])
+
+    if DefaultCurrency != "USD":
+        defDF = histpDF[(histpDF["AssetID"] == DefaultCurrency)][["Date","AssetID",\
+                "Close"]]
+        defDF["Currency"] = "USD"
+    else:
+        defDF = histpDF[(histpDF["AssetID"] == DefaultCurrency)][["Date"]]
+        defDF["AssetID"] = "USD"
+        defDF["Close"] = 1
+        defDF["Currency"] = "USD"
+    defDF = defDF.sort_values(by='Date')
+    defDF = defDF.rename(columns={"Close": "Div"})
+
+    currency_tmp = histpDF.Currency
+    currency_tmp = currency_tmp.str.upper()
+    currency_tmp = currency_tmp.unique()
+    currency_list = currency_tmp.tolist()
+    currency_list.append('JPY')
+    currency_list.append('EUR')
+    currency_list.append('CHF')
+    currency_list.append('USD')
+    currency_list.append('RMB')
+    currency_list.append('HKD')
+    currency_list.append('GBP')
+
+    print(list(set(currency_list)))
+        
+    for x in currency_list:
+        # US$ is the central currency, if it is not the default
+        # the reciprocal value is to be calculated from US$
+        if x == 'USD' and DefaultCurrency != 'USD':
+            y = histpDF[(histpDF["AssetID"] == DefaultCurrency)]\
+                [["Date","AssetID","Close"]].sort_values(by='Date')
+            h = y.merge(defDF[['Date','Div']], how="inner", on="Date")
+            h['AssetID'] = 'USD'
+            h['Div'] = h['Close'] 
+        elif x != 'USD' and x == DefaultCurrency:
+            y = histpDF[(histpDF["AssetID"] == x)]\
+                [["Date","AssetID","Close"]].sort_values(by='Date')
+            h = y.merge(defDF[['Date','Div']], how="inner", on="Date")
+            h['AssetID'] = x
+            h['Div'] = 1
+            print("Default currency")
+        elif x != 'USD' and DefaultCurrency != 'USD':
+            y = histpDF[(histpDF["AssetID"] == x)]\
+                [["Date","AssetID","Close"]].sort_values(by='Date')
+            h = y.merge(defDF[['Date','Div']], how="inner", on="Date")
+            h['AssetID'] = x
+            h['Div'] = h['Close'] / h['Div']
+            print("Different currency", x)
+        else:
+            y = histpDF[(histpDF["AssetID"] == x)]\
+                [["Date","AssetID","Close"]].sort_values(by='Date')
+            h = y.merge(defDF[['Date','Div']], how="inner", on="Date")
+            h['Div'] = h['Close'] / h['Div']
+            print("US Dollar")
+        h.to_sql("CurrencyRates", __main__.connection, index=False, if_exists='append')
+
+    for x in histpDF.AssetID.unique():
+        # Just the non-currency values are being processed.
+        if x in currency_list:
+            continue
+        currency = get_currency(x)
+        cuffDF = get_currency_data(currency)
+        y = histpDF[(histpDF["AssetID"] == x)]\
+            [["Date","AssetID","Close"]].sort_values(by='Date')
+        h = y.merge(cuffDF[['Date','Div']], how="inner", on="Date")
+        new = pd.DataFrame()
+        new['PriceTime'] = pd.to_datetime(h['Date'])
+        new['AssetID'] = x
+        new['AssetPrice'] = h['Close'] / h['Div']
+        new['Currency'] = DefaultCurrency
+        new.to_sql("AssetPrices", __main__.connection, index=False, if_exists='append')
+        print(x, currency)
+
+    # But USD needs to be added
+    if DefaultCurrency != "USD":
+        currency = get_currency(x)
+        cuffDF = get_currency_data(currency)
+        y = histpDF[(histpDF["AssetID"] == DefaultCurrency)]\
+            [["Date","AssetID","Close"]].sort_values(by='Date')
+        h = y.merge(cuffDF[['Date','Div']], how="inner", on="Date")
+        new = pd.DataFrame()
+        new['PriceTime'] = pd.to_datetime(h['Date'])
+        new['AssetID'] = "USD"
+        new['AssetPrice'] = 1/ h['Close']
+        new['Currency'] = DefaultCurrency
+        new.to_sql("AssetPrices", __main__.connection, index=False, if_exists='append')
+        print(x, "USD")
+    return
 
 if __name__ == '__main__':
     # Get the start time
@@ -236,9 +368,28 @@ if __name__ == '__main__':
 
     cur = connection.cursor()
 
-    files_list = list(glob.glob(myDir+"initdata/*.[cC][sS][vV]"))
+    print('Import: Historical Asset Prices')
+    history_list = list(glob.glob(myDir+"assetdata/*.[cC][sS][vV]"))
+    for f in history_list:
+        print("File: "+f)
+        if "_info." in f:
+            td = pd.read_csv(f, header=None, skiprows=1, names=["Attribute", "Value"])
+            x = os.path.basename(f).split(".")[0].split("_")[0]
+            print(x)
+            td["AssetID"] = x
+            td.to_sql("AssetInfo", con=connection, if_exists='append', index=False)            
+        else:
+            td = pd.read_csv(f, header=0)
+            td.to_sql("HistoryPrices", con=connection, if_exists='append', index=False)
+
+    build_assetprices(DefaultCurrency)
+    
+    assetpriceDF = pd.DataFrame(connection.execute("SELECT AssetID, PriceTime,\
+                AssetPrice, Currency FROM AssetPrices").fetchall(), \
+                columns=["AssetID","PriceTime","AssetPrice","Currency"])
 
     print('Import: Accounts and Depots')
+    files_list = list(glob.glob(myDir+"initdata/*.[cC][sS][vV]"))
     for sdir in accountDir:
         files_list.extend(list(glob.glob(dataDir + sdir + "/*.[cC][sS][vV]")))
     account_entries = []
@@ -249,10 +400,28 @@ if __name__ == '__main__':
         if (len(account_entries)<2 and len(depot_entries)<2):
             tableName = (os.path.splitext(os.path.split(f)[-1])[0])
             tableData = pd.read_csv(f, header=0, sep=";")
+            if tableName == "AssetPrices":
+                assetprices_tempDF = pd.DataFrame()
+                for a in tableData.AssetID.unique():
+                    pricetime = (assetpriceDF[['PriceTime','AssetID']]\
+                    [(assetpriceDF['AssetID']==a)]["PriceTime"].max())
+                    if pd.isna(pricetime) == False:
+                        tempTable = tableData[(tableData['AssetID']==a) & \
+                            (tableData['PriceTime'] > pricetime)]
+                    else:
+                        tempTable = tableData[(tableData['AssetID']==a)]
+                    try:
+                        assetprices_tempDF = pd.concat([assetprices_tempDF,tempTable])
+                    except:
+                        assetprices_tempDF = tempTable
+                assetprices_tempDF['PriceTime'] = \
+                    pd.to_datetime(assetprices_tempDF['PriceTime'])
+                tableData = assetprices_tempDF
+
             tableData.to_sql(tableName, con=connection, if_exists='append', index=False)
         else:
             entriesToDB(account_entries, depot_entries)
-
+    
     account_entries, depot_entries = fl.get_vl_plans(connection)
     entriesToDB(account_entries, depot_entries)
 
@@ -290,13 +459,15 @@ if __name__ == '__main__':
         yearDF[filterLine[0]] = filterDF(filterLine[1])
     yearDF = yearDF.fillna(0)
 
-    yearDF['TotalIncome'] = yearDF['Income'] + yearDF['Dividend'] + yearDF['Interest'] \
+    yearDF['TotalIncome'] = yearDF['Income'] + yearDF['Dividend'] + yearDF['Interest']\
                             + yearDF['Rent'] + yearDF['Sales']
     yearDF['Invest'] = (yearDF['Stock'] * (-1)) + (yearDF['Metal'] * (-1))
     yearDF['Saving'] = yearDF['Cashflow'] + yearDF['Invest']
     yearDF['Spending'] = yearDF['TotalIncome'] - yearDF['Saving']
-    yearDF['SavingRate'] = yearDF['Saving'] / yearDF['TotalIncome'] * 100
+    yearDF['SavingRate'] = np.where(yearDF['TotalIncome']>0,\
+                            yearDF['Saving'] / yearDF['TotalIncome'] * 100,0)
     yearDF['PayMonths'] = countFilterDF(filterList[0][1])
+    yearDF['PayMonths'] = yearDF['PayMonths'].fillna(0)
     yearDF['Months'] = getMonths(yearDF['Year'])
     yearDF.to_sql('qYearly', con=connection, if_exists='replace', index=False)
 
@@ -311,10 +482,14 @@ if __name__ == '__main__':
     print('Generate: Monthly Data')
     monthDF = pd.DataFrame()
     monthDF['Year'] = tmpDF['Year']
-    monthDF['Income'] = yearDF['TotalIncome'] / yearDF['PayMonths']
-    monthDF['Spend'] = yearDF['Spending'] / yearDF['Months']
-    monthDF['Invest'] = yearDF['Invest'] / yearDF['PayMonths']
-    monthDF['Saving'] = yearDF['Saving'] / yearDF['PayMonths']
+    monthDF['Income'] = np.where(yearDF['PayMonths']>0,\
+                        yearDF['TotalIncome'] / yearDF['PayMonths'], 0)
+    monthDF['Spend'] = np.where(yearDF['Months']>0,\
+                        yearDF['Spending'] / yearDF['Months'],0 )
+    monthDF['Invest'] = np.where(yearDF['PayMonths']>0,\
+                        yearDF['Invest'] / yearDF['PayMonths'], 0)
+    monthDF['Saving'] = np.where(yearDF['PayMonths']>0,\
+                        yearDF['Saving'] / yearDF['PayMonths'], 0)
     monthDF=monthDF.round(2)
     monthDF.to_sql('qMonthly', con=connection, if_exists='replace', index=False)
 
@@ -341,17 +516,18 @@ if __name__ == '__main__':
     # Generate depot dataframes
     print('Generate: Depots')
     depotDF = pd.DataFrame(connection.execute("SELECT Bank,DepotNr,AssetID,\
-                BankRef, AssetAmount, AssetBuyPrice, Currency FROM Depots").fetchall(), \
+                BankRef, AssetAmount, AssetBuyPrice, Currency FROM Depots").fetchall(),\
                 columns=["Bank","DepotNr","AssetID","BankRef","AssetAmount",\
                 "AssetBuyPrice","Currency"])
+
     # Gold grams to ounce
     depotDF['AssetAmount'] = np.where(depotDF['AssetID'] == 'Gold',
                                             depotDF['AssetAmount'] / 31.1034768,
                                             depotDF['AssetAmount'])
 
     assetrefDF = pd.DataFrame(connection.execute("SELECT AssetID, AssetType,\
-                AssetName, BankRef, NetRef1, NetRef2 FROM AssetReferences").fetchall(), \
-                columns=["AssetID","AssetType","AssetName","BankRef","NetRef1","NetRef2"])
+                AssetName, Ticker, NetRef1, NetRef2 FROM AssetReferences").fetchall(), \
+                columns=["AssetID","AssetType","AssetName","Ticker","NetRef1","NetRef2"])
 
     assetpriceDF = pd.DataFrame(connection.execute("SELECT AssetID, PriceTime,\
                 AssetPrice, Currency FROM AssetPrices").fetchall(), \
@@ -366,13 +542,6 @@ if __name__ == '__main__':
     print('Generate: Watchlist')
 
     assetpriceDF['PriceTime']= pd.to_datetime(assetpriceDF['PriceTime'])
-    pricetime = assetpriceDF["PriceTime"].max()
-
-    price20time = datetime.datetime.strptime(str(pricetime)[:-9], '%Y-%m-%d')\
-                - timedelta(days=19)
-
-    price200time = datetime.datetime.strptime(str(pricetime)[:-9], '%Y-%m-%d')\
-                - timedelta(days=199)
 
     # Get watchlist if it exists
     try:
@@ -407,16 +576,18 @@ if __name__ == '__main__':
                 if len(q) > 0:
                     watchlistDF = q
     
-    watchlistDF.columns = ['AssetID','AssetName','Delta','DeltaPrice','LastPrice','PriceTime',\
-                        'PrevPrice','Avg20Price','Avg200Price','TargetLow','TargetHigh',\
-                        'MinPrice','MaxPrice','LowPrice','Fib_e382','Fib_r618','Trend']
+    watchlistDF.columns = ['AssetID','AssetName','Delta','DeltaPrice','LastPrice',\
+                        'PriceTime','PrevPrice','Avg20Price','Avg200Price','TargetLow',\
+                        'TargetHigh','MinPrice','MaxPrice','LowPrice','Fib_r618',\
+                        'Fib_e382','Trend']
+    
     # Additional key performance indicators
     watchlistDF['DeltaLow'] = watchlistDF['LastPrice'] - watchlistDF['MinPrice']
     watchlistDF['DeltaHigh'] = watchlistDF['MaxPrice'] - watchlistDF['LastPrice']
     watchlistDF['Avg20Diff'] = (watchlistDF['LastPrice'] - watchlistDF['Avg20Price']) / \
-                        watchlistDF['MaxPrice'] * 100
+                        watchlistDF['Avg20Price'] * 100
     watchlistDF['Avg200Diff'] = (watchlistDF['LastPrice'] - watchlistDF['Avg200Price']) / \
-                        watchlistDF['MaxPrice'] * 100
+                        watchlistDF['Avg200Price'] * 100
     watchlistDF['MaxDD']=(watchlistDF['MaxPrice'] - watchlistDF['MinPrice']) / \
                         watchlistDF['MaxPrice'] * -100
 
@@ -453,22 +624,32 @@ if __name__ == '__main__':
     perfDF = pd.DataFrame()
     perfDF['TotalEarnings'] = [depotviewDF['Earn'].sum() + depotviewDF['Dividend'].sum()]
     perfDF['CoreEarnings'] = [depotviewDF['Earn'].sum()]
-    perfDF['TotalInvest'] = [depotviewDF['AssetBuyPrice'].sum()]
+    perfDF['TotalInvest'] = [yearDF['Invest'].sum()]
     perfDF['BTCInvest'] = depotviewDF.loc[(depotviewDF['AssetID']=='BTC')]['AssetBuyPrice']
     perfDF['BTCEarn'] = depotviewDF.loc[(depotviewDF['AssetID']=='BTC')]['Earn']
+
     perfDF['TotalPerformance'] = (perfDF['TotalEarnings'] / perfDF['TotalInvest']) * 100
+    perfDF['AverageInvest'] = (cumyearDF['Invest'].mean())
+    perfDF['AveragePerformance'] = (perfDF['TotalEarnings'] / perfDF['AverageInvest'])
+    perfDF['DividendPerformance'] = (yearDF['Dividend'].sum() / \
+                                perfDF['TotalInvest']) * 100
+
     # Number of days of current year
     datenow = datetime.date.today()
     ydays = pd.Timestamp(datenow.year, datenow.month, datenow.day).dayofyear
     # Total time of investing
-    perfDF['Years'] = [len(yearDF['Year']) - 1 + (ydays/365)]
-    # (Interest return * 100) / (invested capital * time)
-    perfDF['YearPerformance'] = (perfDF['TotalEarnings'] * 100) / \
-                                (perfDF['TotalInvest'] * perfDF['Years']) 
+    year_factor = 1/(len(yearDF['Year']) - 1 + (ydays/365))
+
+    perfDF['YearPerformance'] = (((1 + (perfDF['AveragePerformance'])) ** \
+                                (year_factor)) - 1) * 100 
+    
     coreearn = perfDF['TotalEarnings'] - perfDF['BTCEarn']
-    coreinvest = perfDF['TotalInvest'] - perfDF['BTCInvest']
-    perfDF['YearCorePerformance'] = (coreearn * 100) / \
-                                (coreinvest * perfDF['Years']) 
+    coreinvest = perfDF['AverageInvest'] - perfDF['BTCInvest']
+    coreperf = coreearn / coreinvest
+
+    perfDF['YearCorePerformance'] = (((1 + (coreperf)) ** \
+                                (year_factor)) - 1) * 100
+
     perfDF = perfDF.round(2)
     perfDF.to_sql('qPerformance', con=connection, if_exists='replace', index=False)
 
@@ -506,20 +687,26 @@ if __name__ == '__main__':
     o_total_e = o_portfolio_e
     o_total_b = o_cash + o_portfolio_b
 
-    overviewS = [['Total', o_total, 100, o_total_e, o_total_e/o_total_b*100]]
-    overviewS.append(['Cash', o_cash, o_cash/o_total*100, 0, 0])
+    # Counting types of assets
+    num_etf = depotviewDF[(depotviewDF['AssetType'] == 'ETF')]['AssetID'].nunique()
+    num_stock = depotviewDF[(depotviewDF['AssetType'] == 'STK')]['AssetID'].nunique()
+    num_fund = depotviewDF[(depotviewDF['AssetType'] == 'FND')]['AssetID'].nunique()
+
+    overviewS = [['Total', o_total, 100, o_total_e, o_total_e/o_total_b*100, 1]]
+    overviewS.append(['Cash', o_cash, o_cash/o_total*100, 0, 0, 1])
     overviewS.append(['Portfolio', o_portfolio, o_portfolio/o_total*100, \
-                        o_portfolio_e, o_portfolio_e/o_portfolio_b*100])
-    overviewS.append(['ETF', o_etf, o_etf/o_total*100, o_etf_e, o_etf_e/o_etf_b*100])
+                        o_portfolio_e, o_portfolio_e/o_portfolio_b*100, 1])
+    overviewS.append(['ETF', o_etf, o_etf/o_total*100, o_etf_e, o_etf_e/o_etf_b*100, \
+                        num_etf])
     overviewS.append(['Stock', o_stock, o_stock/o_total*100, o_stock_e, \
-                    o_stock_e/o_stock_b*100])
+                    o_stock_e/o_stock_b*100, num_stock])
     overviewS.append(['Fund', o_fund, o_fund/o_total*100, o_fund_e, \
-                    o_fund_e/o_fund_b*100])
+                    o_fund_e/o_fund_b*100, num_fund])
     overviewS.append(['Gold', o_gold, o_gold/o_total*100, o_gold_e, \
-                    o_gold_e/o_gold_b*100])
-    overviewS.append(['BTC', o_btc, o_btc/o_total*100, o_btc_e, o_btc_e/o_btc_b*100])
+                    o_gold_e/o_gold_b*100, 1])
+    overviewS.append(['BTC', o_btc, o_btc/o_total*100, o_btc_e, o_btc_e/o_btc_b*100, 1])
     overviewDF = pd.DataFrame(overviewS, columns=['Position', 'Amount', 'Slice', \
-                            'Earn','Return'])
+                            'Earn','Return','Items'])
     overviewDF = overviewDF.round(2)
     overviewDF.to_sql('qOverview', con=connection, if_exists='replace', index=False)
 
