@@ -249,25 +249,32 @@ def build_assetprices(DefaultCurrency):
     currency_tmp = currency_tmp.str.upper()
     currency_tmp = currency_tmp.unique()
     currency_list = currency_tmp.tolist()
-    currency_list.append('JPY')
+
     currency_list.append('EUR')
     currency_list.append('CHF')
-    currency_list.append('USD')
-    currency_list.append('RMB')
-    currency_list.append('HKD')
-    currency_list.append('GBP')
+    currency_list.append('JPY')
+    currency_list.append('CNY')
 
     print(list(set(currency_list)))
         
     for x in currency_list:
         # US$ is the central currency, if it is not the default
         # the reciprocal value is to be calculated from US$
+        
+        if x != "USD":
+            tckr = fl.get_ticker(x)
+            print("Currency:", x, tckr)
+            fl.dl_ticker_data(x, tckr, 5)
+
+        # Calc USD when it is not default currency
         if x == 'USD' and DefaultCurrency != 'USD':
             y = histpDF[(histpDF["AssetID"] == DefaultCurrency)]\
                 [["Date","AssetID","Close"]].sort_values(by='Date')
             h = y.merge(defDF[['Date','Div']], how="inner", on="Date")
             h['AssetID'] = 'USD'
             h['Div'] = h['Close'] 
+        
+        # Calc other currency as default currency
         elif x != 'USD' and x == DefaultCurrency:
             y = histpDF[(histpDF["AssetID"] == x)]\
                 [["Date","AssetID","Close"]].sort_values(by='Date')
@@ -275,13 +282,17 @@ def build_assetprices(DefaultCurrency):
             h['AssetID'] = x
             h['Div'] = 1
             print("Default currency")
+
+        # Calc other currency as non default currency    
         elif x != 'USD' and DefaultCurrency != 'USD':
             y = histpDF[(histpDF["AssetID"] == x)]\
                 [["Date","AssetID","Close"]].sort_values(by='Date')
             h = y.merge(defDF[['Date','Div']], how="inner", on="Date")
             h['AssetID'] = x
-            h['Div'] = h['Close'] / h['Div']
+            h['Div'] = 1 / (h['Close'] / h['Div'])
             print("Different currency", x)
+        
+        # Calc other currency
         else:
             y = histpDF[(histpDF["AssetID"] == x)]\
                 [["Date","AssetID","Close"]].sort_values(by='Date')
@@ -302,7 +313,7 @@ def build_assetprices(DefaultCurrency):
         new = pd.DataFrame()
         new['PriceTime'] = pd.to_datetime(h['Date'])
         new['AssetID'] = x
-        new['AssetPrice'] = h['Close'] / h['Div']
+        new['AssetPrice'] = h['Close'] * h['Div']
         new['Currency'] = DefaultCurrency
         new.to_sql("AssetPrices", __main__.connection, index=False, if_exists='append')
         print(x, currency)

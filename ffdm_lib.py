@@ -562,8 +562,7 @@ def dl_ticker_data(isin, ticker, years):
 def get_currencies():
     # Main currencies
     usd_values = [['EUR=X', 'EUR'], ['CHF=X', 'CHF'], ['JPY=X', 'JPY'], \
-                ['BTC-USD', 'BTC'], ['GC=F', 'Gold'], ['GBP=X', 'GBP'], \
-                ['HKD=X', 'HKD']]
+                ['BTC-USD', 'BTC'], ['GC=F', 'Gold']]
     for v in usd_values:
         dl_ticker_data(v[1], v[0], 5)
     return
