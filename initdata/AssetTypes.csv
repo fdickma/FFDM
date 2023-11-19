@@ -1,8 +1,10 @@
 "AssetType";"AssetTypeName"
 COM;Commodity
 CUR;Currency
+CRP;Crypto
 ETF;ETF
 FND;Fund
 RET;Real Estate
 STK;Stock
+BND;Bonds
 MSC;Misc

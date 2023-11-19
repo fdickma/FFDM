@@ -185,7 +185,7 @@ def readStatement(File):
              '\"([A-Za-z0-9]*)\"\;'            # BLZ.
              '\"([-\d.]*\,\d*)\"\;'            # Betrag.
              '\"(.*)\"\;'                      # Waehrung.
-             '\"(.*)\"')                       # Info.
+             '\"Umsatz.*\"')                   # Info.
         p_dkb_account = re.compile(
             r'\"([A-Za-z]*\:)\"\;'
              '\"([A-Za-z]{2}[0-9]*|'
@@ -574,6 +574,7 @@ def get_assets():
     return assetsrefDF
 
 def isin_data(isin, last_update):
+    print(isin)
     ticker = get_ticker(isin)
     print(ticker)
     past_years = 5

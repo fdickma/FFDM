@@ -9,9 +9,8 @@
 import sys
 import psutil
 import argparse
-import os
 import subprocess
-import re
+import os
 import glob
 import numpy as np
 import pandas as pd
@@ -23,6 +22,8 @@ import sqlite3
 
 # Import FFDM function library
 import ffdm_lib as fl
+import ffdm_scrape as scrape
+scrape.refAvailable = []
 
 # Define main variables as global
 global Directory
@@ -79,96 +80,6 @@ def readAssetRef():
     connection.close()
     return assetrefDF
 
-# Links for finanzen.net
-def get_Fnet_data(a_type, a_id, refFnet):
-    link = ""
-    if a_type == "STK":
-        link = "https://www.finanzen.net/aktien/" + refFnet + "-Aktie" \
-                +" | grep -m 1 '[0-9] EUR' | grep -o [0-9.,]*"
-    if a_type == "ETF":
-        link = "https://www.finanzen.net/etf/" + refFnet + "-" + a_id \
-                +" | grep -m 1 '[0-9] EUR' | grep -o [0-9.,]*"
-    if a_type == "FND":
-        link = "https://www.finanzen.net/fonds/" + refFnet + "-" + a_id \
-                +" | grep -m 1 '[0-9] EUR' | grep -o [0-9.,]*"
-    if a_type == "COM" and a_id == "Gold":
-        link = "https://www.finanzen.net/rohstoffe/goldpreis" \
-                +" | grep -E -m1 '([[:digit:]]{0,3}\.)?([[:digit:]]{0,3}\.)?"\
-                +"[[:digit:]]{1,3},[[:digit:]]{2}EUR' | " \
-                +"grep -o [0-9.,]*"
-    if a_type == "CUR" and a_id == "USD":
-        link = "https://www.finanzen.net/devisen/realtimekurs/dollarkurs" \
-                +" | grep -m 1 '^[0-3].*USD' | cut -c 1-6"
-    if a_type == "CUR" and a_id == "BTC":
-        link = "https://www.finanzen.net/devisen/realtimekurs/" \
-                +"bitcoin-euro-kurs | grep -m 2 '[0-9].*EUR' | " \
-                +"grep -o ^[0-9.,]*" 
-    if link != "":
-        return link
-    else:
-        return 0
-        
-# Links for ard-Boerse
-def get_ARD_data(a_type, a_id, refARD):
-    link = "https://www.tagesschau.de/wirtschaft/boersenkurse/"\
-            +"suche/?suchbegriff="
-    extract = ""
-    if a_type == "COM":
-        extract = " | grep -E -m1 '([[:digit:]]{0,3}\.)?([[:digit:]]"\
-        +"{0,3}\.)?[[:digit:]]{1,3},[[:digit:]]{2}' | grep -o [0-9.,]*$"
-    if a_type == "CUR" and a_id == "USD":
-        extract = " | grep -E -m1 '([[:digit:]]{0,3}\.)?([[:digit:]]"\
-        +"{0,3}\.)?[[:digit:]]{1,3},[[:digit:]]{4}' | grep -o [0-9.,]*$"
-    if a_type == "CUR" and a_id == "BTC":
-        extract = " | grep -E -m1 '([[:digit:]]{0,3}\.)?([[:digit:]]"\
-        +"{0,3}\.)?[[:digit:]]{1,3},[[:digit:]]{2}' | grep -o [0-9.,]*$"
-    if a_type == "FND" or a_type == "ETF" or a_type == "STK":
-        extract = " | grep -E -m1 '([[:digit:]]{0,3}\.)?([[:digit:]]"\
-        +"{0,3}\.)?[[:digit:]]{1,3},[[:digit:]]{2}' | grep -o [0-9.,]*$"
-    if extract != "":
-        return link + refARD + extract
-    else:
-        return 0
-
-def retrieveWebData(link):
-    Browser = "w3m -no-cookie -dump "
-    if link != 0:
-        proc = subprocess.Popen(Browser + link, shell=True, text=True,\
-                                stdout=subprocess.PIPE)
-        try:
-            outs, errs = proc.communicate(timeout=10)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            outs, errs = proc.communicate()
-        if outs == None:
-            return 0
-        clean = outs.replace('.', '').replace(',', '.').rstrip('\n')
-        clean = clean.lstrip()
-        p1 = re.compile(r'[A-Z]|[a-z]([\d]+\.\d{2})')
-        m1 = p1.match(clean)
-        if m1:
-            return m1.group(1)
-        p2 = re.compile(r'([\d]+\.\d{2,4})')
-        m2 = p2.match(clean)
-        if m2:
-            return fl.check_float(m2.group(1))
-    return -1
-
-# Retrieve asset prices
-def assetDataScraping(asset):
-    return_price=-1
-    a_type = asset['AssetType']
-    a_id = asset['AssetID']
-    refFnet = asset['NetRef1']
-    refARD = asset['NetRef2']
-    return_price = retrieveWebData(get_Fnet_data(a_type, a_id, refFnet))
-    #return_price = retrieveWebData(get_ARD_data(a_type, a_id, refARD))
-    if return_price <= 0:
-        return_price = retrieveWebData(get_ARD_data(a_type, a_id, refARD))
-        #return_price = retrieveWebData(get_Fnet_data(a_type, a_id, refFnet))
-        #print(return_price)
-    return return_price
-
 # Get filesystem information for a file
 def getFileTimestamp(File):
     ftime = os.popen("ls -la "+File).read()
@@ -216,13 +127,21 @@ def hashList(List):
     return hash(Complete)
     
 def assetsUpdate():
+    scrape.check_online()
+
+    if (scrape.refAvailable[0] == False) and (scrape.refAvailable[1] == False) \
+        and (scrape.refAvailable[2] == False):
+        print("No online services available...")
+        return
+
     assetrefDF = readAssetRef()
     print(myDir+'initdata/AssetPrices.csv')
     priceDF = pd.read_csv(myDir+'initdata/AssetPrices.csv', header=0, sep=";")
-    
+
     i = 0
     for idx, asset in assetrefDF.iterrows():
-        price = assetDataScraping(asset)
+        old_price = priceDF.set_index('AssetPrice')['AssetID'].eq(asset['AssetID'])[::-1].idxmax()
+        price = scrape.assetDataScraping(asset, old_price)
         if price > 0:
             i = i + 1
             print(i, asset['AssetName'], now_str, price)
@@ -327,7 +246,7 @@ if __name__ == '__main__':
 
     now = datetime.datetime.now()
     now_str = time.strftime('%Y-%m-%d %H:%M:%S')
-        
+
     if args.test:
         if checkLock(): sys.exit()
         print('Test run only.')

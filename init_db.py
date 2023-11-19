@@ -9,6 +9,7 @@ import time
 import locale
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import configparser
 import csv
 import re
@@ -17,6 +18,9 @@ import __main__
 
 # Import FFDM function library
 import ffdm_lib as fl
+
+import locale
+locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
 
 def entriesToDB(account_entries, depot_entries):
     
@@ -121,6 +125,17 @@ def watchlist_asset(assets, proc_num):
             else:
                 recalc = True
 
+        plt.rcParams["figure.dpi"] = 150
+        chartDF = (__main__.assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
+        [(__main__.assetpriceDF['AssetID']==a)][['PriceTime','AssetPrice']])\
+        .set_index('PriceTime').copy()
+        chartDF['SMA20'] = chartDF['AssetPrice'].rolling(20).mean()
+        chartDF['SMA200'] = chartDF['AssetPrice'].rolling(200).mean()
+        chartDF.plot(title=aname,figsize=(8,4))
+        #current_values = plt.gca().get_yticks()
+        #plt.gca().set_yticklabels(['{:,.0f}'.format(x) for x in current_values])
+        plt.savefig(__main__.myDir+"static/charts/"+a+".png")
+
         price20time = datetime.datetime.strptime(str(pricetime)[:-9], '%Y-%m-%d')\
                     - timedelta(days=19)
 
@@ -157,6 +172,7 @@ def watchlist_asset(assets, proc_num):
                                 .values.min(),4)
                 else:
                     minprice = maxprice
+                # print(a,"MinPrice:",minprice,"MaxPrice:",maxprice,"MaxDate:",maxdate)
                 try:
                     lowtarget = (__main__.targetpriceDF[['AssetID','TargetPriceLow']]\
                                 [(__main__.targetpriceDF['AssetID']==a)]\
@@ -470,7 +486,7 @@ if __name__ == '__main__':
         yearDF[filterLine[0]] = filterDF(filterLine[1])
     yearDF = yearDF.fillna(0)
 
-    yearDF['TotalIncome'] = yearDF['Income'] + yearDF['Dividend'] + yearDF['Interest']\
+    yearDF['TotalIncome'] = yearDF['Income'] + yearDF['Dividend'] + yearDF['Interest'] \
                             + yearDF['Rent'] + yearDF['Sales']
     yearDF['Invest'] = (yearDF['Stock'] * (-1)) + (yearDF['Metal'] * (-1))
     yearDF['Saving'] = yearDF['Cashflow'] + yearDF['Invest']
@@ -670,18 +686,20 @@ if __name__ == '__main__':
     o_portfolio = depotviewDF['Value'].sum()
     o_etf = depotviewDF[(depotviewDF['AssetType'] == 'ETF')]['Value'].sum()
     o_stock = depotviewDF[(depotviewDF['AssetType'] == 'STK')]['Value'].sum()
+    o_bonds = depotviewDF[(depotviewDF['AssetType'] == 'BND')]['Value'].sum()
     o_fund = depotviewDF[(depotviewDF['AssetType'] == 'FND')]['Value'].sum()
     o_real = depotviewDF[(depotviewDF['AssetType'] == 'RET')]['Value'].sum()
     o_gold = depotviewDF[(depotviewDF['AssetID'] == 'Gold')]['Value'].sum()
-    o_btc = depotviewDF[(depotviewDF['AssetID'] == 'BTC')]['Value'].sum()
+    o_crypto = depotviewDF[(depotviewDF['AssetType'] == 'CRP')]['Value'].sum()
 
     o_portfolio_b = depotviewDF['AssetBuyPrice'].sum()
     o_etf_b = depotviewDF[(depotviewDF['AssetType'] == 'ETF')]['AssetBuyPrice'].sum()
     o_stock_b = depotviewDF[(depotviewDF['AssetType'] == 'STK')]['AssetBuyPrice'].sum()
+    o_bonds_b = depotviewDF[(depotviewDF['AssetType'] == 'BND')]['AssetBuyPrice'].sum()
     o_fund_b = depotviewDF[(depotviewDF['AssetType'] == 'FND')]['AssetBuyPrice'].sum()
     o_real_b = depotviewDF[(depotviewDF['AssetType'] == 'RET')]['AssetBuyPrice'].sum()
     o_gold_b = depotviewDF[(depotviewDF['AssetID'] == 'Gold')]['AssetBuyPrice'].sum()
-    o_btc_b = depotviewDF[(depotviewDF['AssetID'] == 'BTC')]['AssetBuyPrice'].sum()
+    o_crypto_b = depotviewDF[(depotviewDF['AssetType'] == 'CRP')]['AssetBuyPrice'].sum()
 
     o_portfolio_e = depotviewDF['Earn'].sum()
     o_portfolio_e += depotviewDF['Dividend'].sum()
@@ -689,33 +707,42 @@ if __name__ == '__main__':
     o_etf_e += depotviewDF[(depotviewDF['AssetType'] == 'ETF')]['Dividend'].sum()
     o_stock_e = depotviewDF[(depotviewDF['AssetType'] == 'STK')]['Earn'].sum()
     o_stock_e += depotviewDF[(depotviewDF['AssetType'] == 'STK')]['Dividend'].sum()
+    o_bonds_e = depotviewDF[(depotviewDF['AssetType'] == 'BND')]['Earn'].sum()
+    o_bonds_e += depotviewDF[(depotviewDF['AssetType'] == 'BND')]['Dividend'].sum()
     o_fund_e = depotviewDF[(depotviewDF['AssetType'] == 'FND')]['Earn'].sum()
     o_fund_e += depotviewDF[(depotviewDF['AssetType'] == 'FND')]['Dividend'].sum()
     o_gold_e = depotviewDF[(depotviewDF['AssetID'] == 'Gold')]['Earn'].sum()
-    o_btc_e = depotviewDF[(depotviewDF['AssetID'] == 'BTC')]['Earn'].sum()
+    o_crypto_e = depotviewDF[(depotviewDF['AssetType'] == 'CRP')]['Earn'].sum()
+    o_cash_e = yearDF['Interest'].sum()
+    o_cash_b = o_cash - o_cash_e
 
     o_total = o_cash + o_portfolio
-    o_total_e = o_portfolio_e
+    o_total_e = o_portfolio_e + o_cash_e
     o_total_b = o_cash + o_portfolio_b
 
     # Counting types of assets
     num_etf = depotviewDF[(depotviewDF['AssetType'] == 'ETF')]['AssetID'].nunique()
     num_stock = depotviewDF[(depotviewDF['AssetType'] == 'STK')]['AssetID'].nunique()
+    num_bonds = depotviewDF[(depotviewDF['AssetType'] == 'BND')]['AssetID'].nunique()
     num_fund = depotviewDF[(depotviewDF['AssetType'] == 'FND')]['AssetID'].nunique()
-
+    num_crypto = depotviewDF[(depotviewDF['AssetType'] == 'CRP')]['AssetID'].nunique()
+    
     overviewS = [['Total', o_total, 100, o_total_e, o_total_e/o_total_b*100, 1]]
-    overviewS.append(['Cash', o_cash, o_cash/o_total*100, 0, 0, 1])
-    overviewS.append(['Portfolio', o_portfolio, o_portfolio/o_total*100, \
+    overviewS.append(['Cash', o_cash, o_cash/o_total*100, o_cash_e, o_cash_e/o_cash_b*100, 1])
+    overviewS.append(['Invested', o_portfolio, o_portfolio/o_total*100, \
                         o_portfolio_e, o_portfolio_e/o_portfolio_b*100, 1])
     overviewS.append(['ETF', o_etf, o_etf/o_total*100, o_etf_e, o_etf_e/o_etf_b*100, \
                         num_etf])
     overviewS.append(['Stock', o_stock, o_stock/o_total*100, o_stock_e, \
                     o_stock_e/o_stock_b*100, num_stock])
-    overviewS.append(['Fund', o_fund, o_fund/o_total*100, o_fund_e, \
+    overviewS.append(['Bonds', o_bonds, o_bonds/o_total*100, o_bonds_e, \
+                    o_bonds_e/o_bonds_b*100, num_bonds])
+    overviewS.append(['Funds', o_fund, o_fund/o_total*100, o_fund_e, \
                     o_fund_e/o_fund_b*100, num_fund])
     overviewS.append(['Gold', o_gold, o_gold/o_total*100, o_gold_e, \
                     o_gold_e/o_gold_b*100, 1])
-    overviewS.append(['BTC', o_btc, o_btc/o_total*100, o_btc_e, o_btc_e/o_btc_b*100, 1])
+    overviewS.append(['Crypto', o_crypto, o_crypto/o_total*100, o_crypto_e, \
+                    o_crypto_e/o_crypto_b*100, num_crypto])
     overviewDF = pd.DataFrame(overviewS, columns=['Position', 'Amount', 'Slice', \
                             'Earn','Return','Items'])
     overviewDF = overviewDF.round(2)
