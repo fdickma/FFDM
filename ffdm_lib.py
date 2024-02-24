@@ -20,6 +20,7 @@ import ast
 import yfinance as yf
 import pandas as pd
 import numpy as np
+import sqlalchemy as db
 from dateutil.relativedelta import relativedelta
 
 # Return a float or integer depending on an existing dot
@@ -90,7 +91,7 @@ def get_vl_plans(connection):
     depot_entries.append(["Bank","DepotNr","AssetID","BankRef","AssetAmount",\
                         "AssetBuyPrice","Currency"])
 
-    vlplans = connection.execute("SELECT * FROM VLplans ORDER BY PlanID").fetchall()
+    vlplans = connection.execute(db.text("SELECT * FROM VLplans ORDER BY PlanID")).fetchall()
     for plan in vlplans:
         account_tmp, depot_tmp = vl_fund(plan[5], plan[6], plan[2], plan[3], \
                                         plan[4], plan[9], plan[7], plan[8])
@@ -431,16 +432,19 @@ def get_of_ticker(isin):
                                 'idType': 'ID_ISIN',
                                 'idValue': isin
                             }])
-        full_data = str(response.json())
-        full_data = full_data.replace("{'data': [", '')
-        full_data = full_data.replace("]}", '')
-        full_data = full_data.replace("]", '')
-        full_data = full_data.replace("[", '')
-        full_data = full_data.replace("'", '"')
-        data = ast.literal_eval(full_data)
-        if type(data) is tuple:
-            pd.DataFrame(data).to_csv(ticker_file, header=True, index=False)
-        else:
+        try:
+            full_data = str(response.json())
+            full_data = full_data.replace("{'data': [", '')
+            full_data = full_data.replace("]}", '')
+            full_data = full_data.replace("]", '')
+            full_data = full_data.replace("[", '')
+            full_data = full_data.replace("'", '"')
+            data = ast.literal_eval(full_data)
+            if type(data) is tuple:
+                pd.DataFrame(data).to_csv(ticker_file, header=True, index=False)
+            else:
+                return None
+        except:
             return None
     data = pd.read_csv(ticker_file)
     for idx, entry in data.iterrows():
@@ -578,9 +582,13 @@ def isin_data(isin, last_update):
     ticker = get_ticker(isin)
     print(ticker)
     past_years = 5
-    if len(ticker) == 0:
+    if ticker == None:
+        print("Failed to get ticker for", isin)
         return None
-    now_date = datetime.datetime.now()    
+    if len(ticker) == 0:
+        print("Failed to get ticker for", isin)
+        return None
+    now_date = datetime.datetime.now()
     last_update_date = datetime.datetime.strptime(last_update, '%Y-%m-%d')
     last_update_date += datetime.timedelta(days=1)
     print(last_update_date)
@@ -596,11 +604,12 @@ def isin_data(isin, last_update):
         get_ticker_info(ticker, infofile)
     currency = get_ticker_currency(ticker, infofile)
     start_d = str(last_update[0:4]) + "-01-01"
-    filetime = os.path.getmtime(isin_dir + isin + "_" + str(end_d)[:4] + ".csv")
-    day_date = str(now_date)[:10]
-    lastfile = time.strftime("%Y-%m-%d",time.localtime(filetime))
-    if lastfile >= day_date:
-        return
+    if os.path.exists(isin_dir + isin + "_" + str(end_d)[:4] + ".csv") == True:
+        filetime = os.path.getmtime(isin_dir + isin + "_" + str(end_d)[:4] + ".csv")
+        day_date = str(now_date)[:10]
+        lastfile = time.strftime("%Y-%m-%d",time.localtime(filetime))
+        if lastfile >= day_date:
+            return
     dload = yf.download(ticker, 
             start=start_d, 
             end=end_d, 
@@ -609,9 +618,13 @@ def isin_data(isin, last_update):
     dload['Currency'] = currency
     li = []
     df = pd.DataFrame(dload)
-    for i, x in df.groupby(df.index.year):
-        isin_file = isin_dir + isin + "_" + str(i) + ".csv"
-        x.to_csv(isin_file, header=True)
+    print(df)
+    try:
+        for i, x in df.groupby(df.index.year):
+            isin_file = isin_dir + isin + "_" + str(i) + ".csv"
+            x.to_csv(isin_file, header=True)
+    except:
+        return
 
 def missing_ticker_data():
     print("Retrieve missing ticker data")

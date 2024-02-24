@@ -1,4 +1,5 @@
-import sqlite3
+import sqlalchemy as db
+from sqlalchemy.orm import sessionmaker
 import io
 import os
 import glob
@@ -13,6 +14,7 @@ import matplotlib.pyplot as plt
 import configparser
 import csv
 import re
+import subprocess
 from datetime import date, timedelta
 import __main__
 
@@ -27,12 +29,12 @@ def entriesToDB(account_entries, depot_entries):
     if len(account_entries) > 1:
         tableName = "Accounts"
         tableData = pd.DataFrame(account_entries[1:],columns=account_entries[0])
-        tableData.to_sql(tableName, con=connection, if_exists='append', index=False)     
+        tableData.to_sql(tableName, con=__main__.connection, if_exists='append', index=False, chunksize=__main__.cz)     
 
     if len(depot_entries) > 1:
         tableName = "Depots"
         tableData = pd.DataFrame(depot_entries[1:],columns=depot_entries[0])
-        tableData.to_sql(tableName, con=connection, if_exists='append', index=False)     
+        tableData.to_sql(tableName, con=__main__.connection, if_exists='append', index=False, chunksize=__main__.cz)     
     return
 
 def filterDF(Expression):
@@ -77,6 +79,8 @@ def watchlist_asset(assets, proc_num):
                        .dt.normalize())['PriceTime'].idxmax().values]
             amaxpriceDF = amaxpriceDF.reset_index()
 
+            # Get the timestamp of the previous price data update
+            # Since len -1 equals the current one we need to reduce the counter by 2 
             prevpricetime = amaxpriceDF['PriceTime'].iloc[(len(amaxpriceDF['PriceTime'])-2)]
 
             prevprice = (__main__.assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
@@ -131,10 +135,14 @@ def watchlist_asset(assets, proc_num):
         .set_index('PriceTime').copy()
         chartDF['SMA20'] = chartDF['AssetPrice'].rolling(20).mean()
         chartDF['SMA200'] = chartDF['AssetPrice'].rolling(200).mean()
-        chartDF.plot(title=aname,figsize=(8,4))
+        chartDF.plot(title=aname,figsize=(8,4), linewidth = '1.0')
+        plt.grid(color = 'grey', linestyle = '--', linewidth = 0.25)
         #current_values = plt.gca().get_yticks()
         #plt.gca().set_yticklabels(['{:,.0f}'.format(x) for x in current_values])
-        plt.savefig(__main__.myDir+"static/charts/"+a+".png")
+        try:
+            plt.savefig(__main__.myDir+"static/charts/"+a+".png")
+        except:
+            print("Plot for " + a + " not saved!")
 
         price20time = datetime.datetime.strptime(str(pricetime)[:-9], '%Y-%m-%d')\
                     - timedelta(days=19)
@@ -236,17 +244,18 @@ def get_currency(id):
         return 'USD'
 
 def get_currency_data(currency):
-    currDF = pd.DataFrame(__main__.connection.execute("SELECT * \
-                FROM CurrencyRates WHERE AssetID='"+currency + "'").fetchall(), \
+    currDF = pd.DataFrame(__main__.connection.execute(db.text("SELECT * \
+                FROM CurrencyRates WHERE AssetID='"+currency + "'")).fetchall(), \
                 columns=["Date","AssetID","Currency","Div"])
+
     return currDF
 
 def build_assetprices(DefaultCurrency):
     
     fl.missing_ticker_data()
-    
-    histpDF = pd.DataFrame(__main__.connection.execute("SELECT * \
-                FROM HistoryPrices").fetchall(), columns=["Date","Open",\
+
+    histpDF = pd.DataFrame(__main__.connection.execute(db.text("SELECT * \
+                FROM HistoryPrices")).fetchall(), columns=["Date","Open",\
                 "High","Low","Close","Adj Close","Volume","AssetID","Currency"])
 
     if DefaultCurrency != "USD":
@@ -315,7 +324,7 @@ def build_assetprices(DefaultCurrency):
             h = y.merge(defDF[['Date','Div']], how="inner", on="Date")
             h['Div'] = h['Close'] / h['Div']
             print("US Dollar")
-        h.to_sql("CurrencyRates", __main__.connection, index=False, if_exists='append')
+        h.to_sql("CurrencyRates", con=__main__.connection, index=False, if_exists='append', chunksize=__main__.cz)
 
     for x in histpDF.AssetID.unique():
         # Just the non-currency values are being processed.
@@ -331,7 +340,7 @@ def build_assetprices(DefaultCurrency):
         new['AssetID'] = x
         new['AssetPrice'] = h['Close'] * h['Div']
         new['Currency'] = DefaultCurrency
-        new.to_sql("AssetPrices", __main__.connection, index=False, if_exists='append')
+        new.to_sql("AssetPrices", con=__main__.connection, index=False, if_exists='append', chunksize=__main__.cz)
         print(x, currency)
 
     # But USD needs to be added
@@ -346,8 +355,9 @@ def build_assetprices(DefaultCurrency):
         new['AssetID'] = "USD"
         new['AssetPrice'] = 1/ h['Close']
         new['Currency'] = DefaultCurrency
-        new.to_sql("AssetPrices", __main__.connection, index=False, if_exists='append')
+        new.to_sql("AssetPrices", con=__main__.connection, index=False, if_exists='append', chunksize=__main__.cz)
         print(x, "USD")
+
     return
 
 if __name__ == '__main__':
@@ -355,7 +365,7 @@ if __name__ == '__main__':
     start_time = time.time()
 
     cores = os.cpu_count()
-
+    cz = 100
     myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
     config = configparser.ConfigParser()
     config.sections()
@@ -377,23 +387,21 @@ if __name__ == '__main__':
     spendList.append(['Amazon','EREF.*AMAZON'])
     dataDir=config['Accounts']['Dir']
     accountDir = []
-    if config['Accounts']['dat1'] != '':
-        accountDir.append(config['Accounts']['dat1'])
-    if config['Accounts']['dat2'] != '':
-        accountDir.append(config['Accounts']['dat2'])
-    if config['Accounts']['dat3'] != '':
-        accountDir.append(config['Accounts']['dat3'])
-    if config['Accounts']['dat4'] != '':
-        accountDir.append(config['Accounts']['dat4'])
-    if config['Accounts']['dat5'] != '':
-        accountDir.append(config['Accounts']['dat5'])
+    # Iterating account directory entries
+    dir_count = 0
+    for cdir in config['Accounts']:
+        print(cdir)
+        if cdir[:3] == "dat":
+            dir_count += 1
+            if config['Accounts']['dat' + str(dir_count)] != "":
+                accountDir.append(config['Accounts']['dat' + str(dir_count)])    
 
-    connection = sqlite3.connect(myDir + DB)
-
-    with open(myDir + 'init_schema.sql') as f:
-        connection.executescript(f.read())
-
-    cur = connection.cursor()
+    print("Initialize database...")
+    subprocess.run(["python3 " + myDir + "init_schema.py"], shell=True, check=True)
+    
+    # Create and start DB connection
+    engine = db.create_engine('sqlite:///ffdm.sqlite', echo=False) 
+    connection = engine.connect()
 
     print('Import: Historical Asset Prices')
     history_list = list(glob.glob(myDir+"assetdata/*.[cC][sS][vV]"))
@@ -404,15 +412,15 @@ if __name__ == '__main__':
             x = os.path.basename(f).split(".")[0].split("_")[0]
             print(x)
             td["AssetID"] = x
-            td.to_sql("AssetInfo", con=connection, if_exists='append', index=False)            
+            td.to_sql("AssetInfo", con=connection, if_exists='append', index=False, chunksize=__main__.cz)            
         else:
             td = pd.read_csv(f, header=0)
-            td.to_sql("HistoryPrices", con=connection, if_exists='append', index=False)
+            td.to_sql("HistoryPrices", con=connection, if_exists='append', index=False, chunksize=__main__.cz)
 
     build_assetprices(DefaultCurrency)
-    
-    assetpriceDF = pd.DataFrame(connection.execute("SELECT AssetID, PriceTime,\
-                AssetPrice, Currency FROM AssetPrices").fetchall(), \
+
+    assetpriceDF = pd.DataFrame(connection.execute(db.text("SELECT AssetID, PriceTime,\
+                AssetPrice, Currency FROM AssetPrices")).fetchall(), \
                 columns=["AssetID","PriceTime","AssetPrice","Currency"])
 
     print('Import: Accounts and Depots')
@@ -445,25 +453,25 @@ if __name__ == '__main__':
                     pd.to_datetime(assetprices_tempDF['PriceTime'])
                 tableData = assetprices_tempDF
 
-            tableData.to_sql(tableName, con=connection, if_exists='append', index=False)
+            tableData.to_sql(tableName, con=connection, if_exists='append', index=False, chunksize=__main__.cz)
         else:
             entriesToDB(account_entries, depot_entries)
     
     account_entries, depot_entries = fl.get_vl_plans(connection)
     entriesToDB(account_entries, depot_entries)
 
-    accountDF = pd.DataFrame(connection.execute("SELECT Bank,AccountNr,EntryDate,\
-                Reference,Amount,Currency FROM Accounts").fetchall(), \
+    accountDF = pd.DataFrame(connection.execute(db.text("SELECT Bank,AccountNr,EntryDate,\
+                Reference,Amount,Currency FROM Accounts")).fetchall(), \
                 columns=["Bank","AccountNr","EntryDate","Reference","Amount","Currency"])
 
     accountBalanceDF = accountDF.groupby(['Bank','AccountNr'])['Amount'].sum()\
                         .reset_index()
     accountBalanceDF = accountBalanceDF.round(2)
     accountBalanceDF.to_sql("qAccountBalances", con=connection, if_exists='replace', \
-                            index=False)
+                            index=False, chunksize=__main__.cz)
 
-    accountDF = pd.DataFrame(connection.execute("SELECT Bank,AccountNr,EntryDate,\
-                Reference,Amount,Currency FROM Accounts").fetchall(), \
+    accountDF = pd.DataFrame(connection.execute(db.text("SELECT Bank,AccountNr,EntryDate,\
+                Reference,Amount,Currency FROM Accounts")).fetchall(), \
                 columns=["Bank","AccountNr","EntryDate","Reference","Amount","Currency"])
 
     accountDF['EntryDate'] = pd.to_datetime(accountDF['EntryDate'])
@@ -496,14 +504,14 @@ if __name__ == '__main__':
     yearDF['PayMonths'] = countFilterDF(filterList[0][1])
     yearDF['PayMonths'] = yearDF['PayMonths'].fillna(0)
     yearDF['Months'] = getMonths(yearDF['Year'])
-    yearDF.to_sql('qYearly', con=connection, if_exists='replace', index=False)
+    yearDF.to_sql('qYearly', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
 
     # Generate yearly cumulative dataframe
     print('Generate: Yearly Cumulative')
     cumyearDF = pd.DataFrame()
     cumyearDF = yearDF.cumsum()
     cumyearDF['Year'] = yearDF['Year']
-    cumyearDF.to_sql('qCumulative', con=connection, if_exists='replace', index=False)
+    cumyearDF.to_sql('qCumulative', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
 
     # Generate monthly average dataframe
     print('Generate: Monthly Data')
@@ -518,7 +526,7 @@ if __name__ == '__main__':
     monthDF['Saving'] = np.where(yearDF['PayMonths']>0,\
                         yearDF['Saving'] / yearDF['PayMonths'], 0)
     monthDF=monthDF.round(2)
-    monthDF.to_sql('qMonthly', con=connection, if_exists='replace', index=False)
+    monthDF.to_sql('qMonthly', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
 
     # Generate quarterly cashflow dataframe
     print('Generate: Quarterly Cashflow')
@@ -528,7 +536,7 @@ if __name__ == '__main__':
     quarterDF['Quarter'] = quarterDF.index.astype(str).str.\
                             replace(r'(\d+)Q(\d)', r'\1-Q\2', regex=True)
     quarterDF = quarterDF.round(2)
-    quarterDF.to_sql('qQuarterly', con=connection, if_exists='replace', index=False)
+    quarterDF.to_sql('qQuarterly', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
 
     # Generate spending dataframe
     print('Generate: Spending')
@@ -538,12 +546,12 @@ if __name__ == '__main__':
         spendDF[spendLine[0]] = filterDF(spendLine[1])
     spendDF['Total'] = spendDF.sum(axis=1, numeric_only=True)
     spendDF = spendDF.fillna(0)
-    spendDF.to_sql('qSpending', con=connection, if_exists='replace', index=False)
+    spendDF.to_sql('qSpending', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
 
     # Generate depot dataframes
     print('Generate: Depots')
-    depotDF = pd.DataFrame(connection.execute("SELECT Bank,DepotNr,AssetID,\
-                BankRef, AssetAmount, AssetBuyPrice, Currency FROM Depots").fetchall(),\
+    depotDF = pd.DataFrame(connection.execute(db.text("SELECT Bank,DepotNr,AssetID,\
+                BankRef, AssetAmount, AssetBuyPrice, Currency FROM Depots")).fetchall(),\
                 columns=["Bank","DepotNr","AssetID","BankRef","AssetAmount",\
                 "AssetBuyPrice","Currency"])
 
@@ -552,17 +560,17 @@ if __name__ == '__main__':
                                             depotDF['AssetAmount'] / 31.1034768,
                                             depotDF['AssetAmount'])
 
-    assetrefDF = pd.DataFrame(connection.execute("SELECT AssetID, AssetType,\
-                AssetName, Ticker, NetRef1, NetRef2 FROM AssetReferences").fetchall(), \
+    assetrefDF = pd.DataFrame(connection.execute(db.text("SELECT AssetID, AssetType,\
+                AssetName, Ticker, NetRef1, NetRef2 FROM AssetReferences")).fetchall(), \
                 columns=["AssetID","AssetType","AssetName","Ticker","NetRef1","NetRef2"])
 
-    assetpriceDF = pd.DataFrame(connection.execute("SELECT AssetID, PriceTime,\
-                AssetPrice, Currency FROM AssetPrices").fetchall(), \
+    assetpriceDF = pd.DataFrame(connection.execute(db.text("SELECT AssetID, PriceTime,\
+                AssetPrice, Currency FROM AssetPrices")).fetchall(), \
                 columns=["AssetID","PriceTime","AssetPrice","Currency"])
 
     # Generate target prices dataframe
-    targetpriceDF = pd.DataFrame(connection.execute("SELECT AssetID,TargetPriceLow,\
-                TargetPriceHigh,Currency FROM TargetPrices").fetchall(), \
+    targetpriceDF = pd.DataFrame(connection.execute(db.text("SELECT AssetID,TargetPriceLow,\
+                TargetPriceHigh,Currency FROM TargetPrices")).fetchall(), \
                 columns=["AssetID","TargetPriceLow","TargetPriceHigh","Currency"])
 
     # Generate watchlist dataframe
@@ -572,7 +580,7 @@ if __name__ == '__main__':
 
     # Get watchlist if it exists
     try:
-        oldwlist = pd.read_sql_query("SELECT * FROM qWatchlist", connection)
+        oldwlist = pd.read_sql_query(db.text("SELECT * FROM qWatchlist"), connection)
     except:
         oldwlist = pd.DataFrame()
 
@@ -619,7 +627,7 @@ if __name__ == '__main__':
                         watchlistDF['MaxPrice'] * -100
 
     # Finally writing the watchlist to database
-    watchlistDF.to_sql('qWatchlist', con=connection, if_exists='replace', index=False)
+    watchlistDF.to_sql('qWatchlist', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
 
     # Generate compound dividend dataframe
     print('Generate: Dividends')
@@ -644,7 +652,8 @@ if __name__ == '__main__':
     depotviewDF['Return'] = (depotviewDF['Earn'] / depotviewDF['AssetBuyPrice']) * 100
     depotviewDF['DivReturn'] = (depotviewDF['Dividend'] / depotviewDF['AssetBuyPrice']) \
                                 * 100
-    depotviewDF.to_sql('qDepotOverview', con=connection, if_exists='replace', index=False)
+    depotviewDF['TotReturn'] = depotviewDF['Return'] + depotviewDF['DivReturn']
+    depotviewDF.to_sql('qDepotOverview', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
 
     # Generate performance dataframe
     print('Generate: Performance')
@@ -678,7 +687,7 @@ if __name__ == '__main__':
                                 (year_factor)) - 1) * 100
 
     perfDF = perfDF.round(2)
-    perfDF.to_sql('qPerformance', con=connection, if_exists='replace', index=False)
+    perfDF.to_sql('qPerformance', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
 
     # Generate overview dataframe
     print('Generate: Overview')
@@ -746,7 +755,7 @@ if __name__ == '__main__':
     overviewDF = pd.DataFrame(overviewS, columns=['Position', 'Amount', 'Slice', \
                             'Earn','Return','Items'])
     overviewDF = overviewDF.round(2)
-    overviewDF.to_sql('qOverview', con=connection, if_exists='replace', index=False)
+    overviewDF.to_sql('qOverview', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
 
     # Important products dataframe: gold, USD, BTC
     print('Generate: USD-Prices')
@@ -755,10 +764,9 @@ if __name__ == '__main__':
     for p in prod:
         valuesDF[p] = [(watchlistDF[['AssetID','LastPrice']]\
             [(watchlistDF['AssetID']==p)]['LastPrice']).iloc[0]]
-    valuesDF.to_sql('qUSDValues', con=connection, if_exists='replace', index=False)
+    valuesDF.to_sql('qUSDValues', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
 
     # Closing the database
-    connection.commit()
     connection.close()
 
     # End of FFDM

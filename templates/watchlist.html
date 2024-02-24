@@ -59,7 +59,7 @@
             <td align="right" class="p-1">
                 {% if asset['LastPrice'] >= 0: %}
                     <span><b><a target="_blank" rel="noopener noreferrer"
-                        style="text-decoration: none"
+                        style="text-decoration: none; color: blue"
                         href="static/charts/{{ asset['AssetID'] }}.png">
                         {{ format_number(asset['LastPrice']) }}</a>
                         </b>
@@ -181,7 +181,11 @@
             <td align="right" class="p-1">
                 {% if asset['LastPrice'] >= 0: %}
                     <span>
-                        <b>{{ format_number(asset['LastPrice']) }}</b>
+                        <b><a target="_blank" rel="noopener noreferrer"
+                            style="text-decoration: none; color: blue"
+                            href="static/charts/{{ asset['AssetID'] }}.png">
+                            {{ format_number(asset['LastPrice']) }}</a>
+                        </b>
                     </span>
                 {% else %}
                     <span>

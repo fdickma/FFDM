@@ -19,6 +19,7 @@ import csv
 import datetime
 import time
 import sqlite3
+import smtplib
 
 # Import FFDM function library
 import ffdm_lib as fl
@@ -38,17 +39,17 @@ DefaultCurrency=config['Accounts']['DefaultCurrency']
 fl.DefaultCurrency=config['Accounts']['DefaultCurrency']
 dataDir=config['Accounts']['Dir']
 mailAddr=config['Server']['Mail']
+mailPwd=config['Server']['MailPwd']
+mailServ=config['Server']['MailServ']
 Directory = []
-if config['Accounts']['dat1'] != '':
-    Directory.append(config['Accounts']['dat1'])
-if config['Accounts']['dat2'] != '':
-    Directory.append(config['Accounts']['dat2'])
-if config['Accounts']['dat3'] != '':
-    Directory.append(config['Accounts']['dat3'])
-if config['Accounts']['dat4'] != '':
-    Directory.append(config['Accounts']['dat4'])
-if config['Accounts']['dat5'] != '':
-    Directory.append(config['Accounts']['dat5'])
+# Iterating account directory entries
+dir_count = 0
+for cdir in config['Accounts']:
+    print(cdir)
+    if cdir[:3] == "dat":
+        dir_count += 1
+        if config['Accounts']['dat' + str(dir_count)] != "":
+            Directory.append(config['Accounts']['dat' + str(dir_count)])    
 
 def createLock():
     f = open(LockFile, 'w')
@@ -153,17 +154,42 @@ def assetsUpdate():
     priceDF.to_csv(myDir+'initdata/AssetPrices.csv', header=True, sep=";", index=False)
     return
 
+def checkMailserver():
+    print("Checking mail server...")
+    smtpServer=mailServ
+    try:
+        server = smtplib.SMTP(smtpServer, port=587, timeout=1)
+        server.quit()
+    except:
+        print("Mail server not working!")
+        return False
+    return True
+
 # Retrieve current stock values from several sources
 def sendEmail(a_name, a_price, target, text):
-    if os.path.exists('/usr/bin/mail'):
-        os.popen("echo \"" + a_name + " : " + str(a_price) + " is " + text + "\""
-                +"| mail -s '"+ a_name +" is " + text + ": " \
-                + str(a_price) +"' " \
-                +mailAddr)
-    else:
-        print(a_name + " : " + str(a_price) + " is " + text)
+    smtpServer=mailServ
+    fromAddr=mailAddr
+    toAddr=mailAddr
+    msg= "Subject: " + \
+        a_name +" is " + text + ": " + str(a_price) + "\n\n" + \
+        a_name + " : " + str(a_price) + " is " + text
+    try:
+        server = smtplib.SMTP(smtpServer, port=587, timeout=1)
+        server.ehlo()
+        server.starttls()
+        server.login(mailAddr, mailPwd)
+        server.sendmail(fromAddr, toAddr, msg)
+        server.quit()
+    except:
+        print("Mail server not working!")
+    print(a_name + " : " + str(a_price) + " is " + text)
 
 def targetTest():
+    
+    # In case the mail server is not reachable don't continue
+    if checkMailserver() != True:
+        return
+
     targetDF = []
     connection = sqlite3.connect(myDir + DB)
     targetDF = pd.DataFrame(connection.execute("SELECT AssetID, TargetPriceLow,\

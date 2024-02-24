@@ -11,6 +11,7 @@ def check_online():
     refAvailable.append(check_url("https://boerse.de"))
     refAvailable.append(check_url("https://tagesschau.de"))
     refAvailable.append(check_url("https://ariva.de"))
+    refAvailable.append(check_url("https://alleaktien.de"))
 
 # Check a service to be online
 def check_url(url):
@@ -58,8 +59,25 @@ def get_Fnet_data(a_type, a_id, refFnet):
 # Links for ariva.de
 def get_Ref2_data(a_type, a_id, refFnet):
     link = ""
-    link = "https://www.ariva.de/" + refFnet \
+    if a_type == "COM":
+        link = "https://www.ariva.de/" + refFnet \
             +" | grep -m 1 '[0-9] €' | grep -o [0-9.,]* | head -1"
+    elif a_type == "CRP" and a_id == "BTC":
+        link = "https://www.ariva.de/" + refFnet \
+            +" | grep -m 1 '[0-9.,]%' | grep -o [0-9.,]* | head -1"
+    else:
+        link = "https://www.ariva.de/" + a_id \
+            +" | grep -m 1 '[0-9] €' | grep -o [0-9.,]* | head -1"
+    if link != "":
+        return link
+    else:
+        return 0
+
+# Links for ariva.de
+def get_Ref3_data(a_type, a_id, refFnet):
+    link = ""
+    link = "https://www.alleaktien.de/data/" + a_id \
+            +" | grep -m 1 ' EUR' | grep -o [0-9.,]* | head -1"
     if link != "":
         return link
     else:
@@ -98,7 +116,7 @@ def get_Ref1_data(a_type, a_id, refARD):
         return 0
 
 def retrieveWebData(link):
-    webheader = "'User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; rv:110.0)'"
+    webheader = "'User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0'"
     Browser = "w3m -header " + webheader + " -no-cookie -dump "
     if link != 0:
         proc = subprocess.Popen(Browser + link, shell=True, text=True,\
@@ -130,7 +148,8 @@ def assetDataScraping(asset, old_price):
     refNet0 = asset['NetRef1']
     refNet1 = asset['NetRef2']
     if (refAvailable[0] == True):
-        return_price = retrieveWebData(get_Ref0_data(a_type, a_id, refNet0))
+        return_price = retrieveWebData(get_Ref2_data(a_type, a_id, refNet1))
+    print(a_id, return_price)
     if (abs(old_price-return_price)/old_price > 0.5) and (return_price > 0):
         print("Major difference to old price")
         return_price = -1
@@ -138,4 +157,11 @@ def assetDataScraping(asset, old_price):
         print("first service failed...")
         if (refAvailable[1] == True):
             return_price = retrieveWebData(get_Ref1_data(a_type, a_id, refNet1))
+    if (abs(old_price-return_price)/old_price > 0.5) and (return_price > 0):
+        print("Major difference to old price")
+        return_price = -1
+    if return_price <= 0:
+        print("second service failed...")
+        if (refAvailable[3] == True):
+            return_price = retrieveWebData(get_Ref3_data(a_type, a_id, refNet1))
     return return_price

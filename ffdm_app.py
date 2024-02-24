@@ -13,6 +13,7 @@ import locale
 import pandas as pd
 import numpy as np
 import configparser
+import bcrypt
 import ffdm_lib as fl
 import init_db as init_run
 
@@ -244,8 +245,17 @@ def settings():
             config = configparser.ConfigParser()
             config.sections()
             config.read(myDir + 'ffdm.ini')
+            dat_count = 0
             for crow in requestDF.iterrows():
                 config.set(crow[1][0], crow[1][1], crow[1][2].replace('%','%%'))
+                if crow[1][1][:3] == "dat":
+                    dat_count += 1
+                    print(crow[1][1][3])
+                if crow[1][2] == "" and crow[1][1][:3] == "dat":
+                    dat_count -= 1
+                    config.remove_option(crow[1][0], crow[1][1])
+            # Adding one more line for accounts
+            config.set(crow[1][0], "dat"+str(dat_count + 1), "")
             with open(myDir + 'ffdm.ini', 'w') as configfile:
                 config.write(configfile)
             configfile.close()

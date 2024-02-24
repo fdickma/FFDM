@@ -210,11 +210,12 @@
         <th>Growth</th>
         <th>Div.</th>
         <th>Ret.</th>
+        <th>Tot.</th>
     </tr>
     {% for asset in depot %}
-        {% if asset['Return'] > -0.2 and asset['Return'] < 0.2 %}
+        {% if asset['TotReturn'] > -0.2 and asset['TotReturn'] < 0.2 %}
             <tr class="row-neutral">
-        {% elif asset['Return'] >= 0.2 %}
+        {% elif asset['TotReturn'] >= 0.2 %}
             <tr class="row-success">
         {% else %}
             <tr class="row-danger">
@@ -237,17 +238,40 @@
             </td>
             <td align="right">
                 <span>
-                    <b>{{ format_percent(asset['Return']) }}%</b>
+                    <b>
+                        {% if asset['Dividend'] != 0 %}
+                            {{ format_percent(asset['Return']) }}%
+                        {% else %}
+                            -
+                        {% endif %}
+                    </b>
                 </span>
             </td>
             <td align="right">
                 <span>
-                    <b>{{ format_dec(asset['Dividend']) }}</b>
+                    <b>
+                        {% if asset['Dividend'] != 0 %}
+                            {{ format_dec(asset['Dividend']) }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </b>
                 </span>
             </td>
             <td align="right">
                 <span>
-                    <b>{{ format_percent(asset['DivReturn']) }}%</b>
+                    <b>
+                        {% if asset['Dividend'] != 0 %}
+                            {{ format_percent(asset['DivReturn']) }}%
+                        {% else %}
+                            -
+                        {% endif %}
+                    </b>
+                </span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_percent(asset['TotReturn']) }}%</b>
                 </span>
             </td>
             </tr>
