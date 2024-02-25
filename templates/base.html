@@ -21,8 +21,9 @@
     <link rel="shortcut icon" type="image/png" href="/static/applogo.png">
   </head>
   <body>
-  
- <div class="navbar">
+
+{% if current_user.is_authenticated %}
+<div class="navbar">
     <a href="{{url_for('index')}}"><img src="/static/applogo128.png" class="logo"></img></a>
     <a href="{{url_for('watchlist')}}">Watchlist</a>
     <a href="{{url_for('finance')}}">Finance</a>
@@ -49,17 +50,19 @@
     </div>
   </div>
   <div class="dropdown">
-    <button class="dropbtn">Edit
+    <button class="dropbtn">{{ current_user.name }}
       <i class="fa fa-caret-down"></i>
     </button>
     <div class="dropdown-content">
       <a href="{{url_for('settings')}}">Settings</a>
       <a href="{{url_for('inita')}}">Init Accounts</a>
       <a href="{{url_for('initd')}}">Init Depots</a>
+      <a href="/logout">Logout</a>
     </div>
   </div>
   <a class="nav_date" style="color:white;">{{ get_time() }}</a>
-</div> 
+</div>
+{% endif %}
 
     <div class="container">
         {% for message in get_flashed_messages() %}

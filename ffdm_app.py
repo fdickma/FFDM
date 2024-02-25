@@ -1,6 +1,8 @@
 import sqlite3
 from flask import Flask, render_template, request, url_for, flash, redirect
 from werkzeug.exceptions import abort
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
 import io
 import os
 import subprocess
@@ -28,7 +30,7 @@ dataDir=config['Accounts']['Dir']
 serverPort=int(config['Server']['Port'])
 serverName=config['Server']['Name']
 DefaultCurrency=config['Accounts']['DefaultCurrency']
-    
+
 def get_db_connection():
     try:
         conn = sqlite3.connect(myDir + DB)
@@ -37,13 +39,76 @@ def get_db_connection():
     except:
         return None
 
+# The app key is stored separately
+keyconf = configparser.ConfigParser()
+keyconf.read(myDir + 'ffdm.key')
+
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'DM4g7th2Juz1'
+# Load the app key
+app.config['SECRET_KEY'] = keyconf['Key']['key']
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 locale.setlocale(locale.LC_ALL, 'de_DE.utf-8')
+# The user database is stored separately
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///userdb.sqlite"
+userdb = SQLAlchemy()
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+# Initialize user database structure
+class Users(UserMixin, userdb.Model):
+    id = userdb.Column(userdb.Integer, primary_key=True)
+    name = userdb.Column(userdb.String(12), unique=True, nullable=False)
+    username = userdb.Column(userdb.String(250), unique=True, nullable=False)
+    password = userdb.Column(userdb.String(250), nullable=False)
+
+# Initialize the user database
+userdb.init_app(app)
+with app.app_context():
+    userdb.create_all()
+
+@login_manager.user_loader
+def loader_user(user_id):
+    return Users.query.get(user_id)
+
+@app.route('/register', methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        user = Users(name=request.form.get("name"),
+                     username=request.form.get("username"),
+                     password=request.form.get("password"))
+        userdb.session.add(user)
+        userdb.session.commit()
+        return redirect(url_for("login"))
+    return render_template("sign_up.html", serverName=serverName)
+ 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    # If a post request was made, find the user by 
+    # filtering for the username
+    if request.method == "POST":
+        user = Users.query.filter_by(
+            username=request.form.get("username")).first()
+        try:
+            # Check if the password entered is the 
+            # same as the user's password
+            if user.password == request.form.get("password"):
+                # Use the login_user method to log in the user
+                login_user(user)
+                return redirect(url_for("index"))
+            # Redirect the user back to the home
+        except:
+            return redirect(url_for("login"))
+    return render_template("login.html", serverName=serverName)
+
+@app.route("/logout")
+def logout():
+    logout_user()
+    return redirect(url_for("index"))
 
 @app.route('/assets', methods=('GET', 'POST'))
 def assets():
+    if current_user.is_authenticated == False:
+        return render_template('index.html', serverName=serverName)
     try:
         assetsDF = pd.read_csv(myDir+"initdata/AssetReferences.csv", \
                             sep=';')
@@ -83,6 +148,8 @@ def assets():
 
 @app.route('/inita', methods=('GET', 'POST'))
 def inita():
+    if current_user.is_authenticated == False:
+        return render_template('index.html', serverName=serverName)
     try:
         accountsDF = pd.read_csv(myDir+"initdata/Accounts.csv", \
                             sep=';')
@@ -129,6 +196,8 @@ def inita():
 
 @app.route('/initd', methods=('GET', 'POST'))
 def initd():
+    if current_user.is_authenticated == False:
+        return render_template('index.html', serverName=serverName)
     try:
         depotsDF = pd.read_csv(myDir+"initdata/Depots.csv", \
                             sep=';')
@@ -177,6 +246,8 @@ def initd():
 
 @app.route('/vlplans', methods=('GET', 'POST'))
 def vlplans():
+    if current_user.is_authenticated == False:
+        return render_template('index.html', serverName=serverName)
     try:
         vlplansDF = pd.read_csv(myDir+"initdata/VLplans.csv", \
                             sep=';')
@@ -212,6 +283,8 @@ def vlplans():
 
 @app.route('/settings', methods=('GET', 'POST'))
 def settings():
+    if current_user.is_authenticated == False:
+        return render_template('index.html', serverName=serverName)
     try:
         myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
         config = configparser.ConfigParser()
@@ -267,6 +340,8 @@ def settings():
 # Update ticker data
 @app.route('/tdu')
 def tdu():
+    if current_user.is_authenticated == False:
+        return render_template('index.html', serverName=serverName)
     try:
         subprocess.run(["python3 ffdm.py -d"], shell=True, check=True)
     except:
@@ -276,6 +351,8 @@ def tdu():
 
 @app.route('/acc')
 def acc():
+    if current_user.is_authenticated == False:
+        return render_template('index.html', serverName=serverName)
     try:
         subprocess.run(["python3 ffdm.py -f"], shell=True, check=True)
     except:
@@ -285,6 +362,8 @@ def acc():
 
 @app.route('/web')
 def web():
+    if current_user.is_authenticated == False:
+        return render_template('index.html', serverName=serverName)
     try:
         subprocess.run(["python3 ffdm.py -w"], shell=True, check=True)
     except:
@@ -294,6 +373,8 @@ def web():
 
 @app.route('/unlock')
 def unlock():
+    if current_user.is_authenticated == False:
+        return render_template('index.html', serverName=serverName)
     try:
         subprocess.run(["python3 ffdm.py -u"], shell=True, check=True)
     except:
@@ -303,6 +384,8 @@ def unlock():
 
 @app.route('/targets', methods=('GET', 'POST'))
 def targets():
+    if current_user.is_authenticated == False:
+        return render_template('index.html', serverName=serverName)
     try:
         assetsDF = pd.read_csv(myDir+"initdata/TargetPrices.csv", \
                             sep=';')
@@ -363,6 +446,8 @@ def targets():
 
 @app.route('/split', methods=('GET', 'POST'))
 def split():
+    if current_user.is_authenticated == False:
+        return render_template('index.html', serverName=serverName)
     try:
         conn = get_db_connection()
         assets = conn.execute('SELECT AssetID, AssetName \
@@ -409,6 +494,8 @@ def split():
 
 @app.route('/watchlist')
 def watchlist():
+    if current_user.is_authenticated == False:
+        return render_template('index.html', serverName=serverName)
     try:
         conn = get_db_connection()
         watchlist = conn.execute('SELECT * FROM qWatchlist WHERE AssetID NOT IN \
@@ -433,6 +520,8 @@ def error():
 
 @app.route('/finance')
 def finance():
+    if current_user.is_authenticated == False:
+        return render_template('index.html', serverName=serverName)
     try:
         conn = get_db_connection()
         overview = conn.execute('SELECT * FROM qOverview ORDER BY Slice DESC')\

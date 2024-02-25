@@ -2,6 +2,15 @@
   box-sizing: border-box;
 }
 
+.logininput{
+    font: 1em/1.25em Arial, Helvetica, sans-serif;
+}
+
+.logindiv {
+  padding-top: 1em;
+  padding-left: 3em;
+}
+
 .hidden_link{
   text-decoration: none;
   color: black;

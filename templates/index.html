@@ -2,6 +2,15 @@
 
 {% block content %}
 
-<img src="/static/applogo.png" class="mainlogo"></img>
+   {% if current_user.is_authenticated %}
+   {% else %}
+   <div class="navbar">
+        <a href="."><img src="/static/applogo128.png" class="logo"></img></a>
+        <a href="/login">Login</a>
+        <a href="/register">Create account</a>
+   </div>
+   {% endif %}
+
+   <img src="/static/applogo.png" class="mainlogo"></img>
 
 {% endblock %}
