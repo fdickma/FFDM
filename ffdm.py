@@ -103,16 +103,15 @@ def getFileList():
         print('Directory for:', u_id)
 
         myDir = baseDir + 'users/' + u_id + '/'
+        Directory = [ f.path for f in os.scandir(myDir) if f.is_dir() ]
         for sdir in Directory:
-            tmpPath = dataDir + sdir + "/*.[cC][sS][vV]"
+            print(sdir)
+            tmpPath = sdir + "/*.[cC][sS][vV]"
             tmpFiles = list(glob.glob(tmpPath))
             for f in tmpFiles:
                 fRec = f + getFileTimestamp(f)
                 fList.append(fRec)
-        for sfile in list(glob.glob(myDir + 'initdata/*.[cC][sS][vV]')):
-            fRec = getFileTimestamp(sfile)
-            fList.append(fRec)
-
+        
     return fList
 
 # Read the file with the last time generated filesystem data for all files
