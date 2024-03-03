@@ -18,8 +18,8 @@ import configparser
 import csv
 import datetime
 import time
-import sqlite3
 import smtplib
+import __main__
 
 # Import FFDM function library
 import ffdm_lib as fl
@@ -30,10 +30,10 @@ scrape.refAvailable = []
 global Directory
 
 # Set default variables including database parameters
-myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
+baseDir = os.path.abspath(os.path.dirname(__file__)) + '/'
 config = configparser.ConfigParser()
 config.sections()
-config.read(myDir + 'ffdm.ini')
+config.read(baseDir + 'ffdm.ini')
 DB=config['DB']['DB']
 DefaultCurrency=config['Accounts']['DefaultCurrency']
 fl.DefaultCurrency=config['Accounts']['DefaultCurrency']
@@ -42,6 +42,7 @@ mailAddr=config['Server']['Mail']
 mailPwd=config['Server']['MailPwd']
 mailServ=config['Server']['MailServ']
 Directory = []
+
 # Iterating account directory entries
 dir_count = 0
 for cdir in config['Accounts']:
@@ -50,6 +51,10 @@ for cdir in config['Accounts']:
         dir_count += 1
         if config['Accounts']['dat' + str(dir_count)] != "":
             Directory.append(config['Accounts']['dat' + str(dir_count)])    
+
+# Finally retrieve a list of all users
+userlist = []
+userlist = fl.get_user_db('SELECT username FROM users')
 
 def createLock():
     f = open(LockFile, 'w')
@@ -72,13 +77,12 @@ def months(d1, d2):
     return d1.month - d2.month + 12 * (d1.year - d2.year)
 
 # Read the assets references
-def readAssetRef():
+def readAssetRef(user_id):
+    myDir = baseDir + 'users/' + user_id + '/'
     AssetData = []
-    connection = sqlite3.connect(myDir + DB)
-    assetrefDF = pd.DataFrame(connection.execute("SELECT AssetID, AssetType,\
-            AssetName, Ticker, NetRef1, NetRef2 FROM AssetReferences").fetchall(), \
+    assetrefDF = pd.DataFrame(fl.get_db_data("SELECT AssetID, AssetType,\
+            AssetName, Ticker, NetRef1, NetRef2 FROM AssetReferences", user_id), \
             columns=["AssetID","AssetType","AssetName","Ticker","NetRef1","NetRef2"])
-    connection.close()
     return assetrefDF
 
 # Get filesystem information for a file
@@ -90,15 +94,25 @@ def getFileTimestamp(File):
 # Return a list of all files to operate on
 def getFileList():
     fList = []
-    for sdir in Directory:
-        tmpPath = dataDir + sdir + "/*.[cC][sS][vV]"
-        tmpFiles = list(glob.glob(tmpPath))
-        for f in tmpFiles:
-            fRec = f + getFileTimestamp(f)
+
+    for user_id in userlist:
+        if type(user_id) != str:
+            u_id = str(user_id[0])
+        else:
+            u_id = user_id
+        print('Directory for:', u_id)
+
+        myDir = baseDir + 'users/' + u_id + '/'
+        for sdir in Directory:
+            tmpPath = dataDir + sdir + "/*.[cC][sS][vV]"
+            tmpFiles = list(glob.glob(tmpPath))
+            for f in tmpFiles:
+                fRec = f + getFileTimestamp(f)
+                fList.append(fRec)
+        for sfile in list(glob.glob(myDir + 'initdata/*.[cC][sS][vV]')):
+            fRec = getFileTimestamp(sfile)
             fList.append(fRec)
-    for sfile in list(glob.glob(myDir + 'initdata/*.[cC][sS][vV]')):
-        fRec = getFileTimestamp(sfile)
-        fList.append(fRec)
+
     return fList
 
 # Read the file with the last time generated filesystem data for all files
@@ -134,26 +148,39 @@ def assetsUpdate():
         and (scrape.refAvailable[2] == False):
         print("No online services available...")
         return
-
-    assetrefDF = readAssetRef()
-    print(myDir+'initdata/AssetPrices.csv')
-    priceDF = pd.read_csv(myDir+'initdata/AssetPrices.csv', header=0, sep=";")
-
-    i = 0
-    for idx, asset in assetrefDF.iterrows():
-        old_price = priceDF.set_index('AssetPrice')['AssetID'].eq(asset['AssetID'])[::-1].idxmax()
-        price = scrape.assetDataScraping(asset, old_price)
-        if price > 0:
-            i = i + 1
-            print(i, asset['AssetName'], now_str, price)
-            asset_prices = [asset['AssetID'], now_str+'.000', price, DefaultCurrency]
-            df_length = len(priceDF)
-            priceDF.loc[df_length] = asset_prices
+    
+    for user_id in userlist:
+        if type(user_id) != str:
+            u_id = str(user_id[0])
         else:
-            print('Failed: ', asset['AssetName'])
-    priceDF.to_csv(myDir+'initdata/AssetPrices.csv', header=True, sep=";", index=False)
+            u_id = user_id
+        print('Update assets data for:', u_id)
+
+        myDir = baseDir + 'users/' + u_id + '/'
+        assetrefDF = readAssetRef(u_id)
+        print(myDir+'initdata/AssetPrices.csv')
+        priceDF = pd.read_csv(myDir+'initdata/AssetPrices.csv', header=0, sep=";")
+
+        i = 0
+        for idx, asset in assetrefDF.iterrows():
+            if (priceDF['AssetID'] == asset['AssetID']).any():
+                old_price = priceDF.set_index('AssetPrice')['AssetID']\
+                    .eq(asset['AssetID'])[::-1].idxmax()
+            else:
+                old_price = 0
+            price = scrape.assetDataScraping(asset, old_price)
+            if price > 0:
+                i = i + 1
+                print(i, asset['AssetName'], now_str, price)
+                asset_prices = [asset['AssetID'], now_str+'.000', price, DefaultCurrency]
+                df_length = len(priceDF)
+                priceDF.loc[df_length] = asset_prices
+            else:
+                print('Failed: ', asset['AssetName'])
+        priceDF.to_csv(myDir+'initdata/AssetPrices.csv', header=True, sep=";", index=False)
     return
 
+# Check function to test if the mail server is alive in general
 def checkMailserver():
     print("Checking mail server...")
     smtpServer=mailServ
@@ -190,47 +217,63 @@ def targetTest():
     if checkMailserver() != True:
         return
 
-    targetDF = []
-    connection = sqlite3.connect(myDir + DB)
-    targetDF = pd.DataFrame(connection.execute("SELECT AssetID, TargetPriceLow,\
-            TargetPriceHigh, Currency FROM TargetPrices").fetchall(), \
-            columns=["AssetID","TargetPriceLow","TargetPriceHigh","Currency"])
-    assetpriceDF = pd.DataFrame(connection.execute("SELECT AssetID,\
-            LastPrice, AssetName FROM qWatchlist").fetchall(), \
-            columns=["AssetID","LastPrice","AssetName"])
-    connection.close()
-    
-    for idx, tgt in targetDF.iterrows():
-        if len(assetpriceDF['AssetID'][(assetpriceDF['AssetID']==tgt['AssetID'])]) > 0:
-            aprice = (assetpriceDF[['AssetID','LastPrice']]\
-                    [(assetpriceDF['AssetID']==tgt['AssetID'])]['LastPrice']).iloc[0]
-            aname = (assetpriceDF[['AssetID','AssetName']]\
-                    [(assetpriceDF['AssetID']==tgt['AssetID'])]['AssetName']).iloc[0]
-            if tgt['TargetPriceLow'] != 0 and tgt['TargetPriceHigh'] != 0:
-                if (aprice < tgt['TargetPriceLow']):
-                    sendEmail(aname, fl.format_number(aprice), \
-                        tgt['TargetPriceLow'], "low")
-                elif (aprice > tgt['TargetPriceHigh']):
-                    sendEmail(aname, fl.format_number(aprice), \
-                        tgt['TargetPriceHigh'], "high")
-                else:
-                    print(aname, ': check ok')
+    for user_id in userlist:
+        if type(user_id) != str:
+            u_id = str(user_id[0])
         else:
-            print(tgt['AssetID'])
+            u_id = user_id
+        print('Targets for:', u_id)
+
+        targetDF = []
+        targetDF = pd.DataFrame(fl.get_db_data("SELECT AssetID, TargetPriceLow,\
+                TargetPriceHigh, Currency FROM TargetPrices", u_id), \
+                columns=["AssetID","TargetPriceLow","TargetPriceHigh","Currency"])
+        assetpriceDF = pd.DataFrame(fl.get_db_data("SELECT AssetID,\
+                LastPrice, AssetName FROM qWatchlist", u_id), \
+                columns=["AssetID","LastPrice","AssetName"])
+
+        for idx, tgt in targetDF.iterrows():
+            if len(assetpriceDF['AssetID'][(assetpriceDF['AssetID']==tgt['AssetID'])]) > 0:
+                aprice = (assetpriceDF[['AssetID','LastPrice']]\
+                        [(assetpriceDF['AssetID']==tgt['AssetID'])]['LastPrice']).iloc[0]
+                aname = (assetpriceDF[['AssetID','AssetName']]\
+                        [(assetpriceDF['AssetID']==tgt['AssetID'])]['AssetName']).iloc[0]
+                if tgt['TargetPriceLow'] != 0 and tgt['TargetPriceHigh'] != 0:
+                    if (aprice < tgt['TargetPriceLow']):
+                        sendEmail(aname, fl.format_number(aprice), \
+                            tgt['TargetPriceLow'], "low")
+                    elif (aprice > tgt['TargetPriceHigh']):
+                        sendEmail(aname, fl.format_number(aprice), \
+                            tgt['TargetPriceHigh'], "high")
+                    else:
+                        print(aname, ': check ok')
+            else:
+                print(tgt['AssetID'])
     return
 
 def accountsUpdate():
-    print('Re-initilize data')
-    fl.get_currencies()
-    subprocess.run(["python3 " + myDir + "init_db.py"], shell=True, check=True)
+    for user_id in userlist:
+        if type(user_id) != str:
+            u_id = str(user_id[0])
+        else:
+            u_id = user_id
+        print('Re-initilize data for:', u_id)
+        fl.get_currencies()
+        subprocess.run(["python3 " + baseDir + "init_db.py " + u_id], shell=True, check=True)
 
 def tickerDataUpdate():
-    assetDF = fl.get_assets()
-    for a in assetDF.AssetID:
-        if assetDF[(assetDF['AssetID'] == a)]['AssetType'].iloc[0] != 'CUR':
-            ticker = assetDF[(assetDF['AssetID'] == a)]['Ticker'].iloc[0]
-            print(a, ticker)
-            fl.dl_ticker_data(a, ticker, 5)
+    for user_id in userlist:
+        if type(user_id) != str:
+            u_id = str(user_id[0])
+        else:
+            u_id = user_id
+        print('Re-initilize data for:', u_id)
+        assetDF = fl.get_assets(u_id)
+        for a in assetDF.AssetID:
+            if assetDF[(assetDF['AssetID'] == a)]['AssetType'].iloc[0] != 'CUR':
+                ticker = assetDF[(assetDF['AssetID'] == a)]['Ticker'].iloc[0]
+                print(a, ticker)
+                fl.dl_ticker_data(a, ticker, 5)
 
 if __name__ == '__main__':
     
@@ -268,10 +311,27 @@ if __name__ == '__main__':
         '-a', '--all', help='Force all data update', action='store_true')
     parser.add_argument(
         '-g', '--target', help='Check target prices', action='store_true')
+    
+    # The last parameter is the username
+    parser.add_argument('rest', nargs=argparse.REMAINDER)
     args = parser.parse_args()
 
     now = datetime.datetime.now()
     now_str = time.strftime('%Y-%m-%d %H:%M:%S')
+
+    # In case a username is given check it against the userlist
+    # If the username exists append it to an empty userlist as the single 
+    # username to be processed
+    if args.rest:
+        if userlist != None:
+            if fl.in_list(args.rest, userlist):
+                userlist = []
+                userlist.append(args.rest)
+        else:
+            print("Username does not exist.")
+            exit()
+
+    print(userlist)
 
     if args.test:
         if checkLock(): sys.exit()

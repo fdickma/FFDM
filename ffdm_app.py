@@ -1,8 +1,8 @@
-import sqlite3
 from flask import Flask, render_template, request, url_for, flash, redirect
 from werkzeug.exceptions import abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
+import sqlalchemy as sa
 import io
 import os
 import subprocess
@@ -19,46 +19,55 @@ import bcrypt
 import ffdm_lib as fl
 import init_db as init_run
 
-# Import config data
-# Set default variables including database parameters
-myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
-config = configparser.ConfigParser()
-config.sections()
-config.read(myDir + 'ffdm.ini')
-DB=config['DB']['DB']
-dataDir=config['Accounts']['Dir']
-serverPort=int(config['Server']['Port'])
-serverName=config['Server']['Name']
-DefaultCurrency=config['Accounts']['DefaultCurrency']
-
-def get_db_connection():
+def get_db_data(sql_string, u_id):
+    db_data = []
     try:
-        conn = sqlite3.connect(myDir + DB)
-        conn.row_factory = sqlite3.Row
-        return conn
+        appdir = os.path.abspath(os.path.dirname(__file__))
+        sql_uri = 'sqlite:///' + os.path.join(appdir, 'users/' + u_id + '/ffdm.sqlite')
+        engine = sa.create_engine(sql_uri, echo=False) 
+        with engine.connect() as connection:
+            result = connection.execute(sa.text(sql_string))
+            for row in result:
+                db_data.append(row)
+        return db_data
     except:
         return None
 
 # The app key is stored separately
+baseDir = os.path.abspath(os.path.dirname(__file__)) + '/'
 keyconf = configparser.ConfigParser()
-keyconf.read(myDir + 'ffdm.key')
+keyconf.read(baseDir + 'ffdm.key')
 
 app = Flask(__name__)
 # Load the app key
 app.config['SECRET_KEY'] = keyconf['Key']['key']
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 locale.setlocale(locale.LC_ALL, 'de_DE.utf-8')
+
 # The user database is stored separately
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///userdb.sqlite"
+appdir = os.path.abspath(os.path.dirname(__file__))
+sql_uri = 'sqlite:///' + os.path.join(appdir, 'userdb.sqlite')
+app.config["SQLALCHEMY_DATABASE_URI"] = sql_uri
 userdb = SQLAlchemy()
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+# Import config data
+# Set default variables including database parameters
+config = configparser.ConfigParser()
+config.sections()
+config.read(baseDir + 'ffdm.ini')
+DB=config['DB']['DB']
+dataDir=config['Accounts']['Dir']
+serverPort=int(config['Server']['Port'])
+serverName=config['Server']['Name']
+DefaultCurrency=config['Accounts']['DefaultCurrency']
+
 # Initialize user database structure
 class Users(UserMixin, userdb.Model):
     id = userdb.Column(userdb.Integer, primary_key=True)
-    name = userdb.Column(userdb.String(12), unique=True, nullable=False)
-    username = userdb.Column(userdb.String(250), unique=True, nullable=False)
+    name = userdb.Column(userdb.String(250), unique=True, nullable=False)
+    username = userdb.Column(userdb.String(12), unique=True, nullable=False)
     password = userdb.Column(userdb.String(250), nullable=False)
 
 # Initialize the user database
@@ -110,6 +119,7 @@ def assets():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
     try:
+        myDir = baseDir + 'users/' + current_user.username + '/'
         assetsDF = pd.read_csv(myDir+"initdata/AssetReferences.csv", \
                             sep=';')
         assetsDF = assetsDF.sort_values(by=['AssetType','AssetName'], ascending=True)
@@ -151,6 +161,7 @@ def inita():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
     try:
+        myDir = baseDir + 'users/' + current_user.username + '/'
         accountsDF = pd.read_csv(myDir+"initdata/Accounts.csv", \
                             sep=';')
         accountsDF['EntryDate'] = pd.to_datetime(accountsDF['EntryDate']).dt.date
@@ -199,6 +210,7 @@ def initd():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
     try:
+        myDir = baseDir + 'users/' + current_user.username + '/'
         depotsDF = pd.read_csv(myDir+"initdata/Depots.csv", \
                             sep=';')
         try:
@@ -249,6 +261,7 @@ def vlplans():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
     try:
+        myDir = baseDir + 'users/' + current_user.username + '/'
         vlplansDF = pd.read_csv(myDir+"initdata/VLplans.csv", \
                             sep=';')
         try:
@@ -286,18 +299,15 @@ def settings():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
     try:
-        myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
+        myDir = baseDir + 'users/' + '/' + current_user.username + '/'
         config = configparser.ConfigParser()
         config.sections()
         config.read(myDir + "ffdm.ini")
         confdatf = pd.DataFrame(config.items('Filter'), columns=['Param', 'Setting'])
         confdatf['Section'] = 'Filter'
-        confdata = pd.DataFrame(config.items('Server'), columns=['Param', 'Setting'])
-        confdata['Section'] = 'Server'
-        confdat = pd.concat([confdatf, confdata])
         confdata = pd.DataFrame(config.items('Accounts'), columns=['Param', 'Setting'])
         confdata['Section'] = 'Accounts'
-        confdat = pd.concat([confdat, confdata])
+        confdat = pd.concat([confdatf, confdata])
     except:
         return redirect(url_for('error'))
 
@@ -314,7 +324,7 @@ def settings():
         if len(requestDF) < 1:
             flash('Error!')
         else:
-            myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
+            myDir = baseDir + 'users/' + '/' + current_user.username + '/'
             config = configparser.ConfigParser()
             config.sections()
             config.read(myDir + 'ffdm.ini')
@@ -343,7 +353,8 @@ def tdu():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
     try:
-        subprocess.run(["python3 ffdm.py -d"], shell=True, check=True)
+        subprocess.run(["python3 ffdm.py -d " \
+            + current_user.username], shell=True, check=True)
     except:
         return redirect(url_for('error'))
 
@@ -354,7 +365,8 @@ def acc():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
     try:
-        subprocess.run(["python3 ffdm.py -f"], shell=True, check=True)
+        subprocess.run(["python3 ffdm.py -f " \
+            + current_user.username], shell=True, check=True)
     except:
         return redirect(url_for('error'))
 
@@ -365,7 +377,8 @@ def web():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
     try:
-        subprocess.run(["python3 ffdm.py -w"], shell=True, check=True)
+        subprocess.run(["python3 ffdm.py -w " \
+            + current_user.username], shell=True, check=True)
     except:
         return redirect(url_for('error'))
 
@@ -387,15 +400,14 @@ def targets():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
     try:
+        myDir = baseDir + 'users/' + current_user.username + '/'
         assetsDF = pd.read_csv(myDir+"initdata/TargetPrices.csv", \
                             sep=';')
         asset_cols = list(assetsDF.columns)
         namesDF = pd.read_csv(myDir+"initdata/AssetReferences.csv", \
                             sep=';')
-        conn = get_db_connection()
-        prices = conn.execute('SELECT qWatchlist.AssetID, qWatchlist.AssetName, \
-                            qWatchlist.LastPrice FROM qWatchList').fetchall()
-        conn.close()
+        prices = get_db_data('SELECT qWatchlist.AssetID, qWatchlist.AssetName, \
+                            qWatchlist.LastPrice FROM qWatchList', current_user.username)
         pricesDF = pd.DataFrame(prices, columns=['AssetID', 'AssetName', 'AssetPrice'])
 
         # Filter all non active assets
@@ -449,11 +461,9 @@ def split():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
     try:
-        conn = get_db_connection()
-        assets = conn.execute('SELECT AssetID, AssetName \
+        assets = get_db_data('SELECT AssetID, AssetName \
                             FROM qWatchList ORDER BY AssetID \
-                            COLLATE NOCASE ASC;').fetchall()
-        conn.close()
+                            COLLATE NOCASE ASC;', current_user.username)
     except Exception as e:
         print(e)
         return redirect(url_for('error'))
@@ -481,7 +491,8 @@ def split():
         apricesDF.to_csv(myDir+"initdata/AssetPrices.csv", \
                             sep=';', index = False)
         try:
-            subprocess.run(["python3 ffdm.py -f"], shell=True, check=True)
+            subprocess.run(["python3 ffdm.py -f " \
+                + current_user.username], shell=True, check=True)
         except:
             return redirect(url_for('error'))
                 
@@ -497,14 +508,10 @@ def watchlist():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
     try:
-        conn = get_db_connection()
-        watchlist = conn.execute('SELECT * FROM qWatchlist WHERE AssetID NOT IN \
-                (SELECT AssetID FROM qDepotOverview) ORDER BY Delta DESC')\
-                .fetchall()
-        investlist = conn.execute('SELECT * FROM qWatchlist WHERE AssetID IN \
-                (SELECT AssetID FROM qDepotOverview) ORDER BY Delta DESC')\
-                .fetchall()
-        conn.close()
+        watchlist = get_db_data('SELECT * FROM qWatchlist WHERE AssetID NOT IN \
+            (SELECT AssetID FROM qDepotOverview) ORDER BY Delta DESC', current_user.username)
+        investlist = get_db_data('SELECT * FROM qWatchlist WHERE AssetID IN \
+                (SELECT AssetID FROM qDepotOverview) ORDER BY Delta DESC', current_user.username)
     except:
         return redirect(url_for('error'))
     return render_template('watchlist.html', watchlist=watchlist, \
@@ -523,28 +530,18 @@ def finance():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
     try:
-        conn = get_db_connection()
-        overview = conn.execute('SELECT * FROM qOverview ORDER BY Slice DESC')\
-                    .fetchall()
-        monthly = conn.execute('SELECT * FROM qMonthly ORDER BY Year DESC')\
-                    .fetchall()
-        yearly = conn.execute('SELECT * FROM qYearly ORDER BY Year DESC')\
-                    .fetchall()
-        cumyear = conn.execute('SELECT * FROM qCumulative ORDER BY Year DESC')\
-                    .fetchall()
-        spend = conn.execute('SELECT * FROM qSpending ORDER BY Year DESC')\
-                    .fetchall()
-        quarterly = conn.execute('SELECT * FROM qQuarterly ORDER BY Quarter DESC')\
-                    .fetchall()
-        perf = conn.execute('SELECT * FROM qPerformance')\
-                    .fetchall()
-        usd = conn.execute('SELECT * FROM qUSDValues')\
-                    .fetchall()
-        balance = conn.execute('SELECT * FROM qAccountBalances WHERE Amount > 0 '+ \
-                            ' ORDER BY Bank').fetchall()
-        depot = conn.execute('SELECT * FROM qDepotOverview '+ \
-                            ' ORDER BY Value DESC').fetchall()
-        conn.close()
+        overview = get_db_data('SELECT * FROM qOverview ORDER BY Slice DESC', current_user.username)
+        monthly = get_db_data('SELECT * FROM qMonthly ORDER BY Year DESC', current_user.username)
+        yearly = get_db_data('SELECT * FROM qYearly ORDER BY Year DESC', current_user.username)
+        cumyear = get_db_data('SELECT * FROM qCumulative ORDER BY Year DESC', current_user.username)
+        spend = get_db_data('SELECT * FROM qSpending ORDER BY Year DESC', current_user.username)
+        quarterly = get_db_data('SELECT * FROM qQuarterly ORDER BY Quarter DESC', current_user.username)
+        perf = get_db_data('SELECT * FROM qPerformance', current_user.username)
+        usd = get_db_data('SELECT * FROM qUSDValues', current_user.username)
+        balance = get_db_data('SELECT * FROM qAccountBalances WHERE Amount > 0 '+ \
+                            ' ORDER BY Bank', current_user.username)
+        depot = get_db_data('SELECT * FROM qDepotOverview '+ \
+                            ' ORDER BY Value DESC', current_user.username)
         return render_template('finance.html', overview=overview, monthly=monthly, \
                             perf=perf, usd=usd, balance=balance, depot=depot, \
                             yearly=yearly, cumyear=cumyear, spend=spend, \
@@ -642,34 +639,28 @@ def my_utility_processor():
 
     def get_time():
         try:    
-            conn = get_db_connection()
-            DataDate = conn.execute('SELECT PriceTime FROM AssetPrices ORDER BY PriceTime \
-                        DESC LIMIT 1').fetchall()
+            DataDate = get_db_data('SELECT PriceTime FROM AssetPrices ORDER BY PriceTime \
+                        DESC LIMIT 1', current_user.username)
             dtime = str(DataDate[0][0]).replace(' ', ' / ')[:18]
             dtime = dtime + " (" + DefaultCurrency + ")"
-            conn.close()
             return dtime
         except:
             return "No time..."
 
     def get_lastupdtime():
         try:    
-            conn = get_db_connection()
-            DataDate = conn.execute('SELECT PriceTime FROM AssetPrices \
-                        ORDER BY PriceTime DESC LIMIT 1').fetchall()
+            DataDate = get_db_data('SELECT PriceTime FROM AssetPrices \
+                        ORDER BY PriceTime DESC LIMIT 1', current_user.username)
             dtime = str(DataDate[0][0])
-            conn.close()
             return dtime
         except:
             return "No time..."
 
     def get_prices(AssetID):
         try:    
-            conn = get_db_connection()
-            prices = conn.execute('SELECT AssetID, PriceTime, AssetPrice \
+            prices = get_db_data('SELECT AssetID, PriceTime, AssetPrice \
                         FROM AssetPrices WHERE AssetID="' + AssetID + '"GROUP BY \
-                        PriceTime ORDER BY PriceTime DESC LIMIT 100').fetchall()
-            conn.close()
+                        PriceTime ORDER BY PriceTime DESC LIMIT 100', current_user.username)
             return prices
         except Exception as e:
             print(e)

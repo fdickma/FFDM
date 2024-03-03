@@ -13,3 +13,4 @@ testing/
 of_ticker/
 assetdata/
 currencies/
+static/charts/*.png

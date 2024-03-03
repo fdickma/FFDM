@@ -20,8 +20,43 @@ import ast
 import yfinance as yf
 import pandas as pd
 import numpy as np
-import sqlalchemy as db
+import sqlalchemy as sa
 from dateutil.relativedelta import relativedelta
+
+def get_db_data(sql_string, u_id):
+    db_data = []
+    try:
+        appdir = os.path.abspath(os.path.dirname(__file__))
+        sql_uri = 'sqlite:///' + os.path.join(appdir, 'users/' + u_id + '/ffdm.sqlite')
+        engine = sa.create_engine(sql_uri, echo=False) 
+        with engine.connect() as connection:
+            result = connection.execute(sa.text(sql_string))
+            for row in result:
+                db_data.append(row)
+        return db_data
+    except:
+        return None
+
+def get_user_db(sql_string):
+    db_data = []
+    try:
+        appdir = os.path.abspath(os.path.dirname(__file__))
+        sql_uri = 'sqlite:///' + os.path.join(appdir, 'userdb.sqlite')
+        engine = sa.create_engine(sql_uri, echo=False) 
+        with engine.connect() as connection:
+            result = connection.execute(sa.text(sql_string))
+            for row in result:
+                db_data.append(row)
+        return db_data
+    except:
+        return None
+
+def del_images():
+    baseDir = os.path.abspath(os.path.dirname(__file__)) + '/'
+    del_list = list(glob.glob(baseDir+"static/charts/*.*"))
+    for d in del_list:
+        os.remove(d)
+    return
 
 # Return a float or integer depending on an existing dot
 def check_float(num):
@@ -91,7 +126,7 @@ def get_vl_plans(connection):
     depot_entries.append(["Bank","DepotNr","AssetID","BankRef","AssetAmount",\
                         "AssetBuyPrice","Currency"])
 
-    vlplans = connection.execute(db.text("SELECT * FROM VLplans ORDER BY PlanID")).fetchall()
+    vlplans = connection.execute(sa.text("SELECT * FROM VLplans ORDER BY PlanID")).fetchall()
     for plan in vlplans:
         account_tmp, depot_tmp = vl_fund(plan[5], plan[6], plan[2], plan[3], \
                                         plan[4], plan[9], plan[7], plan[8])
@@ -472,8 +507,8 @@ def get_yf_ticker(isin):
     else:
         return None
         
-def get_existing_ticker(isin):
-    aDF = get_assets()
+def get_existing_ticker(isin, u_id):
+    aDF = get_assets(u_id)
     usd_values = [['EUR=X', 'EUR'], ['CHF=X', 'CHF'], ['JPY=X', 'JPY'], \
                 ['BTC-USD', 'BTC'], ['GC=F', 'Gold'], ['GBP=X', 'GBP'], \
                 ['HKD=X', 'HKD']]
@@ -486,8 +521,8 @@ def get_existing_ticker(isin):
         except:
             return None
         
-def get_ticker(isin):   
-    ticker = get_existing_ticker(isin)
+def get_ticker(isin, u_id):   
+    ticker = get_existing_ticker(isin, u_id)
     if ticker != None and str(ticker) != "nan":
         return ticker
     ticker = get_of_ticker(isin)
@@ -571,16 +606,15 @@ def get_currencies():
         dl_ticker_data(v[1], v[0], 5)
     return
 
-def get_assets():
-    myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
+def get_assets(u_id):
+    myDir = os.path.abspath(os.path.dirname(__file__)) + '/' + 'users/' + u_id + '/'
     file = myDir+"initdata/AssetReferences.csv"
     assetsrefDF = pd.read_csv(file, header=0, sep=";")
     return assetsrefDF
 
-def isin_data(isin, last_update):
-    print(isin)
-    ticker = get_ticker(isin)
-    print(ticker)
+def isin_data(isin, last_update, u_id):
+    ticker = get_ticker(isin, u_id)
+    print(isin, ticker)
     past_years = 5
     if ticker == None:
         print("Failed to get ticker for", isin)
@@ -626,7 +660,7 @@ def isin_data(isin, last_update):
     except:
         return
 
-def missing_ticker_data():
+def missing_ticker_data(u_id):
     print("Retrieve missing ticker data")
     myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
     asset_files = list(glob.glob(myDir+"assetdata/*.[cC][sS][vV]"))
@@ -645,5 +679,11 @@ def missing_ticker_data():
         aDF = frame[(frame["AssetID"] == a)]
         last = aDF.sort_values(['Date']).drop_duplicates('Date', keep='last')\
             ['Date'].max()
-        isin_data(a, last)
+        isin_data(a, last, u_id)
     return
+
+def in_list(citem, clist):
+    for a in clist:
+        if citem[0] == a[0]:
+            return True
+    return False

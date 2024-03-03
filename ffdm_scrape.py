@@ -63,8 +63,11 @@ def get_Ref2_data(a_type, a_id, refFnet):
         link = "https://www.ariva.de/" + refFnet \
             +" | grep -m 1 '[0-9] €' | grep -o [0-9.,]* | head -1"
     elif a_type == "CRP" and a_id == "BTC":
-        link = "https://www.ariva.de/" + refFnet \
-            +" | grep -m 1 '[0-9.,]%' | grep -o [0-9.,]* | head -1"
+        link = "https://www.coinbase.com/de/converter/btc/eur" \
+            +" | grep -m 1 'entspricht' | grep -m 1 -o '[0-9.]*,[0-9]*'"
+    elif a_type == "CRP" and a_id == "ETH":
+        link = "https://www.coinbase.com/de/converter/eth/eur" \
+            +" | grep -m 1 'entspricht' | grep -m 1 -o '[0-9.]*,[0-9]*'"
     else:
         link = "https://www.ariva.de/" + a_id \
             +" | grep -m 1 '[0-9] €' | grep -o [0-9.,]* | head -1"
@@ -147,19 +150,21 @@ def assetDataScraping(asset, old_price):
     a_id = asset['AssetID']
     refNet0 = asset['NetRef1']
     refNet1 = asset['NetRef2']
-    if (refAvailable[0] == True):
+    if (refAvailable[2] == True):
         return_price = retrieveWebData(get_Ref2_data(a_type, a_id, refNet1))
-    print(a_id, return_price)
-    if (abs(old_price-return_price)/old_price > 0.5) and (return_price > 0):
-        print("Major difference to old price")
-        return_price = -1
+    print(a_id, return_price, ' -- Old:', old_price)
+    if (old_price > 0):
+        if (abs(old_price-return_price)/old_price > 0.5) and (return_price > 0):
+            print("Major difference to old price")
+            return_price = -1
     if return_price <= 0:
         print("first service failed...")
         if (refAvailable[1] == True):
             return_price = retrieveWebData(get_Ref1_data(a_type, a_id, refNet1))
-    if (abs(old_price-return_price)/old_price > 0.5) and (return_price > 0):
-        print("Major difference to old price")
-        return_price = -1
+    if (old_price > 0):
+        if (abs(old_price-return_price)/old_price > 0.5) and (return_price > 0):
+            print("Major difference to old price")
+            return_price = -1
     if return_price <= 0:
         print("second service failed...")
         if (refAvailable[3] == True):

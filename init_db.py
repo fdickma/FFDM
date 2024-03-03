@@ -1,4 +1,4 @@
-import sqlalchemy as db
+import sqlalchemy as sa
 from sqlalchemy.orm import sessionmaker
 import io
 import os
@@ -140,7 +140,7 @@ def watchlist_asset(assets, proc_num):
         #current_values = plt.gca().get_yticks()
         #plt.gca().set_yticklabels(['{:,.0f}'.format(x) for x in current_values])
         try:
-            plt.savefig(__main__.myDir+"static/charts/"+a+".png")
+            plt.savefig(__main__.baseDir+"static/charts/"+a+".png")
         except:
             print("Plot for " + a + " not saved!")
 
@@ -226,8 +226,8 @@ def watchlist_asset(assets, proc_num):
 
 def get_currency(id):
     myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
-    file1 = myDir + 'assetdata/' + id + '_info.csv'
-    file2 = myDir + 'currencies/' + id + '_info.csv'
+    file1 = baseDir + 'assetdata/' + id + '_info.csv'
+    file2 = baseDir + 'currencies/' + id + '_info.csv'
     if os.path.exists(file1):
         tdf = pd.read_csv(file1, index_col=None, header=0)
         attr_col = tdf.columns[0]
@@ -244,7 +244,7 @@ def get_currency(id):
         return 'USD'
 
 def get_currency_data(currency):
-    currDF = pd.DataFrame(__main__.connection.execute(db.text("SELECT * \
+    currDF = pd.DataFrame(__main__.connection.execute(sa.text("SELECT * \
                 FROM CurrencyRates WHERE AssetID='"+currency + "'")).fetchall(), \
                 columns=["Date","AssetID","Currency","Div"])
 
@@ -252,9 +252,9 @@ def get_currency_data(currency):
 
 def build_assetprices(DefaultCurrency):
     
-    fl.missing_ticker_data()
+    fl.missing_ticker_data(__main__.user_id)
 
-    histpDF = pd.DataFrame(__main__.connection.execute(db.text("SELECT * \
+    histpDF = pd.DataFrame(__main__.connection.execute(sa.text("SELECT * \
                 FROM HistoryPrices")).fetchall(), columns=["Date","Open",\
                 "High","Low","Close","Adj Close","Volume","AssetID","Currency"])
 
@@ -287,7 +287,7 @@ def build_assetprices(DefaultCurrency):
         # the reciprocal value is to be calculated from US$
         
         if x != "USD":
-            tckr = fl.get_ticker(x)
+            tckr = fl.get_ticker(x, __main__.user_id)
             print("Currency:", x, tckr)
             fl.dl_ticker_data(x, tckr, 5)
 
@@ -366,7 +366,15 @@ if __name__ == '__main__':
 
     cores = os.cpu_count()
     cz = 100
-    myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
+    
+    # Get user ID from main process
+    user_id = sys.argv[1]
+    if len(user_id) == 0 or user_id == '-f':
+        user_id = 'test'
+    print(user_id)
+
+    baseDir = os.path.abspath(os.path.dirname(__file__)) + '/'
+    myDir = baseDir + 'users/' + user_id + '/'
     config = configparser.ConfigParser()
     config.sections()
     config.read(myDir + 'ffdm.ini')
@@ -387,6 +395,7 @@ if __name__ == '__main__':
     spendList.append(['Amazon','EREF.*AMAZON'])
     dataDir=config['Accounts']['Dir']
     accountDir = []
+
     # Iterating account directory entries
     dir_count = 0
     for cdir in config['Accounts']:
@@ -397,14 +406,17 @@ if __name__ == '__main__':
                 accountDir.append(config['Accounts']['dat' + str(dir_count)])    
 
     print("Initialize database...")
-    subprocess.run(["python3 " + myDir + "init_schema.py"], shell=True, check=True)
-    
+    subprocess.run(["python3 " + baseDir + "init_schema.py " + user_id], shell=True, check=True)
+    fl.del_images()
+
     # Create and start DB connection
-    engine = db.create_engine('sqlite:///ffdm.sqlite', echo=False) 
+    appdir = os.path.abspath(os.path.dirname(__file__))
+    sql_uri = 'sqlite:///' + os.path.join(appdir, 'users/' + user_id + '/ffdm.sqlite')
+    engine = sa.create_engine(sql_uri, echo=False) 
     connection = engine.connect()
 
     print('Import: Historical Asset Prices')
-    history_list = list(glob.glob(myDir+"assetdata/*.[cC][sS][vV]"))
+    history_list = list(glob.glob(baseDir+"assetdata/*.[cC][sS][vV]"))
     for f in history_list:
         print("File: "+f)
         if "_info." in f:
@@ -416,17 +428,18 @@ if __name__ == '__main__':
         else:
             td = pd.read_csv(f, header=0)
             td.to_sql("HistoryPrices", con=connection, if_exists='append', index=False, chunksize=__main__.cz)
-
+    
     build_assetprices(DefaultCurrency)
 
-    assetpriceDF = pd.DataFrame(connection.execute(db.text("SELECT AssetID, PriceTime,\
+    assetpriceDF = pd.DataFrame(connection.execute(sa.text("SELECT AssetID, PriceTime,\
                 AssetPrice, Currency FROM AssetPrices")).fetchall(), \
                 columns=["AssetID","PriceTime","AssetPrice","Currency"])
 
     print('Import: Accounts and Depots')
     files_list = list(glob.glob(myDir+"initdata/*.[cC][sS][vV]"))
     for sdir in accountDir:
-        files_list.extend(list(glob.glob(dataDir + sdir + "/*.[cC][sS][vV]")))
+        files_list.extend(list(glob.glob(myDir + sdir + "/*.[cC][sS][vV]")))
+
     account_entries = []
     depot_entries = []
     for f in files_list:
@@ -460,7 +473,7 @@ if __name__ == '__main__':
     account_entries, depot_entries = fl.get_vl_plans(connection)
     entriesToDB(account_entries, depot_entries)
 
-    accountDF = pd.DataFrame(connection.execute(db.text("SELECT Bank,AccountNr,EntryDate,\
+    accountDF = pd.DataFrame(connection.execute(sa.text("SELECT Bank,AccountNr,EntryDate,\
                 Reference,Amount,Currency FROM Accounts")).fetchall(), \
                 columns=["Bank","AccountNr","EntryDate","Reference","Amount","Currency"])
 
@@ -470,7 +483,7 @@ if __name__ == '__main__':
     accountBalanceDF.to_sql("qAccountBalances", con=connection, if_exists='replace', \
                             index=False, chunksize=__main__.cz)
 
-    accountDF = pd.DataFrame(connection.execute(db.text("SELECT Bank,AccountNr,EntryDate,\
+    accountDF = pd.DataFrame(connection.execute(sa.text("SELECT Bank,AccountNr,EntryDate,\
                 Reference,Amount,Currency FROM Accounts")).fetchall(), \
                 columns=["Bank","AccountNr","EntryDate","Reference","Amount","Currency"])
 
@@ -550,7 +563,7 @@ if __name__ == '__main__':
 
     # Generate depot dataframes
     print('Generate: Depots')
-    depotDF = pd.DataFrame(connection.execute(db.text("SELECT Bank,DepotNr,AssetID,\
+    depotDF = pd.DataFrame(connection.execute(sa.text("SELECT Bank,DepotNr,AssetID,\
                 BankRef, AssetAmount, AssetBuyPrice, Currency FROM Depots")).fetchall(),\
                 columns=["Bank","DepotNr","AssetID","BankRef","AssetAmount",\
                 "AssetBuyPrice","Currency"])
@@ -560,16 +573,16 @@ if __name__ == '__main__':
                                             depotDF['AssetAmount'] / 31.1034768,
                                             depotDF['AssetAmount'])
 
-    assetrefDF = pd.DataFrame(connection.execute(db.text("SELECT AssetID, AssetType,\
+    assetrefDF = pd.DataFrame(connection.execute(sa.text("SELECT AssetID, AssetType,\
                 AssetName, Ticker, NetRef1, NetRef2 FROM AssetReferences")).fetchall(), \
                 columns=["AssetID","AssetType","AssetName","Ticker","NetRef1","NetRef2"])
 
-    assetpriceDF = pd.DataFrame(connection.execute(db.text("SELECT AssetID, PriceTime,\
+    assetpriceDF = pd.DataFrame(connection.execute(sa.text("SELECT AssetID, PriceTime,\
                 AssetPrice, Currency FROM AssetPrices")).fetchall(), \
                 columns=["AssetID","PriceTime","AssetPrice","Currency"])
 
     # Generate target prices dataframe
-    targetpriceDF = pd.DataFrame(connection.execute(db.text("SELECT AssetID,TargetPriceLow,\
+    targetpriceDF = pd.DataFrame(connection.execute(sa.text("SELECT AssetID,TargetPriceLow,\
                 TargetPriceHigh,Currency FROM TargetPrices")).fetchall(), \
                 columns=["AssetID","TargetPriceLow","TargetPriceHigh","Currency"])
 
@@ -580,7 +593,7 @@ if __name__ == '__main__':
 
     # Get watchlist if it exists
     try:
-        oldwlist = pd.read_sql_query(db.text("SELECT * FROM qWatchlist"), connection)
+        oldwlist = pd.read_sql_query(sa.text("SELECT * FROM qWatchlist"), connection)
     except:
         oldwlist = pd.DataFrame()
 
