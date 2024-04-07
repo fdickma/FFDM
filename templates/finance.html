@@ -174,24 +174,20 @@
 
     <table class="table fintab_top">
     <tr>
-        <th>Bank</th>
         <th>Account</th>
         <th>Balance</th>
     </tr>
-    {% for bal in balance %}
-    {% if bal['Amount'] >= 0: %}
+    {% for i, bal in balance.iterrows() %}
+    {% if bal['Balance'] >= 0: %}
         <tr class="row-success">
     {% else %}
         <tr class="row-danger">
     {% endif %}
             <td align="left">
-                <span><b>{{ bal['Bank'] }}</b></span>
-            </td>
-            <td align="left">
-                <span><b>{{ bal['AccountNr'] }}</b></span>
+                <span><b>{{ bal['Name'] }}</b></span>
             </td>
             <td align="right">
-                <span><b>{{ format_eur(bal['Amount']) }}</b></span>
+                <span><b>{{ format_eur(bal['Balance']) }}</b></span>
             </td>
             </tr>
     {% endfor %}

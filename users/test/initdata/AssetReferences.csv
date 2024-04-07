@@ -1,7 +1,7 @@
 "AssetType";"AssetID";"AssetName";"Ticker";"NetRef1";"NetRef2"
 "BND";"LU1737653631";"Amundi GBI";"10AK.F";"LU1737653631";"LU1737653631"
 "COM";"Gold";"Gold";"GC=F";"goldpreis_gold-kurs";"XC0009655157"
-"CRP";"BTC";"BTC";"BTC-USD";"btc_eur_bitcoin_euro-kurs";"None"
+"CRP";"BTC";"Bitcoin";"BTC-USD";"btc_eur_bitcoin_euro-kurs";"None"
 "CRP";"ETH";"Ethereum";"ETH-USD";"eth_eur_ethereum_euro-kurs";"None"
 "CUR";"USD";"USD";"EUR=X";"USD";"EU0009652759"
 "ETF";"FR0010315770";"Lyxor MSCI World";"WLD.PA";"lyxor_etf_msci_world_-_d-eur";"FR0010315770"

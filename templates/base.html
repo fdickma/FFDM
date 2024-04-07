@@ -28,14 +28,13 @@
     <a href="{{url_for('watchlist')}}">Watchlist</a>
     <a href="{{url_for('finance')}}">Finance</a>
   <div class="dropdown">
-    <button class="dropbtn">Updates
+    <button class="dropbtn">Data
       <i class="fa fa-caret-down"></i>
     </button>
     <div class="dropdown-content">
-      <a href="{{url_for('acc')}}">Accounts</a>
-      <a href="{{url_for('web')}}">Web</a>
-      <a href="{{url_for('tdu')}}">Ticker</a>
-      <a href="{{url_for('unlock')}}">Unlock</a>
+      <a href="{{url_for('edit_accounts')}}">Manual Accounts</a>
+      <a href="{{url_for('edit_depots')}}">Manual Depots</a>
+      <a href="{{url_for('manage_accounts')}}">Accounts & Depots</a>
     </div>
   </div>
   <div class="dropdown">
@@ -55,12 +54,23 @@
     </button>
     <div class="dropdown-content">
       <a href="{{url_for('settings')}}">Settings</a>
-      <a href="{{url_for('inita')}}">Init Accounts</a>
-      <a href="{{url_for('initd')}}">Init Depots</a>
+      <a href="{{url_for('userpass')}}">User Account</a>
+      <a href="{{url_for('userdelete')}}">Delete Account</a>
       <a href="/logout">Logout</a>
     </div>
   </div>
-  <a class="nav_date" style="color:white;">{{ get_time() }}</a>
+  <div class="dropdown">
+    <button class="dropbtn">{{ get_time() }}
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-content">
+      <a href="{{url_for('acc')}}">Accounts Update</a>
+      <a href="{{url_for('web')}}">Web data Update</a>
+      <a href="{{url_for('tdu')}}">Ticker Update</a>
+      <a href="{{url_for('unlock')}}">Unlock</a>
+      <a href="{{url_for('fix')}}">Fix error</a>
+    </div>
+  </div>
 </div>
 {% endif %}
 

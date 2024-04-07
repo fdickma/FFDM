@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="form-group">
+    <form method="post">
+    <table>
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Bank</th>
+            <th>AccountNr</th>
+            <th>Currency</th>
+            <th><button type="submit" class="upd_button">Update</button></th>
+        </tr>
+            {% for key,account in accountReg.iterrows() %}
+            <tr>
+            <td><select name="Type" style="font-size: 0.9em;" autofocus>
+                {% for akey, atype in atypes.iterrows() %}
+                {% if account['Type'] == '' %}
+                    <option hidden selected>Select Account...</option>
+                {% endif %}
+                {% if atype['AccountType'] == account['Type'] %}
+                    <option value="{{ atype['AccountType'] }}" selected>
+                        {{ atype['AccountTypeName'] }}
+                    </option>
+                {% else %}
+                    <option value="{{ atype['AccountType'] }}">
+                        {{ atype['AccountTypeName'] }}
+                    </option>
+                {% endif %}
+                {% endfor %}
+            </select></td>        
+            <td><input type="text" name="Name" placeholder=""
+                size=14 class="input" value="{{ account['Name'] }}">
+            </input></td>
+            <td><input type="text" name="Bank" placeholder=""
+                size=12 class="input" value="{{ account['Bank'] }}">
+            </input></td>
+            <td><input type="text" name="AccountNr" placeholder=""
+                size=24 class="input" value="{{ account['AccountNr'] }}">
+            </input></td>
+            <td><input type="text" name="Currency" placeholder=""
+                size=4 class="input" value="{{ account['Currency'] }}">
+            </input></td>
+            </tr>
+            {% endfor %}
+    </table>
+    </form>
+</div>
+
+{% endblock %}

@@ -276,10 +276,10 @@ ul li {
     background-color:#7e0101;
     border-radius: 4px;
     display:block;
-    padding: 0px 8px;
+    padding: 0px 12px;
     margin: 0px 0px;
-    font-size: 90%;
-    font-size: 1.1vw;
+    font-size: 100%;
+    font-size: 1.25vw;
     text-align: center;
     font-weight:bold;
     border: none;
@@ -290,6 +290,26 @@ ul li {
     background-color: #b90303;
     color:white;
 }
+
+.delacc_button{
+    color:white;
+    background-color:#7e0101;
+    border-radius: 4px;
+    padding: 0px 8px;
+    margin: 0px 0px;
+    font-size: 100%;
+    font-size: 1.25vw;
+    text-align: center;
+    font-weight:bold;
+    border: none;
+    vertical-align:middle;
+}
+
+.delacc_button:hover{
+    background-color: #b90303;
+    color:white;
+}
+
 
 .logo_button{
   width: 32px;

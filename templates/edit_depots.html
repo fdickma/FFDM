@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<script src="/static/ffdm.js"></script>
+<div class="form-group">
+<form method="post">
+<table id="FFDMTable">
+    <tr>
+        <th>Depot</th>
+        <th>Asset</th>
+        <th>Amount</th>
+        <th>Buy Price</th>
+        <th>Currency</th>
+        <th><button type="submit" class="upd_button">Update</button></th>
+    </tr>
+        {% set count = [] %}
+        {% for key, entry in depots.iterrows() %}
+        <tr>
+            <td><select name="AccountNr" style="font-size: 0.9em;" autofocus>
+                {% if entry['AccountNr'] == '' %}
+                    <option hidden selected>Select Account...</option>
+                {% endif %}
+                {% for akey, account in accountReg.iterrows() %}
+                    {% if entry['AccountNr'] == account['AccountNr'] %}
+                        <option value="{{ account['AccountNr'] }}" selected>
+                            {{ account['Name'] }}
+                        </option>
+                    {% else %}
+                        <option value="{{ account['AccountNr'] }}">
+                            {{ account['Name'] }}
+                        </option>
+                    {% endif %}
+                {% endfor %}    
+            </select></td>    
+            <td><select name="AssetID" style="font-size: 0.9em;" autofocus>
+                {% if entry['AssetID'] == '' %}
+                    <option hidden selected>Select Asset...</option>
+                {% endif %}
+                {% for skey, asset in assets.iterrows() %}
+                    {% if entry['AssetID'] == asset['AssetID'] %}
+                        <option value="{{ asset['AssetID'] }}" selected>
+                            {{ asset['AssetName'] }}
+                        </option>
+                    {% else %}
+                        <option value="{{ asset['AssetID'] }}">
+                            {{ asset['AssetName'] }}
+                        </option>
+                    {% endif %}
+                {% endfor %}    
+            </select></td>    
+        <td><input type="number" name="AssetAmount" placeholder="" class="input" 
+            size=8 min="0" default="0" max="99999" min="0" step="any"
+            value="{{ request.form['AssetAmount'] or entry['AssetAmount'] }}">
+        </input></td>
+        <td><input type="number" name="AssetBuyPrice" placeholder="" class="input" 
+            size=8 max="99999" min="0" step="any" default="0"
+            value="{{ request.form['AssetBuyPrice'] or entry['AssetBuyPrice'] }}">
+        </input></td>
+        {% if entry['Currency'] == '' %}
+        <td><input type="text" name="Currency" placeholder="" class="input" 
+            size=4 value="{{ currency }}">
+        </input></td>
+        {% else %}
+        <td><input type="text" name="Currency" placeholder="" class="input" 
+            size=4 value="{{ request.form['Currency'] or entry['Currency'] }}">
+        </input></td>
+        {% endif %}
+        <td><button id="del_line{{ loop.index|string }}" class="del_button" 
+            onclick="return delTableRow({{ loop.index|string }})">
+            Delete</button></td>
+        </tr>
+        {% if count.append(loop.index) %}{% endif %}
+        {% endfor %}
+        {% set row = count[-1] + 1 %}
+    </table>
+</form>
+</div>
+
+{% endblock %}

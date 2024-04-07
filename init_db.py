@@ -137,8 +137,11 @@ def watchlist_asset(assets, proc_num):
         chartDF['SMA200'] = chartDF['AssetPrice'].rolling(200).mean()
         chartDF.plot(title=aname,figsize=(8,4), linewidth = '1.0')
         plt.grid(color = 'grey', linestyle = '--', linewidth = 0.25)
-        #current_values = plt.gca().get_yticks()
-        #plt.gca().set_yticklabels(['{:,.0f}'.format(x) for x in current_values])
+        # Put a legend below the graph
+        plt.legend(bbox_to_anchor=(0.5, -0.15), loc='upper center', ncols=3)
+        # Remove the unnecessary x-axis title 
+        frame1 = plt.gca()
+        frame1.axes.get_xaxis().set_label_text('')
         try:
             plt.savefig(__main__.baseDir+"static/charts/"+a+".png")
         except:
@@ -399,7 +402,6 @@ if __name__ == '__main__':
     # Iterating account directory entries
     dir_count = 0
     for cdir in config['Accounts']:
-        print(cdir)
         if cdir[:3] == "dat":
             dir_count += 1
             if config['Accounts']['dat' + str(dir_count)] != "":
@@ -443,6 +445,8 @@ if __name__ == '__main__':
     account_entries = []
     depot_entries = []
     for f in files_list:
+        if f == myDir + "initdata/AccountRegistry.csv" or f == myDir + "initdata/AccountTypes.csv":
+            continue
         print("File: "+f)
         account_entries, depot_entries = fl.readStatement(f)
         if (len(account_entries)<2 and len(depot_entries)<2):

@@ -1,3 +1,5 @@
-"Bank";"DepotNr";"AssetID";"BankRef";"AssetAmount";"AssetBuyPrice";"Currency"
-"None";"None";"BTC";"Bitcoin";"0,1";"500,00";"EUR"
-"None";"None";"Gold";"Gold";"31,1034768";"1000,00";"EUR"
+"Bank";"AccountNr";"AssetID";"BankRef";"AssetAmount";"AssetBuyPrice";"Currency"
+"None";"Wallet1";"BTC";"Bitcoin";"0,1";"500,0000";"EUR"
+"SPK";"Locker60";"Gold";"Gold";"31,1034768";"1000,0000";"EUR"
+"BIS";"Bison1";"BTC";"Bitcoin";"0,00031296";"15,0000";"EUR"
+"BIS";"Bison1";"ETH";"Ethereum";"0,00306967";"10,0000";"EUR"

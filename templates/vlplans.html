@@ -4,7 +4,7 @@
 <script src="/static/ffdm.js"></script>
 <div class="form-group">
 <form method="post">
-<table id="VLEditTable">
+<table id="FFDMTable">
     <tr>
         <th>PlanID</th>
         <th>Bank</th>
@@ -44,22 +44,18 @@
         </input></td>
         <td><input type="number" name="Pieces" placeholder="" class="input" 
             size=8 max="99999" min="0" step="0.001"
-            value="{{ request.form['Pieces'] or plan['Pieces'] | round(3)}}">
+            value="{{ request.form['Pieces'] or plan['Pieces'] }}">
         </input></td>
         <td><input type="text" name="Currency" placeholder="" class="input" 
             size=3 value="{{ request.form['Currency'] or plan['Currency'] }}">
         </input></td>
         <td><button id="del_line{{ loop.index|string }}" class="del_button" 
-            onclick="return delVL({{ loop.index|string }})">
+            onclick="return delTableRow({{ loop.index|string }})">
             Delete</button></td>
         </tr>
         {% if count.append(loop.index) %}{% endif %}
         {% endfor %}
         {% set row = count[-1] + 1 %}
-        <tr><td style="text-align:center;">
-            <button id="add" class="add_button" type="button"
-            onclick="addVL({{ row|string }})">Add</button>
-        </td></tr>
     </table>
 </form>
 </div>

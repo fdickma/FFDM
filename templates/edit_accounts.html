@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<script src="/static/ffdm.js"></script>
+<div class="form-group">
+<form method="post">
+<table id="FFDMTable">
+    <tr>
+        <th>EntryDate</th>
+        <th>Account</th>
+        <th>Reference</th>
+        <th>Amount</th>
+        <th>Currency</th>
+        <th><button type="submit" class="upd_button">Update</button></th>
+    </tr>
+        {% set count = [] %}
+        {% for key, entry in accounts.iterrows() %}
+        <tr>
+        {% if entry['EntryDate'] == '' %}
+            <td><input type="date" name="EntryDate" placeholder="" class="input"
+                size=10 value="{{ today_date }}" required>
+            </input></td>
+        {% else %}
+            <td><input type="date" name="EntryDate" placeholder="" class="input"
+                size=10 value="{{ request.form['EntryDate'] or entry['EntryDate'] }}">
+            </input></td>
+        {% endif %}
+        <td><select name="AccountNr" style="font-size: 0.9em;" autofocus>
+            {% if entry['AccountNr'] == '' %}
+                <option hidden selected>Select Account...</option>
+            {% endif %}
+            {% for akey, account in accountReg.iterrows() %}
+                {% if entry['AccountNr'] == account['AccountNr'] %}
+                    <option value="{{ account['AccountNr'] }}" selected>
+                        {{ account['Name'] }}
+                    </option>
+                {% else %}
+                    <option value="{{ account['AccountNr'] }}">
+                        {{ account['Name'] }}
+                    </option>
+                {% endif %}
+            {% endfor %}    
+        </select></td>
+        <td><input type="text" name="Reference" placeholder="" class="input" 
+            size=35 value="{{ request.form['Reference'] or entry['Reference'] }}">
+        </input></td>
+        <td><input type="number" name="Amount" placeholder="" class="input" 
+            size=8 max="99999" step="0.001" default="0" 
+            value="{{ request.form['Amount'] or entry['Amount'] }}">
+        </input></td>
+        {% if entry['Currency'] == '' %}
+        <td><input type="text" name="Currency" placeholder="" class="input" 
+            size=4 value="{{ currency }}">
+        </input></td>
+        {% else %}
+        <td><input type="text" name="Currency" placeholder="" class="input" 
+            size=4 value="{{ request.form['Currency'] or entry['Currency'] }}">
+        </input></td>
+        {% endif %}
+        <td><button id="del_line{{ loop.index|string }}" class="del_button" 
+            onclick="return delTableRow({{ loop.index|string }})">
+            Delete</button></td>
+        </tr>
+        {% if count.append(loop.index) %}{% endif %}
+        {% endfor %}
+        {% set row = count[-1] + 1 %}
+    </table>
+</form>
+</div>
+
+{% endblock %}
