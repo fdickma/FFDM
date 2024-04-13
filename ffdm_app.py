@@ -474,6 +474,22 @@ def edit_depots():
 def vlplans():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
+
+    # Read the account registry and assets
+    try:
+        myDir = baseDir + 'users/' + current_user.username + '/'
+        accountRegDF = pd.read_csv(myDir+"initdata/AccountRegistry.csv", \
+                            sep=';')
+        depot_list = ['Depot', 'Wallet']
+        accountRegDF = accountRegDF[accountRegDF['Type'].isin(depot_list)]
+        accountRegDF = accountRegDF.sort_values(by=['Name'])
+        assetsDF = pd.read_csv(myDir+"initdata/AssetReferences.csv", \
+                            sep=';')
+        assetsDF = assetsDF.sort_values(by=['AssetType', 'AssetName'])
+    except Exception as e:
+        print(e)
+        return redirect(url_for('error'))
+                
     try:
         myDir = baseDir + 'users/' + current_user.username + '/'
         vlplansDF = pd.read_csv(myDir+"initdata/VLplans.csv", \
@@ -484,10 +500,12 @@ def vlplans():
         except:
             vlplansDF['Amount'] = vlplansDF['Amount']\
                     .astype(float)
+        vlplansDF['AccountNr'] = vlplansDF['AccountNr'].astype(str)
         vlplansDF.loc[len(vlplansDF)] = pd.Series(dtype='float64')
         vlplansDF = vlplansDF.sort_values(by=['StartDate'], \
             ascending=False, na_position='first')
         vlplansDF = vlplansDF.fillna('')
+        print(vlplansDF)
     except:
         return redirect(url_for('error'))
 
@@ -500,9 +518,14 @@ def vlplans():
             for value in vlplans_data[a]:
                 column.append(value)
             requestDF[a] = column
+            
         requestDF = requestDF[requestDF['AssetID'].str.len() > 0]
         requestDF = requestDF[((requestDF['AssetID'] != "") & \
             (requestDF['Amount'] != ""))]
+
+        requestDF = requestDF.merge(accountRegDF[["AccountNr", "Bank"]], on=["AccountNr"], how="left")
+        requestDF = requestDF[["PlanID","Bank","AccountNr","AssetID","StartDate","EndDate",\
+            "Amount","Pieces","Currency"]]
 
         if len(requestDF) < 1:
             flash('Error!')
@@ -512,7 +535,8 @@ def vlplans():
                             index = False, quoting=csv.QUOTE_ALL, quotechar='"')
             return redirect(url_for('vlplans'))
 
-    return render_template('vlplans.html', vlplans=vlplansDF, serverName=serverName)
+    return render_template('vlplans.html', vlplans=vlplansDF, assets=assetsDF, \
+        accountReg=accountRegDF, currency=DefaultCurrency, serverName=serverName)
 
 @app.route('/settings', methods=('GET', 'POST'))
 def settings():

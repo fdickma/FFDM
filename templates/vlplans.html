@@ -7,7 +7,6 @@
 <table id="FFDMTable">
     <tr>
         <th>PlanID</th>
-        <th>Bank</th>
         <th>AccountNr</th>
         <th>AssetID</th>
         <th>StartDate</th>
@@ -20,18 +19,43 @@
         {% set count = [] %}
         {% for key, plan in vlplans.iterrows() %}
         <tr>
-        <td><input type="text" name="PlanID" placeholder="STK" class="input" 
+        <td><input type="text" name="PlanID" placeholder="1" class="input" 
             size=2 value="{{ request.form['PlanID'] or plan['PlanID'] }}">
         </input></td>
-        <td><input type="text" name="Bank" placeholder="" class="input" 
-            size=8 value="{{ request.form['Bank'] or plan['Bank'] }}">
-        </input></td>
-        <td><input type="text" name="AccountNr" placeholder="" class="input" 
-            size=10 value="{{ request.form['AccountNr'] or plan['AccountNr'] }}">
-        </input></td>
-        <td><input type="text" name="AssetID" placeholder="" class="input" 
-            size=10 value="{{ request.form['AssetID'] or plan['AssetID'] }}">
-        </input></td>
+
+        <td><select name="AccountNr" style="font-size: 0.9em;" autofocus>
+            {% if plan['AccountNr'] == '' %}
+                <option hidden selected>Select Account...</option>
+            {% endif %}
+            {% for akey, account in accountReg.iterrows() %}
+                {% if plan['AccountNr'] == account['AccountNr'] %}
+                    <option value="{{ account['AccountNr'] }}" selected>
+                        {{ account['Name'] }}
+                    </option>
+                {% else %}
+                    <option value="{{ account['AccountNr'] }}">
+                        {{ account['Name'] }}
+                    </option>
+                {% endif %}
+            {% endfor %}    
+        </select></td>    
+        <td><select name="AssetID" style="font-size: 0.9em;" autofocus>
+            {% if plan['AssetID'] == '' %}
+                <option hidden selected>Select Asset...</option>
+            {% endif %}
+            {% for skey, asset in assets.iterrows() %}
+                {% if plan['AssetID'] == asset['AssetID'] %}
+                    <option value="{{ asset['AssetID'] }}" selected>
+                        {{ asset['AssetName'] }}
+                    </option>
+                {% else %}
+                    <option value="{{ asset['AssetID'] }}">
+                        {{ asset['AssetName'] }}
+                    </option>
+                {% endif %}
+            {% endfor %}    
+        </select></td>    
+
         <td><input type="date" name="StartDate" placeholder="" class="input" 
             size=4 value="{{ request.form['StartDate'] or plan['StartDate'] }}">
         </input></td>
