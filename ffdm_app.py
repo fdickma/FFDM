@@ -104,7 +104,7 @@ with app.app_context():
 
 @login_manager.user_loader
 def loader_user(user_id):
-    return Users.query.get(user_id)
+    return userdb.session.get(Users, int(user_id))
 
 @app.route('/register', methods=["GET", "POST"])
 def register():
@@ -462,7 +462,6 @@ def edit_depots():
         if len(requestDF) < 1:
             flash('Error!')
         else:
-            print(requestDF)
             requestDF.to_csv(myDir+"initdata/Depots.csv", sep=';', \
                             index = False, quoting=csv.QUOTE_ALL, quotechar='"')
             return redirect(url_for('edit_depots'))
@@ -505,7 +504,6 @@ def vlplans():
         vlplansDF = vlplansDF.sort_values(by=['StartDate'], \
             ascending=False, na_position='first')
         vlplansDF = vlplansDF.fillna('')
-        print(vlplansDF)
     except:
         return redirect(url_for('error'))
 
@@ -530,7 +528,6 @@ def vlplans():
         if len(requestDF) < 1:
             flash('Error!')
         else:
-            print(requestDF)
             requestDF.to_csv(myDir+"initdata/VLplans.csv", sep=';', \
                             index = False, quoting=csv.QUOTE_ALL, quotechar='"')
             return redirect(url_for('vlplans'))
