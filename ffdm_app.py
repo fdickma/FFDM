@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, url_for, flash, redirect, g, 
 from werkzeug.exceptions import abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
+from fileinput import filename 
 import sqlalchemy as sa
 import io
 import os
@@ -33,9 +34,12 @@ def get_db_data(sql_string, u_id):
     except:
         return None
 
-def get_account_files(user_id):
+def get_myDir(user_id):
     baseDir = os.path.abspath(os.path.dirname(__file__)) + '/'
-    myDir = baseDir + 'users/' + user_id + '/'
+    return baseDir + 'users/' + user_id + '/'
+
+def get_account_dirs(user_id):
+    myDir = get_myDir(user_id)
     user_config = configparser.ConfigParser()
     user_config.sections()
     user_config.read(myDir + 'ffdm.ini')
@@ -48,14 +52,18 @@ def get_account_files(user_id):
             dir_count += 1
             if user_config['Accounts']['dat' + str(dir_count)] != "":
                 accountDir.append(user_config['Accounts']['dat' + str(dir_count)])
-    
+    return accountDir
+
+def get_account_files(user_id):
+    myDir = get_myDir(user_id)
+    accountDir = get_account_dirs(user_id)
     # Now generate the files list from the directories
     files_list = []
     for sdir in accountDir:
         files_list.extend(list(glob.glob(myDir + sdir + "/*.[cC][sS][vV]")))
+    files_list.sort(key=os.path.getmtime, reverse=True)
     files_list.extend(list(glob.glob(myDir + 'initdata' + "/Accounts.[cC][sS][vV]")))
     #files_list.extend(list(glob.glob(myDir + 'initdata' + "/*.[cC][sS][vV]")))
-
     return files_list
 
 # The app key is stored separately
@@ -120,7 +128,6 @@ def register():
             dir1 = myDir+"initdata"
             os.mkdir(myDir)
             os.mkdir(dir1)
-
         except Exception as e:
             print(e)
             return redirect(url_for('error'))        
@@ -215,6 +222,38 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for("index"))
+
+@app.route('/file_upload', methods=["GET", "POST"])
+def file_upload():
+    if current_user.is_authenticated == False:
+        return render_template('index.html', serverName=serverName)
+    try:
+        myDirs = get_account_dirs(current_user.username)
+        myFiles = get_account_files(current_user.username)
+    except Exception as e:
+        print(e)
+    return render_template("file_upload.html", myFiles=myFiles, myDirs=myDirs)  
+
+@app.route('/ack_upload', methods=["POST"])
+def ack_upload():
+    if current_user.is_authenticated == False:
+        return render_template('index.html', serverName=serverName)
+    if request.method == 'POST':
+        f = request.files['file']
+        if len(f.filename) > 0:
+            try:
+                if request.form['targetPath'][-3:].upper() == 'CSV':
+                    saveName = request.form['targetPath']
+                else:
+                    saveName = get_myDir(current_user.username) + \
+                        request.form['targetPath'] + '/' + f.filename
+                if saveName != "":
+                    f.save(saveName)
+            except:
+                return redirect(url_for('error'))
+        else:
+            return redirect(url_for('error'))
+        return render_template("ack_upload.html", name = saveName)
 
 # Set long valid session duration
 @app.before_request

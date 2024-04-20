@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="form-group">
+  <table id="FFDMTable">
+    <tr>
+    <form action = "/ack_upload" method = "post" class="input"
+      enctype="multipart/form-data">   
+      <td><input type="file" name="file" class="logininput"/>
+      <input type = "submit" value="Upload" class="logininput"></td>
+      </tr>
+      {% for xdir in myDirs %}
+        <tr><td><input type="radio" id="{{ xdir }}" name="targetPath" value="{{ xdir }}">
+        <label for="{{ xdir }}">{{ xdir }}</label></td></tr>
+      {% endfor %}
+      {% for xfile in myFiles %}
+        <tr><td><input type="radio" id="{{ xfile }}" name="targetPath" value="{{ xfile }}">
+        <label for="{{ xfile }}">{{ xfile }}</label></td></tr>
+      {% endfor %}
+    </form>
+  </table>
+  </div>
+{% endblock %}
