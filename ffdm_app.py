@@ -2,7 +2,8 @@ from flask import Flask, render_template, request, url_for, flash, redirect, g, 
 from werkzeug.exceptions import abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
-from fileinput import filename 
+from fileinput import filename
+from werkzeug.utils import secure_filename
 import sqlalchemy as sa
 import io
 import os
@@ -98,6 +99,12 @@ serverPort=int(config['Server']['Port'])
 serverName=config['Server']['Name']
 DefaultCurrency=config['Accounts']['DefaultCurrency']
 
+# Secure file uploads
+ALLOWED_EXTENSIONS = {'csv'}
+UPLOAD_FOLDER = baseDir
+# With a max file size of 32 Megabyte
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1000 * 1000
+
 # Initialize user database structure
 class Users(UserMixin, userdb.Model):
     id = userdb.Column(userdb.Integer, primary_key=True)
@@ -109,6 +116,13 @@ class Users(UserMixin, userdb.Model):
 userdb.init_app(app)
 with app.app_context():
     userdb.create_all()
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def allowed_dir(filename):
+    return filename[:len(UPLOAD_FOLDER)] == UPLOAD_FOLDER
 
 @login_manager.user_loader
 def loader_user(user_id):
@@ -248,12 +262,15 @@ def ack_upload():
                     saveName = get_myDir(current_user.username) + \
                         request.form['targetPath'] + '/' + f.filename
                 if saveName != "":
-                    f.save(saveName)
+                    # Double security check
+                    if allowed_file(saveName) == True and allowed_dir(saveName) == True:
+                        f.save(saveName)
+                        return render_template("ack_upload.html", name = saveName)
             except:
                 return redirect(url_for('error'))
         else:
             return redirect(url_for('error'))
-        return render_template("ack_upload.html", name = saveName)
+    return render_template('index.html', serverName=serverName)
 
 # Set long valid session duration
 @app.before_request
