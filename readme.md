@@ -2,16 +2,19 @@
 
 FFDM is a web based financial data management software which display the finance data from data files by DKB and Sparkasse, including DKB depot data. In addition a watchlist for stock, ETF, funds and gold can be managed.
 
-Most parameters can be changed via the web interface. Some initial data still need to be edited in the corresponding CSV files.
+Most parameters can be changed via the web interface. Manual accounts and depots can be directly edited in the web interface or in the corresponding CSV files. CSV files can be uploaded via the web interface. This includes replacing files with different names (a necessity for files from Sparkasse).
 
-Current prices of financial products are retrieved by scraping web pages. The main source is [finanzen.net](http://finanzen.net) and [tagesschau.de](http://tagesschau.de) as a second option.
+Current prices of financial products are retrieved by scraping web pages. The main sources have changed over time because some sources block these requests. Long term price data is downloaded via Yahoo finance.
 
 #### Requirements
 
 All can be met by Linux distributions like Debian 11 or Arch Linux.
 
-* Python 3.9+
-* Openpyxl 3.0.3+
+* Python 3.10+
+* Pandas
+* Flask
+* yfinance
+* SQLalchemy
 
 #### Parameters for the command line module
 
@@ -49,7 +52,7 @@ The data files provided contain only generated information not related to any pe
 ![alt text](img/ffdm_03.png)
 ![alt text](img/ffdm_04.png)
 
-#### Menu
+#### Menu example
 
 ![alt text](img/ffdm_05.png)
 
