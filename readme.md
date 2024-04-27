@@ -58,6 +58,10 @@ Clicking on the current price of a financial product opens a chart in a new brow
 
 #### Finance overview
 
+The first (upper/left) table shows an aggregated overview over all investment classes with the total always at the top. In the middle/second table the monthly average per year of income, spending and saving is shown. On the right are three tables displaying key performance indicators, current prices of important investment products, and the current balance of the managed bank accounts. The key performance indicators are: total performance of all investments, average yearly performance of all investments, average yearly performance excluding crypto currencies, and average yearly dividend yield of all investments.
+
+On the second line, the left table shows a complete list of the investments. The right table contains key performance indicators on a yearly basis. Below the left table shows similar key performance indictors per year on a compounding basis. Beginning right next to the compounding table is a list of quarterly cashflows. The last table contains the yearly spending divided between total, cash payments, card payments, and spending on Amazon.
+
 ![alt text](img/ffdm_03.png)
 ![alt text](img/ffdm_04.png)
 
