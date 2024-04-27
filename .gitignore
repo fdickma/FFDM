@@ -3,7 +3,7 @@
 logs
 *.log
 tagbotft*.ini
-*.sqlite
+*.bak
 result_data*.*
 __pycache__/
 *.pdf
