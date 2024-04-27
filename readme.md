@@ -1,4 +1,5 @@
 ### **FFDM - Free Financial Data Management**
+![alt text](img/pbh.png)
 
 FFDM is a web based financial data management software which display the finance data from data files by DKB and Sparkasse, including DKB depot data. In addition a watchlist for stock, ETF, funds and gold can be managed.
 
@@ -45,7 +46,15 @@ The data files provided contain only generated information not related to any pe
 
 #### Watchlist
 
+The left/first table shows the financial products that have no current investment. The right/second table shows the financial products with current investment. 
+
 ![alt text](img/ffdm_02.png)
+
+#### Charts
+
+Clicking on the current price of a financial product opens a chart in a new browser tab. The charts usually contain data of the last five years before the first data update of this financial product in FFDM. 
+
+![alt text](img/ffdm_11.png)
 
 #### Finance overview
 
