@@ -19,6 +19,7 @@ import numpy as np
 import configparser
 import bcrypt
 import ffdm_lib as fl
+import ffdm_init as fi
 import init_db as init_run
 
 def get_db_data(sql_string, u_id):
@@ -832,6 +833,8 @@ def index():
 
 @app.route('/error') 
 def error():
+    #if current_user.is_authenticated == True:
+    fi.check_files(baseDir + 'users/' + current_user.username + '/')
     return render_template('error.html', serverName=serverName)
 
 @app.route('/finance')

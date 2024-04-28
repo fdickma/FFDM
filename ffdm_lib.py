@@ -608,9 +608,12 @@ def get_currencies():
 
 def get_assets(u_id):
     myDir = os.path.abspath(os.path.dirname(__file__)) + '/' + 'users/' + u_id + '/'
-    file = myDir+"initdata/AssetReferences.csv"
-    assetsrefDF = pd.read_csv(file, header=0, sep=";")
-    return assetsrefDF
+    assetRefFile = myDir+"initdata/AssetReferences.csv"
+    if os.path.isfile(assetRefFile) and os.path.getsize(assetRefFile) > 0:
+        assetRefsDF = pd.read_csv(assetRefFile, quotechar='"', sep=";")
+    else:
+        assetRefsDF = pd.DataFrame(columns=["AssetID"])    
+    return assetRefsDF
 
 def isin_data(isin, last_update, u_id):
     ticker = get_ticker(isin, u_id)
@@ -660,26 +663,29 @@ def isin_data(isin, last_update, u_id):
     except:
         return
 
-def missing_ticker_data(u_id):
+def missing_ticker_data(u_id, user_aIDs):
     print("Retrieve missing ticker data")
     myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
     asset_files = list(glob.glob(myDir+"assetdata/*.[cC][sS][vV]"))
     asset_list = []
     li = []
     for f in asset_files:
-        if "_info." in f:
-            continue
-        else:
-            x = os.path.basename(f).split(".")[0].split("_")[0]
-            if x not in asset_list:
-                asset_list.append(x)
-            li.append(pd.read_csv(f, header=0))
-    frame = pd.concat(li, axis=0, ignore_index=True)
-    for a in asset_list:
-        aDF = frame[(frame["AssetID"] == a)]
-        last = aDF.sort_values(['Date']).drop_duplicates('Date', keep='last')\
-            ['Date'].max()
-        isin_data(a, last, u_id)
+        if any(aID in f for aID in user_aIDs):
+            print(f)
+            if "_info." in f:
+                continue
+            else:
+                x = os.path.basename(f).split(".")[0].split("_")[0]
+                if x not in asset_list:
+                    asset_list.append(x)
+                li.append(pd.read_csv(f, header=0))
+    if len(asset_list) > 0 and len(li) > 0:
+        frame = pd.concat(li, axis=0, ignore_index=True)
+        for a in asset_list:
+            aDF = frame[(frame["AssetID"] == a)]
+            last = aDF.sort_values(['Date']).drop_duplicates('Date', keep='last')\
+                ['Date'].max()
+            isin_data(a, last, u_id)
     return
 
 def in_list(citem, clist):

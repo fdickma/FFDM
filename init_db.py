@@ -253,12 +253,16 @@ def get_currency_data(currency):
 
     return currDF
 
-def build_assetprices(DefaultCurrency):
+def build_assetprices(DefaultCurrency, user_aIDs):
     
-    fl.missing_ticker_data(__main__.user_id)
+    fl.missing_ticker_data(__main__.user_id, user_aIDs)
 
-    histpDF = pd.DataFrame(__main__.connection.execute(sa.text("SELECT * \
+    try:
+        histpDF = pd.DataFrame(__main__.connection.execute(sa.text("SELECT * \
                 FROM HistoryPrices")).fetchall(), columns=["Date","Open",\
+                "High","Low","Close","Adj Close","Volume","AssetID","Currency"])
+    except:
+        histpDF = pd.DataFrame(columns=["Date","Open",\
                 "High","Low","Close","Adj Close","Volume","AssetID","Currency"])
 
     if DefaultCurrency != "USD":
@@ -360,8 +364,14 @@ def build_assetprices(DefaultCurrency):
         new['Currency'] = DefaultCurrency
         new.to_sql("AssetPrices", con=__main__.connection, index=False, if_exists='append', chunksize=__main__.cz)
         print(x, "USD")
-
     return
+
+def check_fileName_aID(assetRefsDF, f):
+    if len(assetRefsDF) < 1: return False
+    for index, aID in assetRefsDF['AssetID'].items():
+        if aID in f:
+            return aID
+    return False
 
 if __name__ == '__main__':
     # Get the start time
@@ -412,26 +422,30 @@ if __name__ == '__main__':
     fl.del_images()
 
     # Create and start DB connection
-    appdir = os.path.abspath(os.path.dirname(__file__))
-    sql_uri = 'sqlite:///' + os.path.join(appdir, 'users/' + user_id + '/ffdm.sqlite')
+    sql_uri = 'sqlite:///' + os.path.join(myDir + '/ffdm.sqlite')
     engine = sa.create_engine(sql_uri, echo=False) 
     connection = engine.connect()
 
     print('Import: Historical Asset Prices')
+    assetRefsDF = fl.get_assets(user_id)    
     history_list = list(glob.glob(baseDir+"assetdata/*.[cC][sS][vV]"))
+    user_aIDs = list()
     for f in history_list:
-        print("File: "+f)
-        if "_info." in f:
-            td = pd.read_csv(f, header=None, skiprows=1, names=["Attribute", "Value"])
-            x = os.path.basename(f).split(".")[0].split("_")[0]
-            print(x)
-            td["AssetID"] = x
-            td.to_sql("AssetInfo", con=connection, if_exists='append', index=False, chunksize=__main__.cz)            
-        else:
-            td = pd.read_csv(f, header=0)
-            td.to_sql("HistoryPrices", con=connection, if_exists='append', index=False, chunksize=__main__.cz)
-    
-    build_assetprices(DefaultCurrency)
+        # Check if file contains data for a current investment of the user
+        check_aID = check_fileName_aID(assetRefsDF, f)
+        if check_aID != False:
+            user_aIDs.append(check_aID)
+            print("File: "+f)
+            if "_info." in f:
+                td = pd.read_csv(f, header=None, skiprows=1, names=["Attribute", "Value"])
+                x = os.path.basename(f).split(".")[0].split("_")[0]
+                td["AssetID"] = x
+                td.to_sql("AssetInfo", con=connection, if_exists='append', index=False, chunksize=__main__.cz)            
+            else:
+                td = pd.read_csv(f, header=0)
+                td.to_sql("HistoryPrices", con=connection, if_exists='append', index=False, chunksize=__main__.cz)
+
+    build_assetprices(DefaultCurrency, user_aIDs)
 
     assetpriceDF = pd.DataFrame(connection.execute(sa.text("SELECT AssetID, PriceTime,\
                 AssetPrice, Currency FROM AssetPrices")).fetchall(), \
@@ -445,14 +459,26 @@ if __name__ == '__main__':
     account_entries = []
     depot_entries = []
     for f in files_list:
-        if f == myDir + "initdata/AccountRegistry.csv" or f == myDir + "initdata/AccountTypes.csv":
+        if f == myDir + "initdata/AccountRegistry.csv" or \
+        f == myDir + "initdata/AssetReferences.csv" or \
+        f == myDir + "initdata/AccountTypes.csv":
             continue
-        print("File: "+f)
+        print("File: " + f)
         account_entries, depot_entries = fl.readStatement(f)
-        if (len(account_entries)<2 and len(depot_entries)<2):
+        if (len(account_entries) < 2 and len(depot_entries) < 2):
             tableName = (os.path.splitext(os.path.split(f)[-1])[0])
-            tableData = pd.read_csv(f, header=0, sep=";")
-            if tableName == "AssetPrices":
+            if os.path.isfile(tableName) and os.path.getsize(tableName) > 0:
+                tableData = pd.read_csv(f, header=0, sep=";")
+            else:
+                if tableName == "AssetPrices":
+                    tableData = pd.DataFrame([["USD", datetime.datetime(2020, 1, 1),\
+                        1, DefaultCurrency]], columns=["AssetID","PriceTime",\
+                        "AssetPrice","Currency"])
+                if tableName == "Depots":
+                    tableData = pd.DataFrame(columns=["Bank","AccountNr","AssetID",\
+                         "BankRef","AssetAmount","AssetBuyPrice","Currency"])
+
+            if tableName == "AssetPrices" and len(tableData) > 0:
                 assetprices_tempDF = pd.DataFrame()
                 for a in tableData.AssetID.unique():
                     pricetime = (assetpriceDF[['PriceTime','AssetID']]\
@@ -628,10 +654,16 @@ if __name__ == '__main__':
                 if len(q) > 0:
                     watchlistDF = q
     
-    watchlistDF.columns = ['AssetID','AssetName','Delta','DeltaPrice','LastPrice',\
-                        'PriceTime','PrevPrice','Avg20Price','Avg200Price','TargetLow',\
-                        'TargetHigh','MinPrice','MaxPrice','LowPrice','Fib_r618',\
-                        'Fib_e382','Trend']
+    if len(watchlistDF) < 1:
+        watchlistDF = pd.DataFrame(columns=['AssetID','AssetName','Delta','DeltaPrice','LastPrice',\
+                            'PriceTime','PrevPrice','Avg20Price','Avg200Price','TargetLow',\
+                            'TargetHigh','MinPrice','MaxPrice','LowPrice','Fib_r618',\
+                            'Fib_e382','Trend'])
+    else:
+        watchlistDF.columns = ['AssetID','AssetName','Delta','DeltaPrice','LastPrice',\
+                            'PriceTime','PrevPrice','Avg20Price','Avg200Price','TargetLow',\
+                            'TargetHigh','MinPrice','MaxPrice','LowPrice','Fib_r618',\
+                            'Fib_e382','Trend']
     
     # Additional key performance indicators
     watchlistDF['DeltaLow'] = watchlistDF['LastPrice'] - watchlistDF['MinPrice']
@@ -648,7 +680,7 @@ if __name__ == '__main__':
 
     # Generate compound dividend dataframe
     print('Generate: Dividends')
-    dividendDF = pd.DataFrame()
+    dividendDF = pd.DataFrame(columns=['AssetID','Dividend'])
     for a in assetrefDF['AssetID']:
         dividend = pd.Series([a, filterDF("(?:"+filterList[1][1]+").*"+a).sum()])
         dividendDF = pd.concat([dividendDF, dividend.to_frame().T], \
@@ -657,34 +689,39 @@ if __name__ == '__main__':
 
     # Generate depot overview dataframe
     print('Generate: Depot Overview')
-    depotviewDF = pd.DataFrame()
-    depotviewDF = depotDF.copy()
-    depotviewDF = depotviewDF.groupby(['AssetID']).sum(['AssetAmount', 'AssetBuyPrice'])
-    depotviewDF = pd.merge(depotviewDF,assetrefDF[['AssetID','AssetType']], on="AssetID")
-    depotviewDF = pd.merge(depotviewDF,assetrefDF[['AssetID','AssetName']], on="AssetID")
-    depotviewDF = pd.merge(depotviewDF,dividendDF[['AssetID','Dividend']], on="AssetID")
-    depotviewDF = pd.merge(depotviewDF,watchlistDF[['AssetID','LastPrice']], on="AssetID")
-    depotviewDF['Value'] = (depotviewDF['LastPrice'] * depotviewDF['AssetAmount'])
-    depotviewDF['Earn'] = depotviewDF['Value'] - depotviewDF['AssetBuyPrice']
-    depotviewDF['Return'] = (depotviewDF['Earn'] / depotviewDF['AssetBuyPrice']) * 100
-    depotviewDF['DivReturn'] = (depotviewDF['Dividend'] / depotviewDF['AssetBuyPrice']) \
-                                * 100
-    depotviewDF['TotReturn'] = depotviewDF['Return'] + depotviewDF['DivReturn']
-    depotviewDF.to_sql('qDepotOverview', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
+    depotviewDF = pd.DataFrame(columns=['AssetID','AssetAmount','AssetType','AssetName',\
+        'Dividend','LastPrice','Value','Earn','DivReturn','TotReturn'])
+    if len(depotDF) > 0:
+        depotviewDF = depotDF.copy()
+        depotviewDF = depotviewDF.groupby(['AssetID']).sum(['AssetAmount', 'AssetBuyPrice'])
+        depotviewDF = pd.merge(depotviewDF,assetrefDF[['AssetID','AssetType']], on="AssetID")
+        depotviewDF = pd.merge(depotviewDF,assetrefDF[['AssetID','AssetName']], on="AssetID")
+        depotviewDF = pd.merge(depotviewDF,dividendDF[['AssetID','Dividend']], on="AssetID")
+        depotviewDF = pd.merge(depotviewDF,watchlistDF[['AssetID','LastPrice']], on="AssetID")
+        depotviewDF['Value'] = (depotviewDF['LastPrice'] * depotviewDF['AssetAmount'])
+        depotviewDF['Earn'] = depotviewDF['Value'] - depotviewDF['AssetBuyPrice']
+        depotviewDF['Return'] = (depotviewDF['Earn'] / depotviewDF['AssetBuyPrice']) * 100
+        depotviewDF['DivReturn'] = (depotviewDF['Dividend'] / depotviewDF['AssetBuyPrice']) \
+                                    * 100
+        depotviewDF['TotReturn'] = depotviewDF['Return'] + depotviewDF['DivReturn']
+        depotviewDF.to_sql('qDepotOverview', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
 
     # Generate performance dataframe
     print('Generate: Performance')
-    perfDF = pd.DataFrame()
-    perfDF['TotalEarnings'] = [depotviewDF['Earn'].sum() + depotviewDF['Dividend'].sum()]
-    perfDF['CoreEarnings'] = [depotviewDF['Earn'].sum()]
-    perfDF['TotalInvest'] = [yearDF['Invest'].sum()]
-    perfDF['BTCInvest'] = depotviewDF.loc[(depotviewDF['AssetID']=='BTC')]['AssetBuyPrice']
-    perfDF['BTCEarn'] = depotviewDF.loc[(depotviewDF['AssetID']=='BTC')]['Earn']
+    perfDF = pd.DataFrame(columns=['TotalEarnings','CoreEarnings','TotalInvest',\
+        'BTCInvest','BTCEarn','TotalPerformance','AverageInvest','AveragePerformance',\
+        'DividendPerformance'])
+    if len(depotviewDF) > 0:
+        perfDF['TotalEarnings'] = [depotviewDF['Earn'].sum() + depotviewDF['Dividend'].sum()]
+        perfDF['CoreEarnings'] = [depotviewDF['Earn'].sum()]
+        perfDF['TotalInvest'] = [yearDF['Invest'].sum()]
+        perfDF['BTCInvest'] = depotviewDF.loc[(depotviewDF['AssetID']=='BTC')]['AssetBuyPrice']
+        perfDF['BTCEarn'] = depotviewDF.loc[(depotviewDF['AssetID']=='BTC')]['Earn']
 
-    perfDF['TotalPerformance'] = (perfDF['TotalEarnings'] / perfDF['TotalInvest']) * 100
-    perfDF['AverageInvest'] = (cumyearDF['Invest'].mean())
-    perfDF['AveragePerformance'] = (perfDF['TotalEarnings'] / perfDF['AverageInvest'])
-    perfDF['DividendPerformance'] = (yearDF['Dividend'].sum() / \
+        perfDF['TotalPerformance'] = (perfDF['TotalEarnings'] / perfDF['TotalInvest']) * 100
+        perfDF['AverageInvest'] = (cumyearDF['Invest'].mean())
+        perfDF['AveragePerformance'] = (perfDF['TotalEarnings'] / perfDF['AverageInvest'])
+        perfDF['DividendPerformance'] = (yearDF['Dividend'].sum() / \
                                 perfDF['TotalInvest']) * 100
 
     # Number of days of current year
@@ -718,14 +755,24 @@ if __name__ == '__main__':
     o_gold = depotviewDF[(depotviewDF['AssetID'] == 'Gold')]['Value'].sum()
     o_crypto = depotviewDF[(depotviewDF['AssetType'] == 'CRP')]['Value'].sum()
 
-    o_portfolio_b = depotviewDF['AssetBuyPrice'].sum()
-    o_etf_b = depotviewDF[(depotviewDF['AssetType'] == 'ETF')]['AssetBuyPrice'].sum()
-    o_stock_b = depotviewDF[(depotviewDF['AssetType'] == 'STK')]['AssetBuyPrice'].sum()
-    o_bonds_b = depotviewDF[(depotviewDF['AssetType'] == 'BND')]['AssetBuyPrice'].sum()
-    o_fund_b = depotviewDF[(depotviewDF['AssetType'] == 'FND')]['AssetBuyPrice'].sum()
-    o_real_b = depotviewDF[(depotviewDF['AssetType'] == 'RET')]['AssetBuyPrice'].sum()
-    o_gold_b = depotviewDF[(depotviewDF['AssetID'] == 'Gold')]['AssetBuyPrice'].sum()
-    o_crypto_b = depotviewDF[(depotviewDF['AssetType'] == 'CRP')]['AssetBuyPrice'].sum()
+    if len(depotviewDF) > 0:
+        o_portfolio_b = depotviewDF['AssetBuyPrice'].sum()
+        o_etf_b = depotviewDF[(depotviewDF['AssetType'] == 'ETF')]['AssetBuyPrice'].sum()
+        o_stock_b = depotviewDF[(depotviewDF['AssetType'] == 'STK')]['AssetBuyPrice'].sum()
+        o_bonds_b = depotviewDF[(depotviewDF['AssetType'] == 'BND')]['AssetBuyPrice'].sum()
+        o_fund_b = depotviewDF[(depotviewDF['AssetType'] == 'FND')]['AssetBuyPrice'].sum()
+        o_real_b = depotviewDF[(depotviewDF['AssetType'] == 'RET')]['AssetBuyPrice'].sum()
+        o_gold_b = depotviewDF[(depotviewDF['AssetID'] == 'Gold')]['AssetBuyPrice'].sum()
+        o_crypto_b = depotviewDF[(depotviewDF['AssetType'] == 'CRP')]['AssetBuyPrice'].sum()
+    else:
+        o_portfolio_b = 0
+        o_etf_b = 0
+        o_stock_b = 0
+        o_bonds_b = 0
+        o_fund_b = 0
+        o_real_b = 0
+        o_gold_b = 0
+        o_crypto_b = 0
 
     o_portfolio_e = depotviewDF['Earn'].sum()
     o_portfolio_e += depotviewDF['Dividend'].sum()
@@ -753,25 +800,29 @@ if __name__ == '__main__':
     num_fund = depotviewDF[(depotviewDF['AssetType'] == 'FND')]['AssetID'].nunique()
     num_crypto = depotviewDF[(depotviewDF['AssetType'] == 'CRP')]['AssetID'].nunique()
     
-    overviewS = [['Total', o_total, 100, o_total_e, o_total_e/o_total_b*100, 1]]
-    overviewS.append(['Cash', o_cash, o_cash/o_total*100, o_cash_e, o_cash_e/o_cash_b*100, 1])
-    overviewS.append(['Invested', o_portfolio, o_portfolio/o_total*100, \
-                        o_portfolio_e, o_portfolio_e/o_portfolio_b*100, 1])
-    overviewS.append(['ETF', o_etf, o_etf/o_total*100, o_etf_e, o_etf_e/o_etf_b*100, \
-                        num_etf])
-    overviewS.append(['Stock', o_stock, o_stock/o_total*100, o_stock_e, \
-                    o_stock_e/o_stock_b*100, num_stock])
-    overviewS.append(['Bonds', o_bonds, o_bonds/o_total*100, o_bonds_e, \
-                    o_bonds_e/o_bonds_b*100, num_bonds])
-    overviewS.append(['Funds', o_fund, o_fund/o_total*100, o_fund_e, \
-                    o_fund_e/o_fund_b*100, num_fund])
-    overviewS.append(['Gold', o_gold, o_gold/o_total*100, o_gold_e, \
-                    o_gold_e/o_gold_b*100, 1])
-    overviewS.append(['Crypto', o_crypto, o_crypto/o_total*100, o_crypto_e, \
-                    o_crypto_e/o_crypto_b*100, num_crypto])
-    overviewDF = pd.DataFrame(overviewS, columns=['Position', 'Amount', 'Slice', \
-                            'Earn','Return','Items'])
-    overviewDF = overviewDF.round(2)
+    if len(depotviewDF) > 0:
+        overviewS = [['Total', o_total, 100, o_total_e, o_total_e/o_total_b*100, 1]]
+        overviewS.append(['Cash', o_cash, o_cash/o_total*100, o_cash_e, o_cash_e/o_cash_b*100, 1])
+        overviewS.append(['Invested', o_portfolio, o_portfolio/o_total*100, \
+                            o_portfolio_e, o_portfolio_e/o_portfolio_b*100, 1])
+        overviewS.append(['ETF', o_etf, o_etf/o_total*100, o_etf_e, o_etf_e/o_etf_b*100, \
+                            num_etf])
+        overviewS.append(['Stock', o_stock, o_stock/o_total*100, o_stock_e, \
+                        o_stock_e/o_stock_b*100, num_stock])
+        overviewS.append(['Bonds', o_bonds, o_bonds/o_total*100, o_bonds_e, \
+                        o_bonds_e/o_bonds_b*100, num_bonds])
+        overviewS.append(['Funds', o_fund, o_fund/o_total*100, o_fund_e, \
+                        o_fund_e/o_fund_b*100, num_fund])
+        overviewS.append(['Gold', o_gold, o_gold/o_total*100, o_gold_e, \
+                        o_gold_e/o_gold_b*100, 1])
+        overviewS.append(['Crypto', o_crypto, o_crypto/o_total*100, o_crypto_e, \
+                        o_crypto_e/o_crypto_b*100, num_crypto])
+        overviewDF = pd.DataFrame(overviewS, columns=['Position', 'Amount', 'Slice', \
+                                'Earn','Return','Items'])
+        overviewDF = overviewDF.round(2)
+    else:
+        overviewDF = pd.DataFrame([['Total',0,0,0,0,0]], columns=['Position', 'Amount', 'Slice', \
+                                'Earn','Return','Items'])
     overviewDF.to_sql('qOverview', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
 
     # Important products dataframe: gold, USD, BTC
@@ -779,8 +830,11 @@ if __name__ == '__main__':
     valuesDF = pd.DataFrame()
     prod = ['USD','Gold','BTC']
     for p in prod:
-        valuesDF[p] = [(watchlistDF[['AssetID','LastPrice']]\
-            [(watchlistDF['AssetID']==p)]['LastPrice']).iloc[0]]
+        if len(watchlistDF) > 0:
+            valuesDF[p] = [(watchlistDF[['AssetID','LastPrice']]\
+                [(watchlistDF['AssetID']==p)]['LastPrice']).iloc[0]]
+        else:
+            valuesDF[p] = [0]
     valuesDF.to_sql('qUSDValues', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
 
     # Closing the database
