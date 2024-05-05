@@ -1,0 +1,15 @@
+psutil
+numpy
+bcrypt
+pandas<2.0
+pyarrow
+sqlalchemy<2.0
+sqlalchemy.orm
+matplotlib
+flask
+flask-login
+flask-sqlalchemy
+openpyxl
+gunicorn
+yahoofinancials
+yfinance

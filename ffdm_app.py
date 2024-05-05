@@ -36,6 +36,21 @@ def get_db_data(sql_string, u_id):
     except:
         return None
 
+def check_db(dbt, u_id):    
+    appdir = os.path.abspath(os.path.dirname(__file__))
+    sql_uri = 'sqlite:///' + os.path.join(appdir, 'users/' + u_id + '/ffdm.sqlite')
+    engine = sa.create_engine(sql_uri, echo=False) 
+    inspector = sa.inspect(engine)
+    tables_dbo = inspector.get_table_names()
+    if dbt in tables_dbo:
+        conn = engine.connect() 
+        query = 'SELECT count(*) FROM ' + dbt + ';'
+        exe = conn.execute(sa.text(query)) 
+        count = exe.scalar()
+        return count
+    else:
+        return 0
+
 def get_myDir(user_id):
     baseDir = os.path.abspath(os.path.dirname(__file__)) + '/'
     return baseDir + 'users/' + user_id + '/'
@@ -289,13 +304,15 @@ def manage_accounts():
 
     try:
         myDir = baseDir + 'users/' + current_user.username + '/'
-        accountRegDF = pd.read_csv(myDir+"initdata/AccountRegistry.csv", \
-                            sep=';')
+        fileName = myDir+"initdata/AccountRegistry.csv"
+        if os.path.isfile(fileName) and os.path.getsize(fileName) > 0:
+            accountRegDF = pd.read_csv(fileName, sep=';')
+        else:
+            accountRegDF = pd.DataFrame(columns=["Type","Name","Bank","AccountNr","Currency"])
         accountRegDF.loc[len(accountRegDF)] = pd.Series(dtype='float64')
         accountRegDF = accountRegDF.fillna('')
         accountRegDF = accountRegDF.sort_values(by=['Name'])
-        atypesDF = pd.read_csv(myDir+"initdata/AccountTypes.csv", \
-                            sep=';')
+        atypesDF = pd.read_csv(myDir+"initdata/AccountTypes.csv", sep=';')
     except Exception as e:
         print(e)
         return redirect(url_for('error'))
@@ -333,13 +350,17 @@ def assets():
         return render_template('index.html', serverName=serverName)
     try:
         myDir = baseDir + 'users/' + current_user.username + '/'
-        assetsDF = pd.read_csv(myDir+"initdata/AssetReferences.csv", \
-                            sep=';')
+        fileName = myDir+"initdata/AssetReferences.csv"
+        if os.path.isfile(fileName) and os.path.getsize(fileName) > 0:
+            assetsDF = pd.read_csv(fileName, sep=';')
+        else:
+            assetsDF = pd.DataFrame(columns=["AssetType","AssetID","AssetName",\
+                "Ticker","NetRef1","NetRef2"])
         assetsDF = assetsDF.sort_values(by=['AssetType','AssetName'], ascending=True)
         assetsDF.loc[len(assetsDF)] = pd.Series(dtype='float64')
         assetsDF = assetsDF.fillna('')
     except:
-        return redirect(url_for('error'))
+        return redirect(url_for('nodata'))
     
     if request.method == 'POST':
         requestDF = pd.DataFrame()
@@ -386,16 +407,19 @@ def edit_accounts():
         depot_list = ['Depot', 'Wallet']
         accountRegDF = accountRegDF[~accountRegDF['Type'].isin(depot_list)]
         accountRegDF = accountRegDF.sort_values(by=['Name'])
-    except Exception as e:
-        print(e)
-        return redirect(url_for('error'))
+    except:
+        return redirect(url_for('nodata'))
 
     try:
         myDir = baseDir + 'users/' + current_user.username + '/'
-        accountsDF = pd.read_csv(myDir+"initdata/Accounts.csv", \
-                            sep=';')
-        accountsDF['EntryDate'] = pd.to_datetime(accountsDF['EntryDate'], \
-            format="%d.%m.%y").dt.date
+        fileName = myDir+"initdata/Accounts.csv"
+        if os.path.isfile(fileName) and os.path.getsize(fileName) > 0:
+            accountsDF = pd.read_csv(fileName, sep=';')
+            accountsDF['EntryDate'] = pd.to_datetime(accountsDF['EntryDate'], \
+                format="%d.%m.%y").dt.date
+        else:
+            accountsDF = pd.DataFrame(columns=["Bank","AccountNr","EntryDate",\
+                "Reference","Amount","Currency"])
         try:
             accountsDF['Amount'] = accountsDF['Amount']\
                     .str.replace(",", ".").astype(float)
@@ -453,23 +477,39 @@ def edit_depots():
     # Read the account registry and assets
     try:
         myDir = baseDir + 'users/' + current_user.username + '/'
-        accountRegDF = pd.read_csv(myDir+"initdata/AccountRegistry.csv", \
-                            sep=';')
+        fileName = myDir+"initdata/AccountRegistry.csv"
+        if os.path.isfile(fileName) and os.path.getsize(fileName) > 0:
+            accountRegDF = pd.read_csv(fileName, sep=';')
+        else:
+            accountRegDF = pd.DataFrame(columns=["Type","Name","Bank","AccountNr","Currency"])
+
         depot_list = ['Depot', 'Wallet']
         accountRegDF = accountRegDF[accountRegDF['Type'].isin(depot_list)]
         accountRegDF = accountRegDF.sort_values(by=['Name'])
-        assetsDF = pd.read_csv(myDir+"initdata/AssetReferences.csv", \
-                            sep=';')
+
+        myDir = baseDir + 'users/' + current_user.username + '/'
+        fileName = myDir+"initdata/AssetReferences.csv"
+        if os.path.isfile(fileName) and os.path.getsize(fileName) > 0:
+            assetsDF = pd.read_csv(fileName, sep=';')
+        else:
+            assetsDF = pd.DataFrame(columns=["AssetType","AssetID","AssetName",\
+                "Ticker","NetRef1","NetRef2"])
+            assetsDF.loc[len(assetsDF)] = pd.Series(dtype='float64')
+            assetsDF = assetsDF.fillna('')
+            
         assetsDF = assetsDF.sort_values(by=['AssetType', 'AssetName'])
-    except Exception as e:
-        print(e)
-        return redirect(url_for('error'))
+    except:
+        return redirect(url_for('nodata'))
 
     try:
         myDir = baseDir + 'users/' + current_user.username + '/'
-        depotsDF = pd.read_csv(myDir+"initdata/Depots.csv", \
-                            sep=';')
-        
+        fileName = myDir+"initdata/Depots.csv"
+        if os.path.isfile(fileName) and os.path.getsize(fileName) > 0:
+            depotsDF = pd.read_csv(fileName, sep=';')
+        else:
+            depotsDF = pd.DataFrame(columns=["Bank","AccountNr","AssetID","BankRef",\
+                "AssetAmount","AssetBuyPrice","Currency"])
+
         # Sort the depot entries and ignore case; lambda iterates lower case
         # over all entries in the dataframe
         depotsDF = depotsDF.sort_values(by=['Bank', 'AccountNr', 'BankRef'],
@@ -539,17 +579,32 @@ def vlplans():
         depot_list = ['Depot', 'Wallet']
         accountRegDF = accountRegDF[accountRegDF['Type'].isin(depot_list)]
         accountRegDF = accountRegDF.sort_values(by=['Name'])
-        assetsDF = pd.read_csv(myDir+"initdata/AssetReferences.csv", \
-                            sep=';')
+
+        myDir = baseDir + 'users/' + current_user.username + '/'
+        fileName = myDir+"initdata/AssetReferences.csv"
+        if os.path.isfile(fileName) and os.path.getsize(fileName) > 0:
+            assetsDF = pd.read_csv(fileName, sep=';')
+        else:
+            assetsDF = pd.DataFrame(columns=["AssetType","AssetID","AssetName",\
+                "Ticker","NetRef1","NetRef2"])
+            assetsDF.loc[len(assetsDF)] = pd.Series(dtype='float64')
+            assetsDF = assetsDF.fillna('')
+            
         assetsDF = assetsDF.sort_values(by=['AssetType', 'AssetName'])
+
     except Exception as e:
         print(e)
-        return redirect(url_for('error'))
+        return redirect(url_for('nodata'))
                 
     try:
         myDir = baseDir + 'users/' + current_user.username + '/'
-        vlplansDF = pd.read_csv(myDir+"initdata/VLplans.csv", \
-                            sep=';')
+        fileName = myDir+"initdata/VLplans.csv"
+        if os.path.isfile(fileName) and os.path.getsize(fileName) > 0:
+            vlplansDF = pd.read_csv(fileName, sep=';')
+        else:
+            vlplansDF = pd.DataFrame(columns=["PlanID","Bank","AccountNr","AssetID",\
+                "StartDate","EndDate","Amount","Pieces","Currency"])
+
         try:
             vlplansDF['Amount'] = vlplansDF['Amount']\
                     .str.replace(",", ".").astype(float)
@@ -711,15 +766,24 @@ def targets():
         return render_template('index.html', serverName=serverName)
     try:
         myDir = baseDir + 'users/' + current_user.username + '/'
-        assetsDF = pd.read_csv(myDir+"initdata/TargetPrices.csv", \
-                            sep=';')
+        fileName = myDir+"initdata/TargetPrices.csv"
+        if os.path.isfile(fileName) and os.path.getsize(fileName) > 0:
+            assetsDF = pd.read_csv(fileName, sep=';')
+        else:
+            assetsDF = pd.DataFrame(columns=["AssetID","TargetPriceLow",\
+                "TargetPriceHigh","Currency"])
+            assetsDF.loc[len(assetsDF)] = pd.Series(dtype='float64')
+            assetsDF = assetsDF.fillna('')
+
         asset_cols = list(assetsDF.columns)
         namesDF = pd.read_csv(myDir+"initdata/AssetReferences.csv", \
                             sep=';')
-        prices = get_db_data('SELECT qWatchlist.AssetID, qWatchlist.AssetName, \
+        if check_db("qWatchlist", current_user.username) > 0:
+            prices = get_db_data('SELECT qWatchlist.AssetID, qWatchlist.AssetName, \
                             qWatchlist.LastPrice FROM qWatchList', current_user.username)
-        pricesDF = pd.DataFrame(prices, columns=['AssetID', 'AssetName', 'AssetPrice'])
-
+            pricesDF = pd.DataFrame(prices, columns=['AssetID', 'AssetName', 'AssetPrice'])
+        else:
+            pricesDF = pd.DataFrame(columns=['AssetID', 'AssetName', 'AssetPrice'])
         # Filter all non active assets
         assetsDF = assetsDF[assetsDF['AssetID'].isin(namesDF['AssetID'])]
 
@@ -736,7 +800,7 @@ def targets():
         assetsDF = assetsDF.sort_values(by=['AssetName'], ascending=True)
 
     except:
-        return redirect(url_for('error'))
+        return redirect(url_for('nodata'))
     
     if request.method == 'POST':
 
@@ -771,12 +835,15 @@ def split():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
     try:
-        assets = get_db_data('SELECT AssetID, AssetName \
-                            FROM qWatchList ORDER BY AssetID \
+        if check_db("qWatchlist", current_user.username) > 0:
+            assets = get_db_data('SELECT AssetID, AssetName \
+                            FROM qWatchlist ORDER BY AssetID \
                             COLLATE NOCASE ASC;', current_user.username)
+        else:
+            return redirect(url_for('nodata')) 
     except Exception as e:
         print(e)
-        return redirect(url_for('error'))
+        return redirect(url_for('nodata'))
 
     if request.method == 'POST':
 
@@ -817,19 +884,53 @@ def split():
 def watchlist():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
-    try:
-        watchlist = get_db_data('SELECT * FROM qWatchlist WHERE AssetID NOT IN \
-            (SELECT AssetID FROM qDepotOverview) ORDER BY Delta DESC', current_user.username)
-        investlist = get_db_data('SELECT * FROM qWatchlist WHERE AssetID IN \
+    if check_db("qWatchlist", current_user.username) > 0:
+        try:
+            watchlist = get_db_data('SELECT * FROM qWatchlist WHERE AssetID NOT IN \
                 (SELECT AssetID FROM qDepotOverview) ORDER BY Delta DESC', current_user.username)
-    except:
-        return redirect(url_for('error'))
+            investlist = get_db_data('SELECT * FROM qWatchlist WHERE AssetID IN \
+                    (SELECT AssetID FROM qDepotOverview) ORDER BY Delta DESC', current_user.username)
+        except:
+            return redirect(url_for('error'))
+    else:
+        return redirect(url_for('nodata'))
     return render_template('watchlist.html', watchlist=watchlist, \
                             investlist=investlist, serverName=serverName)
 
 @app.route('/') 
 def index():
+    if current_user.is_authenticated == False:
+        return render_template('index.html', serverName=serverName)
+    else:
+        try:
+            filesToCheck = ["AccountRegistry.csv", "Accounts.csv", "AssetReferences.csv", \
+                "Depots.csv", "VLplans.csv"]
+            failedText = ""
+            for cFile in filesToCheck:
+                myDir = baseDir + 'users/' + current_user.username + '/'
+                fileName = myDir+"initdata/" + cFile
+                if os.path.isfile(fileName) and os.path.getsize(fileName) == 0:
+                    if cFile == "AccountRegistry.csv":
+                        failedText = failedText + "  No accounts or depots have been defined!\n"
+                    if cFile == "Accounts.csv":
+                        failedText = failedText + "  No account data has been entered!\n"
+                    if cFile == "AssetReferences.csv":
+                        failedText = failedText + "  No financial assets have been defined!\n"
+                    if cFile == "Depots.csv":
+                        failedText = failedText + "  No depot data has been entered!\n"
+                    if cFile == "VLplans.csv":
+                        failedText = failedText + "  No savings plans have been defined!\n"
+            print(failedText)
+            return render_template('index.html', failedText=failedText, serverName=serverName)
+        except:
+            return render_template('index.html', serverName=serverName)        
     return render_template('index.html', serverName=serverName)
+
+@app.route('/nodata') 
+def nodata():
+    #if current_user.is_authenticated == True:
+    fi.check_files(baseDir + 'users/' + current_user.username + '/')
+    return render_template('nodata.html')
 
 @app.route('/error') 
 def error():
@@ -842,39 +943,43 @@ def finance():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
 
-    # Read the account registry and assets
-    try:
-        myDir = baseDir + 'users/' + current_user.username + '/'
-        accountRegDF = pd.read_csv(myDir+"initdata/AccountRegistry.csv", \
-                            sep=';')
-        accountRegDF['AccountNr'] = accountRegDF['AccountNr'].map(fl.get_account)
-    except:
-        return redirect(url_for('error'))
+    if check_db("qOverview", current_user.username) > 0:
 
-    try:
-        overview = get_db_data('SELECT * FROM qOverview ORDER BY Slice DESC', current_user.username)
-        monthly = get_db_data('SELECT * FROM qMonthly ORDER BY Year DESC', current_user.username)
-        yearly = get_db_data('SELECT * FROM qYearly ORDER BY Year DESC', current_user.username)
-        cumyear = get_db_data('SELECT * FROM qCumulative ORDER BY Year DESC', current_user.username)
-        spend = get_db_data('SELECT * FROM qSpending ORDER BY Year DESC', current_user.username)
-        quarterly = get_db_data('SELECT * FROM qQuarterly ORDER BY Quarter DESC', current_user.username)
-        perf = get_db_data('SELECT * FROM qPerformance', current_user.username)
-        usd = get_db_data('SELECT * FROM qUSDValues', current_user.username)
-        balance = get_db_data('SELECT * FROM qAccountBalances WHERE Amount > 0 '+ \
-                            ' ORDER BY Bank', current_user.username)
-        depot = get_db_data('SELECT * FROM qDepotOverview '+ \
-                            ' ORDER BY Value DESC', current_user.username)
+        # Read the account registry and assets
+        try:
+            myDir = baseDir + 'users/' + current_user.username + '/'
+            accountRegDF = pd.read_csv(myDir+"initdata/AccountRegistry.csv", \
+                                sep=';')
+            accountRegDF['AccountNr'] = accountRegDF['AccountNr'].map(fl.get_account)
+        except:
+            return redirect(url_for('error'))
 
-        balanceDF = pd.DataFrame(balance, columns =['Bank', 'AccountNr', 'Balance']) 
-        balanceDF = balanceDF.merge(accountRegDF[["AccountNr", "Name"]], \
-            on=["AccountNr"], how="left")
+        try:
+            overview = get_db_data('SELECT * FROM qOverview ORDER BY Slice DESC', current_user.username)
+            monthly = get_db_data('SELECT * FROM qMonthly ORDER BY Year DESC', current_user.username)
+            yearly = get_db_data('SELECT * FROM qYearly ORDER BY Year DESC', current_user.username)
+            cumyear = get_db_data('SELECT * FROM qCumulative ORDER BY Year DESC', current_user.username)
+            spend = get_db_data('SELECT * FROM qSpending ORDER BY Year DESC', current_user.username)
+            quarterly = get_db_data('SELECT * FROM qQuarterly ORDER BY Quarter DESC', current_user.username)
+            perf = get_db_data('SELECT * FROM qPerformance', current_user.username)
+            usd = get_db_data('SELECT * FROM qUSDValues', current_user.username)
+            balance = get_db_data('SELECT * FROM qAccountBalances WHERE Amount > 0 '+ \
+                                ' ORDER BY Bank', current_user.username)
+            depot = get_db_data('SELECT * FROM qDepotOverview '+ \
+                                ' ORDER BY Value DESC', current_user.username)
 
-        return render_template('finance.html', overview=overview, monthly=monthly, \
-                            perf=perf, usd=usd, balance=balanceDF, depot=depot, \
-                            yearly=yearly, cumyear=cumyear, spend=spend, \
-                            quarterly=quarterly, serverName=serverName)
-    except:
-        return redirect(url_for('error'))
+            balanceDF = pd.DataFrame(balance, columns =['Bank', 'AccountNr', 'Balance']) 
+            balanceDF = balanceDF.merge(accountRegDF[["AccountNr", "Name"]], \
+                on=["AccountNr"], how="left")
+
+            return render_template('finance.html', overview=overview, monthly=monthly, \
+                                perf=perf, usd=usd, balance=balanceDF, depot=depot, \
+                                yearly=yearly, cumyear=cumyear, spend=spend, \
+                                quarterly=quarterly, serverName=serverName)
+        except:
+            return redirect(url_for('error'))
+    else:
+        return redirect(url_for('nodata'))
 
 @app.context_processor
 def my_utility_processor():

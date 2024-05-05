@@ -460,25 +460,18 @@ if __name__ == '__main__':
     depot_entries = []
     for f in files_list:
         if f == myDir + "initdata/AccountRegistry.csv" or \
-        f == myDir + "initdata/AssetReferences.csv" or \
         f == myDir + "initdata/AccountTypes.csv":
             continue
         print("File: " + f)
         account_entries, depot_entries = fl.readStatement(f)
         if (len(account_entries) < 2 and len(depot_entries) < 2):
             tableName = (os.path.splitext(os.path.split(f)[-1])[0])
-            if os.path.isfile(tableName) and os.path.getsize(tableName) > 0:
-                tableData = pd.read_csv(f, header=0, sep=";")
-            else:
-                if tableName == "AssetPrices":
-                    tableData = pd.DataFrame([["USD", datetime.datetime(2020, 1, 1),\
-                        1, DefaultCurrency]], columns=["AssetID","PriceTime",\
-                        "AssetPrice","Currency"])
-                if tableName == "Depots":
-                    tableData = pd.DataFrame(columns=["Bank","AccountNr","AssetID",\
-                         "BankRef","AssetAmount","AssetBuyPrice","Currency"])
+            tableData = pd.read_csv(f, header=0, sep=";")
+            if tableName == "Depots":
+                tableData = pd.DataFrame(columns=["Bank","AccountNr","AssetID",\
+                        "BankRef","AssetAmount","AssetBuyPrice","Currency"])
 
-            if tableName == "AssetPrices" and len(tableData) > 0:
+            if tableName == "AssetPrices":
                 assetprices_tempDF = pd.DataFrame()
                 for a in tableData.AssetID.unique():
                     pricetime = (assetpriceDF[['PriceTime','AssetID']]\
@@ -495,6 +488,11 @@ if __name__ == '__main__':
                 assetprices_tempDF['PriceTime'] = \
                     pd.to_datetime(assetprices_tempDF['PriceTime'])
                 tableData = assetprices_tempDF
+
+            if tableName == "AssetPrices" and len(tableData) < 1:
+                tableData = pd.DataFrame([["USD", datetime.datetime(2020, 1, 1),\
+                    1, DefaultCurrency]], columns=["AssetID","PriceTime",\
+                    "AssetPrice","Currency"])
 
             tableData.to_sql(tableName, con=connection, if_exists='append', index=False, chunksize=__main__.cz)
         else:
@@ -610,7 +608,7 @@ if __name__ == '__main__':
     assetpriceDF = pd.DataFrame(connection.execute(sa.text("SELECT AssetID, PriceTime,\
                 AssetPrice, Currency FROM AssetPrices")).fetchall(), \
                 columns=["AssetID","PriceTime","AssetPrice","Currency"])
-
+  
     # Generate target prices dataframe
     targetpriceDF = pd.DataFrame(connection.execute(sa.text("SELECT AssetID,TargetPriceLow,\
                 TargetPriceHigh,Currency FROM TargetPrices")).fetchall(), \
@@ -680,13 +678,13 @@ if __name__ == '__main__':
 
     # Generate compound dividend dataframe
     print('Generate: Dividends')
-    dividendDF = pd.DataFrame(columns=['AssetID','Dividend'])
+    dividendDF = pd.DataFrame()
     for a in assetrefDF['AssetID']:
         dividend = pd.Series([a, filterDF("(?:"+filterList[1][1]+").*"+a).sum()])
         dividendDF = pd.concat([dividendDF, dividend.to_frame().T], \
                     axis = 0, ignore_index=True)
     dividendDF.columns = ['AssetID','Dividend']
-
+    
     # Generate depot overview dataframe
     print('Generate: Depot Overview')
     depotviewDF = pd.DataFrame(columns=['AssetID','AssetAmount','AssetType','AssetName',\

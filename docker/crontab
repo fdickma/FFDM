@@ -1,0 +1,6 @@
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+*/mfreq * * * * ffdm_user cd /ffdm && python3 ffdm.py <put your username here>
+wwmin 5,9,12,17,20 * * 1-5 ffdm_user cd /ffdm && python3 ffdm.py -w <put your username here>
+wemin 6,12,18 * * 6-7 ffdm_user cd /ffdm && python3 ffdm.py -w <put your username here>

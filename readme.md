@@ -1,11 +1,13 @@
 ### **FFDM - Free Financial Data Management**
 ![alt text](img/pbh.png)
 
-FFDM is a web based financial data management software which display the finance data from data files by DKB and Sparkasse, including DKB depot data. In addition a watchlist for stock, ETF, funds and gold can be managed.
+FFDM is a web based portfolio tracker which aggregates the finance data from data files by DKB and Sparkasse, including DKB depot data. In addition, a watchlist for stock, ETF, funds and gold can be managed.
 
 Most parameters can be changed via the web interface. Manual accounts and depots can be directly edited in the web interface or in the corresponding CSV files. CSV files can be uploaded via the web interface. This includes replacing files with different names (a necessity for files from Sparkasse).
 
 Current prices of financial products are retrieved by scraping web pages. The main sources have changed over time because some sources block these requests. Long term price data is downloaded via Yahoo finance.
+
+The logo resembles an Atari Portfolio and a bar chart to represent a portfolio tracker.
 
 #### Requirements
 
@@ -37,6 +39,18 @@ usage: python ffdm.py [-t] [-w] [-u] [-f] [-a]
 #### Provided example data
 
 The data files provided contain only generated information not related to any person or organization. However, the example data supports a test of all functions.
+
+Test user 1:
+username: test
+password: test
+
+A second user is provided to test functions without existing data.
+
+Test user 2:
+username: empty
+password: empty
+
+In the docker folder is a Dockerfile and scripts to run FFDM within a container. However, some variables need to be defined first. These are emphasized.
 
 ### Screenshots
 

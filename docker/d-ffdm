@@ -1,0 +1,52 @@
+#!/bin/bash
+BASEDIR=<your directory with the general FFDM files>
+USERDIR=<your directory with the FFDM user profile files>
+dname=ffdm_prod
+
+start()
+{
+    port=8811
+    docker run -d -p $port:$port --name $dname \
+	--log-driver json-file \
+	--log-opt max-size=10m \
+	--log-opt max-file=3 \
+	--restart always \
+	-e port=$port \
+	-e certfile=/ssl/galileo.fritz.box.crt \
+	-e keyfile=/ssl/galileo.fritz.box.key \
+	-e MFREQ=5 \
+	-e WWMIN=7 \
+	-e WEMIN=7 \
+	-v $BASEDIR/_ffdm/ffdm.key:/ffdm/ffdm.key \
+	-v $BASEDIR/_ffdm/ffdm.ini:/ffdm/ffdm.ini \
+	-v $BASEDIR/_ffdm/userdb.sqlite:/ffdm/userdb.sqlite \
+	-v $BASEDIR/_ffdm/ssl:/ssl:ro \
+	-v $BASEDIR/_ffdm/assetdata:/ffdm/assetdata \
+	-v $BASEDIR/_ffdm/of_ticker:/ffdm/of_ticker \
+	-v $USERDIR/:/ffdm/users \
+	-v $BASEDIR/SPK:/ffdm/users/<your FFDM user name>/SPK:ro \
+	-v $BASEDIR/DKB:/ffdm/users/<your FFDM user name>/DKB:ro \
+	ffdm
+}
+
+stop()
+{
+    docker stop $dname
+    docker rm $dname
+}
+
+case $1 in
+    create)
+        start
+        ;;
+    remove)
+        stop
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "create | remove | restart"
+        ;;
+esac

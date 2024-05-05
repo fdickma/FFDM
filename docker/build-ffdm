@@ -1,0 +1,4 @@
+#!/bin/bash
+cd <your dir with the FFDM Dockerfile>
+docker build --build-arg DOCKER_USER=<put your username here> --build-arg DOCKER_USER_ID=<put your id here, e.g. 1001> -t ffdm .
+d-ffdm restart
