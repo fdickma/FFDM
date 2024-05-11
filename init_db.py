@@ -264,7 +264,7 @@ def build_assetprices(DefaultCurrency, user_aIDs):
     except:
         histpDF = pd.DataFrame(columns=["Date","Open",\
                 "High","Low","Close","Adj Close","Volume","AssetID","Currency"])
-
+        
     if DefaultCurrency != "USD":
         defDF = histpDF[(histpDF["AssetID"] == DefaultCurrency)][["Date","AssetID",\
                 "Close"]]
@@ -427,14 +427,17 @@ if __name__ == '__main__':
     connection = engine.connect()
 
     print('Import: Historical Asset Prices')
-    assetRefsDF = fl.get_assets(user_id)    
+    assetRefsDF = fl.get_assets(user_id)
     history_list = list(glob.glob(baseDir+"assetdata/*.[cC][sS][vV]"))
     user_aIDs = list()
     for f in history_list:
         # Check if file contains data for a current investment of the user
         check_aID = check_fileName_aID(assetRefsDF, f)
-        if check_aID != False:
-            user_aIDs.append(check_aID)
+        currencies = ['EUR','CHF','JPY','CNY','DKK','GBP','HKD']
+        check_CUR = False
+        if os.path.basename(f)[:3] in currencies: check_CUR = True  
+        if (check_aID != False) or (check_CUR == True):
+            if check_aID != False: user_aIDs.append(check_aID)
             print("File: "+f)
             if "_info." in f:
                 td = pd.read_csv(f, header=None, skiprows=1, names=["Attribute", "Value"])
