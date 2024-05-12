@@ -27,30 +27,11 @@ def check_url(url):
         return False
     return True
 
-# Links for finanzen.net
-def get_Fnet_data(a_type, a_id, refFnet):
+# Alternative data source
+def get_Alt_data(a_type, a_id, refFnet):
     link = ""
     if a_type == "STK":
-        link = "https://www.finanzen.net/aktien/" + refFnet + "-Aktie" \
-                +" | grep -m 1 '[0-9] EUR' | grep -o [0-9.,]*"
-    if a_type == "ETF":
-        link = "https://www.finanzen.net/etf/" + refFnet + "-" + a_id \
-                +" | grep -m 1 '[0-9] EUR' | grep -o [0-9.,]*"
-    if a_type == "FND":
-        link = "https://www.finanzen.net/fonds/" + refFnet + "-" + a_id \
-                +" | grep -m 1 '[0-9] EUR' | grep -o [0-9.,]*"
-    if a_type == "COM" and a_id == "Gold":
-        link = "https://www.finanzen.net/rohstoffe/goldpreis" \
-                +" | grep -E -m1 '([[:digit:]]{0,3}\.)?([[:digit:]]{0,3}\.)?"\
-                +"[[:digit:]]{1,3},[[:digit:]]{2}EUR' | " \
-                +"grep -o [0-9.,]*"
-    if a_type == "CUR" and a_id == "USD":
-        link = "https://www.finanzen.net/devisen/realtimekurs/dollarkurs" \
-                +" | grep -m 1 '^[0-3].*USD' | cut -c 1-6"
-    if a_type == "CUR" and a_id == "BTC":
-        link = "https://www.finanzen.net/devisen/realtimekurs/" \
-                +"bitcoin-euro-kurs | grep -m 2 '[0-9].*EUR' | " \
-                +"grep -o ^[0-9.,]*" 
+        link = refFnet + " | grep Kurs | grep -o '[0-9.,]* €'"
     if link != "":
         return link
     else:
@@ -97,24 +78,25 @@ def get_Ref0_data(a_type, a_id, refFnet):
         return 0
 
 # Links for ard-Boerse
-def get_Ref1_data(a_type, a_id, refARD):
+def get_ARD_data(a_type, a_id):
     link = "https://www.tagesschau.de/wirtschaft/boersenkurse/"\
             +"suche/?suchbegriff="
     extract = ""
     if a_type == "COM":
-        extract = " | grep -E -m1 '([[:digit:]]{0,3}\.)?([[:digit:]]"\
-        +"{0,3}\.)?[[:digit:]]{1,3},[[:digit:]]{2}' | grep -o [0-9.,]*$"
+        extract = r" | grep -E -m1 '([[:digit:]]{0,3}\.)?([[:digit:]]"\
+        +r"{0,3}\.)?[[:digit:]]{1,3},[[:digit:]]{2}' | grep -o [0-9.,]*$"
     if a_type == "CUR" and a_id == "USD":
-        extract = " | grep -E -m1 '([[:digit:]]{0,3}\.)?([[:digit:]]"\
-        +"{0,3}\.)?[[:digit:]]{1,3},[[:digit:]]{4}' | grep -o [0-9.,]*$"
+        link = "https://www.tagesschau.de/wirtschaft/boersenkurse/eu0009652759-25108390/"
+        extract = r" | grep '[$]' | grep Kurs | grep -o [0-9,.]*"
+        return link + extract
     if a_type == "CRP" and len(a_id) < 5:
-        extract = " | grep -E -m1 '([[:digit:]]{0,3}\.)?([[:digit:]]"\
-        +"{0,3}\.)?[[:digit:]]{1,3},[[:digit:]]{2}' | grep -o [0-9.,]*$"
+        extract = r" | grep -E -m1 '([[:digit:]]{0,3}\.)?([[:digit:]]"\
+        +r"{0,3}\.)?[[:digit:]]{1,3},[[:digit:]]{2}' | grep -o [0-9.,]*$"
     if a_type == "FND" or a_type == "ETF" or a_type == "STK":
-        extract = " | grep -E -m1 '([[:digit:]]{0,3}\.)?([[:digit:]]"\
-        +"{0,3}\.)?[[:digit:]]{1,3},[[:digit:]]{2}' | grep -o [0-9.,]*$"
+        extract = r" | grep -E -m1 '([[:digit:]]{0,3}\.)?([[:digit:]]"\
+        +r"{0,3}\.)?[[:digit:]]{1,3},[[:digit:]]{2}' | grep -o [0-9.,]*$"
     if extract != "":
-        return link + refARD + extract
+        return link + a_id + extract
     else:
         return 0
 
@@ -147,10 +129,13 @@ def retrieveWebData(link):
 def assetDataScraping(asset, old_price):
     return_price=-1
     a_type = asset['AssetType']
-    a_id = asset['AssetID']
+    a_id = asset['AssetID'] 
     refNet0 = asset['NetRef1']
     refNet1 = asset['NetRef2']
-    if (refAvailable[2] == True):
+    if return_price <= 0 and a_id[:2] == 'CH':
+        print("Checking alternative first")
+        return_price = retrieveWebData(get_Alt_data(a_type, a_id, refNet0))
+    if (refAvailable[2] == True) and (return_price <= 0):
         return_price = retrieveWebData(get_Ref2_data(a_type, a_id, refNet1))
     print(a_id, return_price, ' -- Old:', old_price)
     if (old_price > 0):
@@ -160,7 +145,7 @@ def assetDataScraping(asset, old_price):
     if return_price <= 0:
         print("first service failed...")
         if (refAvailable[1] == True):
-            return_price = retrieveWebData(get_Ref1_data(a_type, a_id, refNet1))
+            return_price = retrieveWebData(get_ARD_data(a_type, a_id))
     if (old_price > 0):
         if (abs(old_price-return_price)/old_price > 0.5) and (return_price > 0):
             print("Major difference to old price")

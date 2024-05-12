@@ -2,6 +2,7 @@
 .idea/
 logs
 *.log
+*.key
 tagbotft*.ini
 *.bak
 result_data*.*
