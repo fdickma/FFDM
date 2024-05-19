@@ -56,10 +56,17 @@
 }
 
 table, th, td {
-  font-family:Arial, sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
   border: none;
   padding: 4px;
   font-weight:bold;
+}
+
+@-moz-document url-prefix() {
+  table, td {
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: 500;
+  }  
 }
 
 .input{
@@ -111,7 +118,7 @@ table, th, td {
 }
 
 table {
-  font-family:Arial, sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
   margin: 6px 6px;
   -moz-border-radius:4px;
   border-radius:4px;
@@ -125,6 +132,7 @@ table {
 }
 
 .watchtable {
+  font-family: Arial, Helvetica, sans-serif;
   min-width:180px;
 }
 
@@ -232,6 +240,12 @@ ul li {
     vertical-align:middle;
 }
 
+@-moz-document url-prefix() {
+  .button {
+    font-weight: 500;
+  }  
+}
+
 .upd_button{
     color:white;
     background-color: #003366;
@@ -244,6 +258,12 @@ ul li {
     font-weight:bold;
     border: none;
     vertical-align:middle;
+}
+
+@-moz-document url-prefix() {
+  .upd_button {
+    font-weight: 500;
+  }  
 }
 
 .upd_button:hover{
@@ -266,6 +286,12 @@ ul li {
     margin:0 auto;
 }
 
+@-moz-document url-prefix() {
+  .add_button {
+    font-weight: 500;
+  }  
+}
+
 .add_button:hover{
     background-color: #019804;
     color:white;
@@ -284,6 +310,12 @@ ul li {
     font-weight:bold;
     border: none;
     margin:0 auto;
+}
+
+@-moz-document url-prefix() {
+  .del_button {
+    font-weight: 500;
+  }  
 }
 
 .del_button:hover{
@@ -305,11 +337,16 @@ ul li {
     vertical-align:middle;
 }
 
+@-moz-document url-prefix() {
+  .delacc_button {
+    font-weight: 500;
+  }  
+}
+
 .delacc_button:hover{
     background-color: #b90303;
     color:white;
 }
-
 
 .logo_button{
   width: 32px;
@@ -329,6 +366,14 @@ ul li {
   vertical-align:middle;
   padding: 0px 0px 0px 0px;
   border:none;
+}
+
+@-moz-document url-prefix() {
+  .logo{
+    width: 2.2vw;
+    height:2.2vw;
+    margin:-16px -2px -14px -4px;
+  }  
 }
 
 .mainlogo{
@@ -476,7 +521,7 @@ div {
 }
 
 body {
-  font-family:Arial;
+  font-family:Arial, Helvetica, sans-serif;
   font-size: 16px;
   font-weight:bold;
   background-color:#a4adae;
@@ -484,6 +529,14 @@ body {
   margin: 0px;
   border: none;
   width:100%;
+}
+
+@-moz-document url-prefix() {
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: 600;
+    font-size: 1.1vw;
+  }  
 }
 
 @media screen and (max-width: 1024px) {

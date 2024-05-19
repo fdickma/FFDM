@@ -647,10 +647,11 @@ def isin_data(isin, last_update, u_id):
         lastfile = time.strftime("%Y-%m-%d",time.localtime(filetime))
         if lastfile >= day_date:
             return
+    # Downloading the data from Yahoo with a timeout of 10 seconds.
     dload = yf.download(ticker, 
             start=start_d, 
             end=end_d, 
-            progress=True)
+            progress=True, timeout=10)
     dload['AssetID'] = isin
     dload['Currency'] = currency
     li = []
