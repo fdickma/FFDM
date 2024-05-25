@@ -166,68 +166,68 @@ def readStatement(File):
                
         p_init_accounts = re.compile(
             r'\"([A-Za-z0-9]{3,10})\"\;'       # Bank.
-             '\"([A-Za-z0-9]*)\"\;'            # Konto.
-             '\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Wertstellung.
-             '\"(.*)\"\;'                      # Bezeichnung.
-             '\"([-\d.]*\,\d*)\"\;'            # Betrag (EUR).
-             '\"(.*)\"\n')                     # Waehrung.             
+            r'\"([A-Za-z0-9]*)\"\;'            # Konto.
+            r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Wertstellung.
+            r'\"(.*)\"\;'                      # Bezeichnung.
+            r'\"([-\d.]*\,\d*)\"\;'            # Betrag (EUR).
+            r'\"(.*)\"\n')                     # Waehrung.             
         p_init_assets = re.compile(
             r'\"([A-Za-z0-9]{3,10})\"\;'       # Bank.
-             '\"([A-Za-z0-9]*)\"\;'            # Konto.
-             '\"([A-Za-z0-9]*)"\;'             # WKN/ISIN.
-             '\"(.*)\"\;'                      # Bezeichnung.
-             '\"([\d.]*\,\d*)\"\;'             # Stück.
-             '\"([-\d.]*\,\d*)\";'             # Betrag (EUR).
-             '\"(.*)\"\n')                     # Waehrung.             
+            r'\"([A-Za-z0-9]*)\"\;'            # Konto.
+            r'\"([A-Za-z0-9]*)"\;'             # WKN/ISIN.
+            r'\"(.*)\"\;'                      # Bezeichnung.
+            r'\"([\d.]*\,\d*)\"\;'             # Stück.
+            r'\"([-\d.]*\,\d*)\";'             # Betrag (EUR).
+            r'\"(.*)\"\n')                     # Waehrung.             
         p_dkb_depot = re.compile(
             r'\"([\d.]*\,\d*)\"\;'             # Bestand.
-             '"Stück"\;'                       # Stück.
-             '\"([A-Za-z0-9]{6,12})\"\;'       # ISIN/WKN.
-             '\"(.*)\"\;'                      # Bezeichnung.
-             '\"(.*)\"\;'                      # Kurs.
-             '\"(.*)\"\;'                      # Gewinn/Verlust.
-             '".*"\;'                          # "".
-             '\"(.*)\"\;'                      # Einstandskurs.
-             '".*"\;".*"\;'                    # ""; Dev. Kurs.
-             '\"(.*)\"\;'                        # "Kurswert in Euro".
-             '\"Frei\"\;')                     # Konto Gegenbuchung.
+            r'"Stück"\;'                       # Stück.
+            r'\"([A-Za-z0-9]{6,12})\"\;'       # ISIN/WKN.
+            r'\"(.*)\"\;'                      # Bezeichnung.
+            r'\"(.*)\"\;'                      # Kurs.
+            r'\"(.*)\"\;'                      # Gewinn/Verlust.
+            r'".*"\;'                          # "".
+            r'\"(.*)\"\;'                      # Einstandskurs.
+            r'".*"\;".*"\;'                    # ""; Dev. Kurs.
+            r'\"(.*)\"\;'                        # "Kurswert in Euro".
+            r'\"Frei\"\;')                     # Konto Gegenbuchung.
         p_dkb_cash = re.compile(
             r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Buchungstag.
-             '\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Wertstellung.
-             '\"(.*)\"\;'                      # Buchungstext.
-             '\"(.*)\"\;'                      # Auftraggeber / Begünstigter.  
-             '\"(.*)\"\;'                      # Verwendungszweck.
-             '\"([A-Za-z0-9]*)\"\;'            # Kontonummer.
-             '\"([A-Za-z0-9]*)\"\;'            # BLZ.
-             '\"([-\d.]*\,\d*)\"\;'            # Betrag (EUR).
-             '\"(.*)\"\;'                      # Gläubiger-ID.
-             '\"(.*)\"\;'                      # Mandatsreferenz.
-             '\"(.*)\"\;')                     # Kundenreferenz.
+            r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Wertstellung.
+            r'\"(.*)\"\;'                      # Buchungstext.
+            r'\"(.*)\"\;'                      # Auftraggeber / Begünstigter.  
+            r'\"(.*)\"\;'                      # Verwendungszweck.
+            r'\"([A-Za-z0-9]*)\"\;'            # Kontonummer.
+            r'\"([A-Za-z0-9]*)\"\;'            # BLZ.
+            r'\"([-\d.]*\,\d*)\"\;'            # Betrag (EUR).
+            r'\"(.*)\"\;'                      # Gläubiger-ID.
+            r'\"(.*)\"\;'                      # Mandatsreferenz.
+            r'\"(.*)\"\;')                     # Kundenreferenz.
         p_dkb_visa = re.compile(
             r'\"(Ja|ja|Nein|nein|NEIN|JA)\"\;' # Umsatz abgerechnet.
-             '\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Wertstellung.
-             '\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Belegdatum.
-             '\"(.*)\"\;'                      # Beschreibung.
-             '\"([-\d.]*\,\d*)\"\;'            # Betrag (EUR).
-             '\"(.*)\"\;')                     # Ursprünglicher Betrag.
+            r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Wertstellung.
+            r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Belegdatum.
+            r'\"(.*)\"\;'                      # Beschreibung.
+            r'\"([-\d.]*\,\d*)\"\;'            # Betrag (EUR).
+            r'\"(.*)\"\;')                     # Ursprünglicher Betrag.
         p_spk = re.compile(
             r'\"([A-Za-z0-9]*)"\;'             # Auftragskonto.
-             '\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Buchungstag.
-             '\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Valutadatum.
-             '\"(.*)\"\;'                      # Buchungstext.
-             '\"(.*)\"\;'                      # Verwendungszweck.
-             '\"(.*)\"\;'                      # Beguenstigter.
-             '\"([A-Za-z0-9]*)\"\;'            # Kontonummer.
-             '\"([A-Za-z0-9]*)\"\;'            # BLZ.
-             '\"([-\d.]*\,\d*)\"\;'            # Betrag.
-             '\"(.*)\"\;'                      # Waehrung.
-             '\"Umsatz.*\"')                   # Info.
+            r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Buchungstag.
+            r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Valutadatum.
+            r'\"(.*)\"\;'                      # Buchungstext.
+            r'\"(.*)\"\;'                      # Verwendungszweck.
+            r'\"(.*)\"\;'                      # Beguenstigter.
+            r'\"([A-Za-z0-9]*)\"\;'            # Kontonummer.
+            r'\"([A-Za-z0-9]*)\"\;'            # BLZ.
+            r'\"([-\d.]*\,\d*)\"\;'            # Betrag.
+            r'\"(.*)\"\;'                      # Waehrung.
+            r'\"Umsatz.*\"')                   # Info.
         p_dkb_account = re.compile(
             r'\"([A-Za-z]*\:)\"\;'
-             '\"([A-Za-z]{2}[0-9]*|'
-             '[0-9]{4}[\*]{8}[0-9]{4}|'
-             '[0-9]*).*[A-Za-z]*'
-             '(.*)\"\;')
+            r'\"([A-Za-z]{2}[0-9]*|'
+            r'[0-9]{4}[\*]{8}[0-9]{4}|'
+            r'[0-9]*).*[A-Za-z]*'
+            r'(.*)\"\;')
         
         account = None
         i = 0
@@ -511,7 +511,7 @@ def get_existing_ticker(isin, u_id):
     aDF = get_assets(u_id)
     usd_values = [['EUR=X', 'EUR'], ['CHF=X', 'CHF'], ['JPY=X', 'JPY'], \
                 ['BTC-USD', 'BTC'], ['GC=F', 'Gold'], ['GBP=X', 'GBP'], \
-                ['HKD=X', 'HKD']]
+                ['HKD=X', 'HKD'], ['CNY=X', 'CNY'], ['DKK=X', 'DKK']]
     cyDF = pd.DataFrame(usd_values, columns =['Ticker', 'AssetID'])
     try:
         return cyDF[(cyDF['AssetID'] == isin)]['Ticker'].iloc[0]
@@ -580,11 +580,19 @@ def dl_ticker_data(isin, ticker, years):
         start_d = str(start_year) + "-01-01"
         if len(li) > 0:
             ticker_data = pd.concat(li, axis=0, ignore_index=True)
-        else:
+        # Check if the data file is older than today
+        if os.path.exists(ticker_dir + isin + "_" + str(end_d)[:4] + ".csv") == True:
+            filetime = os.path.getmtime(ticker_dir + isin + "_" + str(end_d)[:4] + ".csv")
+            day_date = str(now_date)[:10]
+            lastfile = time.strftime("%Y-%m-%d",time.localtime(filetime))
+            fileDate = datetime.datetime.strptime(lastfile, "%Y-%m-%d")
+            nowDate = datetime.datetime.strptime(day_date, "%Y-%m-%d")
+            if fileDate >= nowDate:
+                return
             dload = yf.download(ticker, 
                     start=start_d, 
                     end=end_d, 
-                    progress=True)
+                    progress=True, timeout=10)
             dload['AssetID'] = isin
             dload['Currency'] = currency
             li = []
@@ -641,11 +649,14 @@ def isin_data(isin, last_update, u_id):
         get_ticker_info(ticker, infofile)
     currency = get_ticker_currency(ticker, infofile)
     start_d = str(last_update[0:4]) + "-01-01"
+    # Check if the data file is older than today
     if os.path.exists(isin_dir + isin + "_" + str(end_d)[:4] + ".csv") == True:
         filetime = os.path.getmtime(isin_dir + isin + "_" + str(end_d)[:4] + ".csv")
         day_date = str(now_date)[:10]
         lastfile = time.strftime("%Y-%m-%d",time.localtime(filetime))
-        if lastfile >= day_date:
+        fileDate = datetime.datetime.strptime(lastfile, "%Y-%m-%d")
+        nowDate = datetime.datetime.strptime(day_date, "%Y-%m-%d")
+        if fileDate >= nowDate:
             return
     # Downloading the data from Yahoo with a timeout of 10 seconds.
     dload = yf.download(ticker, 
@@ -694,3 +705,19 @@ def in_list(citem, clist):
         if citem[0] == a[0]:
             return True
     return False
+
+# Get filesystem information for a file
+def getFileTimestamp(File):
+    ftime = os.popen("ls -la "+File).read()
+    ftime = ftime.replace("\n",'')
+    return ftime
+
+def ffdm_version(myDir):
+    tmpPath = myDir + "/*.[pP][yY]"
+    tmpFiles = list(glob.glob(tmpPath))
+    ts = datetime.datetime(2019, 1, 1, 0, 0, 1)
+    for f in tmpFiles:
+        tmp_ts = datetime.datetime.fromtimestamp(os.path.getmtime(f))
+        if tmp_ts > ts:
+            ts = tmp_ts
+    return str(ts)[:7]

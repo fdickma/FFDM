@@ -899,8 +899,9 @@ def watchlist():
 
 @app.route('/') 
 def index():
+    ffdm_ver = fl.ffdm_version(myDir=baseDir)
     if current_user.is_authenticated == False:
-        return render_template('index.html', serverName=serverName)
+        return render_template('index.html', serverName=serverName, ver=ffdm_ver)
     else:
         try:
             filesToCheck = ["AccountRegistry.csv", "Accounts.csv", "AssetReferences.csv", \
@@ -921,10 +922,11 @@ def index():
                     if cFile == "VLplans.csv":
                         failedText = failedText + "  No savings plans have been defined!\n"
             print(failedText)
-            return render_template('index.html', failedText=failedText, serverName=serverName)
+            return render_template('index.html', failedText=failedText, serverName=serverName,\
+                ver=ffdm_ver)
         except:
-            return render_template('index.html', serverName=serverName)        
-    return render_template('index.html', serverName=serverName)
+            return render_template('index.html', serverName=serverName, ver=ffdm_ver)
+    return render_template('index.html', serverName=serverName, ver=ffdm_ver)
 
 @app.route('/nodata') 
 def nodata():

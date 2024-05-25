@@ -377,12 +377,19 @@ ul li {
 }
 
 .mainlogo{
-  margin:20px 40px 20px 40px;
+  margin:0px 40px 0px 40px;
   border-radius:6px;
   padding: 10px 20px 10px 20px;
   border:none;
   width: 256px;
   height:auto;
+}
+
+.versiontext{
+  margin:0px;
+  padding: 0px 70px 0px 70px;
+  border:none;
+  width: 256px;
 }
 
 .split-select{
@@ -570,7 +577,7 @@ body {
      }
 
      .mainlogo{
-      margin:20px 40px 20px 40px;
+      margin:0px 30px 0px 40px;
       border-radius:6px;
       padding: 10px 20px 10px 20px;
       border:none;
@@ -590,6 +597,14 @@ body {
       height:3.5vw;
       border-radius: 2px;
     }
+
+    .versiontext{
+      margin:0px;
+      padding: 0px 60px 0px 60px;
+      border:none;
+      font-size: 1.3vw;
+      width: 128px;
+    }    
 
     .input {
       font-size: 80%;

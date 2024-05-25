@@ -282,11 +282,6 @@ def build_assetprices(DefaultCurrency, user_aIDs):
     currency_tmp = currency_tmp.unique()
     currency_list = currency_tmp.tolist()
 
-    currency_list.append('EUR')
-    currency_list.append('CHF')
-    currency_list.append('JPY')
-    currency_list.append('CNY')
-
     print(list(set(currency_list)))
         
     for x in currency_list:

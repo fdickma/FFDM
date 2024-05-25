@@ -85,12 +85,6 @@ def readAssetRef(user_id):
             columns=["AssetID","AssetType","AssetName","Ticker","NetRef1","NetRef2"])
     return assetrefDF
 
-# Get filesystem information for a file
-def getFileTimestamp(File):
-    ftime = os.popen("ls -la "+File).read()
-    ftime = ftime.replace("\n",'')
-    return ftime
-
 # Return a list of all files to operate on
 def getFileList():
     fList = []
@@ -109,9 +103,8 @@ def getFileList():
             tmpPath = sdir + "/*.[cC][sS][vV]"
             tmpFiles = list(glob.glob(tmpPath))
             for f in tmpFiles:
-                fRec = f + getFileTimestamp(f)
-                fList.append(fRec)
-        
+                fRec = f + fl.getFileTimestamp(f)
+                fList.append(fRec)       
     return fList
 
 # Read the file with the last time generated filesystem data for all files
