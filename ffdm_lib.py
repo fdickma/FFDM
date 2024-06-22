@@ -329,7 +329,6 @@ def readStatement(File):
                 curr = DefaultCurrency
                 account_entries.append(["DKB", account, date, text, \
                                     check_float(price), curr])
-
         rf.close()
     return account_entries, depot_entries
 
@@ -684,12 +683,12 @@ def missing_ticker_data(u_id, user_aIDs):
     for f in asset_files:
         if any(aID in f for aID in user_aIDs):
             print(f)
+            x = os.path.basename(f).split(".")[0].split("_")[0]
+            if x not in asset_list:
+                asset_list.append(x)
             if "_info." in f:
                 continue
             else:
-                x = os.path.basename(f).split(".")[0].split("_")[0]
-                if x not in asset_list:
-                    asset_list.append(x)
                 li.append(pd.read_csv(f, header=0))
     if len(asset_list) > 0 and len(li) > 0:
         frame = pd.concat(li, axis=0, ignore_index=True)
@@ -697,6 +696,11 @@ def missing_ticker_data(u_id, user_aIDs):
             aDF = frame[(frame["AssetID"] == a)]
             last = aDF.sort_values(['Date']).drop_duplicates('Date', keep='last')\
                 ['Date'].max()
+            # Check if a date could be determined            
+            if type(last) != str:
+                # If not, get the year from 5 years ago
+                now = datetime.datetime.now()
+                last = str(now.year - 5) + '-01-01'
             isin_data(a, last, u_id)
     return
 
