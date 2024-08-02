@@ -8,6 +8,7 @@
 #
 
 import re
+import chardet
 import datetime
 import time
 import csv
@@ -82,7 +83,7 @@ def vl_fund(bank, account, start_date, end_date, ref_text, curr, amnt, pcs):
     now = datetime.datetime.now()
     now_str = str(now.year) + "-" + str(now.month) + "-" + str(now.day)
     #start = time.strptime(start_date, '%d.%m.%Y')
-    if end_date == "None" or end_date == None:
+    if end_date == "None" or end_date == None or len(end_date) < 6:
         max_date = datetime.datetime.strptime(now_str, '%Y-%m-%d')
     else:
         max_date = datetime.datetime.strptime(end_date,'%Y-%m-%d')
@@ -116,7 +117,7 @@ def vl_fund(bank, account, start_date, end_date, ref_text, curr, amnt, pcs):
                 ref_text, pcs, VL_sum, curr])    
     return account_entries, depot_entries
 
-def get_vl_plans(connection):
+def get_vl_plans(myDir, connection):
     print("VL Plans")
 
     account_entries = []
@@ -126,10 +127,15 @@ def get_vl_plans(connection):
     depot_entries.append(["Bank","DepotNr","AssetID","BankRef","AssetAmount",\
                         "AssetBuyPrice","Currency"])
 
-    vlplans = connection.execute(sa.text("SELECT * FROM VLplans ORDER BY PlanID")).fetchall()
-    for plan in vlplans:
-        account_tmp, depot_tmp = vl_fund(plan[5], plan[6], plan[2], plan[3], \
-                                        plan[4], plan[9], plan[7], plan[8])
+    vlplans = pd.read_csv(myDir + "initdata/VLplans.csv", sep=";")
+    
+    vpplan_num = len(vlplans)
+    for plan in range(0,vpplan_num,1):
+        account_tmp, depot_tmp = vl_fund(str(vlplans.iloc[plan]["Bank"]), \
+            str(vlplans.iloc[plan]["AccountNr"]), str(vlplans.iloc[plan]["StartDate"]), \
+            str(vlplans.iloc[plan]["EndDate"]), str(vlplans.iloc[plan]["AssetID"]), \
+            str(vlplans.iloc[plan]["Currency"]), float(vlplans.iloc[plan]["Amount"]), \
+            float(vlplans.iloc[plan]["Pieces"]))
         account_entries.extend(account_tmp)
         depot_entries.extend(depot_tmp)
 
@@ -150,6 +156,10 @@ def get_account(account):
     
     return account
 
+def get_fileType(tFilename):
+    with open(tFilename, 'rb') as f:
+        return chardet.detect(f.read())    
+
 # Read data files
 def readStatement(File):
     account_entries = []
@@ -158,13 +168,21 @@ def readStatement(File):
     depot_entries = []
     depot_entries.append(["Bank","DepotNr","AssetID","BankRef","AssetAmount",\
                         "AssetBuyPrice","Currency"])
+    fileType = get_fileType(File)
+    if fileType['encoding'] == "UTF-8-SIG":
+        print("Strange File Encoding")
+        enc_type = "utf-8"
+    elif fileType['encoding'] == "utf-8":
+        enc_type = "utf-8"
+    else:
+        enc_type = "latin-1"
     try:
-        rf = open(File, encoding='latin-1')
+        rf = open(File, encoding=enc_type)
     except FileNotFoundError:
         print('File ' + File + ' not found.')
     else:
                
-        p_init_accounts = re.compile(
+        p_init_accounts = re.compile(   
             r'\"([A-Za-z0-9]{3,10})\"\;'       # Bank.
             r'\"([A-Za-z0-9]*)\"\;'            # Konto.
             r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Wertstellung.
@@ -189,7 +207,7 @@ def readStatement(File):
             r'".*"\;'                          # "".
             r'\"(.*)\"\;'                      # Einstandskurs.
             r'".*"\;".*"\;'                    # ""; Dev. Kurs.
-            r'\"(.*)\"\;'                        # "Kurswert in Euro".
+            r'\"(.*)\"\;'                      # "Kurswert in Euro".
             r'\"Frei\"\;')                     # Konto Gegenbuchung.
         p_dkb_cash = re.compile(
             r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Buchungstag.
@@ -203,6 +221,19 @@ def readStatement(File):
             r'\"(.*)\"\;'                      # Gläubiger-ID.
             r'\"(.*)\"\;'                      # Mandatsreferenz.
             r'\"(.*)\"\;')                     # Kundenreferenz.
+        p_dkb_cash_2024 = re.compile(
+            r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Buchungsdatum.
+            r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Wertstellung.
+            r'\"(.*)\"\;'                      # Status.
+            r'\"(.*)\"\;'                      # Zahlungspflichtiger.
+            r'\"(.*)\"\;'                      # Zahlungsempfänger.  
+            r'\"(.*)\"\;'                      # Verwendungszweck.
+            r'\"(.*)\"\;'                      # Umsatztyp.
+            r'\"([A-Za-z0-9]*)\"\;'            # IBAN.
+            r'\"([-\d.]*[\,\d]{0,4})\"\;'          # Betrag (EUR).
+            r'\"(.*)\"\;'                      # Gläubiger-ID.
+            r'\"(.*)\"\;'                      # Mandatsreferenz.
+            r'\"(.*)\"')                       # Kundenreferenz.
         p_dkb_visa = re.compile(
             r'\"(Ja|ja|Nein|nein|NEIN|JA)\"\;' # Umsatz abgerechnet.
             r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Wertstellung.
@@ -228,7 +259,9 @@ def readStatement(File):
             r'[0-9]{4}[\*]{8}[0-9]{4}|'
             r'[0-9]*).*[A-Za-z]*'
             r'(.*)\"\;')
-        
+        p_dkb_account_2024 = re.compile(
+            r'\S\"([A-Za-z]*)\"\;\"([A-Za-z]{2}[0-9]*)\"')
+
         account = None
         i = 0
 
@@ -239,7 +272,12 @@ def readStatement(File):
                 account_test = p_dkb_account.match(line)
                 if account_test:
                     account = account_test.group(2)
-        
+            
+            if account == None:
+                account_test = p_dkb_account_2024.match(line)
+                if account_test:
+                    account = account_test.group(2)
+
             init_acc = p_init_accounts.match(line)
             if init_acc and not line_check:
                 i += 1
@@ -317,6 +355,19 @@ def readStatement(File):
                 account_entries.append(["DKB", account, date, text, \
                                     check_float(price), curr])
             
+            dkb_cash_2024 = p_dkb_cash_2024.match(line)
+            if dkb_cash_2024 and not line_check:
+                i += 1
+                line_check = True
+                price = str(dkb_cash_2024.group(9))
+                price = price.replace('.', '').replace(',', '.')
+                account = get_account(account)
+                date = shortDate(dkb_cash_2024.group(1))
+                text = dkb_cash_2024.group(6) + " " + dkb_cash_2024.group(5)
+                curr = DefaultCurrency
+                account_entries.append(["DKB", account, date, text, \
+                                    check_float(price), curr])
+
             dkb_visa = p_dkb_visa.match(line)
             if dkb_visa and not line_check:
                 i += 1
@@ -505,9 +556,25 @@ def get_yf_ticker(isin):
         return data['quotes'][0]['symbol']
     else:
         return None
-        
+                    
 def get_existing_ticker(isin, u_id):
     aDF = get_assets(u_id)
+    baseDir = os.path.abspath(os.path.dirname(__file__)) + '/'
+    basicTicker = baseDir + 'static/BasicAssetTicker.csv'
+    if os.path.isfile(basicTicker) and os.path.getsize(basicTicker) > 0:
+        basicRefsDF = pd.read_csv(basicTicker, quotechar='"', sep=";")
+    else:
+        basicRefsDF = pd.DataFrame(columns=["Asset", "AssetName", "YF_USD"])    
+    assetRefFile = baseDir + 'users/' + u_id + '/initdata/Currencies.csv'
+    if os.path.isfile(assetRefFile) and os.path.getsize(assetRefFile) > 0:
+        assetRefsDF = pd.read_csv(assetRefFile, quotechar='"', sep=";")
+        assetRefsDF = assetRefsDF.rename(columns={"Currency": "Asset",  "CurrencyName": "AssetName"})
+    else:
+        assetRefsDF = pd.DataFrame(columns=["Asset", "AssetName", "YF_USD"])    
+    assetRefsDF = assetRefsDF._append(basicRefsDF)
+    print('________________')
+    print(assetRefsDF)
+    print('________________')
     usd_values = [['EUR=X', 'EUR'], ['CHF=X', 'CHF'], ['JPY=X', 'JPY'], \
                 ['BTC-USD', 'BTC'], ['GC=F', 'Gold'], ['GBP=X', 'GBP'], \
                 ['HKD=X', 'HKD'], ['CNY=X', 'CNY'], ['DKK=X', 'DKK']]
@@ -588,25 +655,24 @@ def dl_ticker_data(isin, ticker, years):
             nowDate = datetime.datetime.strptime(day_date, "%Y-%m-%d")
             if fileDate >= nowDate:
                 return
-            dload = yf.download(ticker, 
-                    start=start_d, 
-                    end=end_d, 
-                    progress=True, timeout=10)
-            dload['AssetID'] = isin
-            dload['Currency'] = currency
-            li = []
-            df = pd.DataFrame(dload)
-            for i, x in df.groupby(df.index.year):
-                ticker_file = ticker_dir + isin + "_" + str(i) + ".csv"
-                x.to_csv(ticker_file, header=True)
-                df = pd.read_csv(ticker_file, index_col=None, header=0)
-                li.append(df)
-            ticker_data = pd.concat(li, axis=0, ignore_index=True)
+            df = yfload(ticker, start_d, end_d, isin, currency)
+            if len(df) > 0:
+                li = []
+                for i, x in df.groupby(df.index.year):
+                    ticker_file = ticker_dir + isin + "_" + str(i) + ".csv"
+                    x.to_csv(ticker_file, header=True)
+                    df = pd.read_csv(ticker_file, index_col=None, header=0)
+                    li.append(df)
+                ticker_data = pd.concat(li, axis=0, ignore_index=True)
+            else:
+                print("Error downloading data:", isin)
+                return None
     else:
         return None
 
 def get_currencies():
     # Main currencies
+    print('------------------------------------')
     usd_values = [['EUR=X', 'EUR'], ['CHF=X', 'CHF'], ['JPY=X', 'JPY'], \
                 ['BTC-USD', 'BTC'], ['GC=F', 'Gold']]
     for v in usd_values:
@@ -622,6 +688,24 @@ def get_assets(u_id):
         assetRefsDF = pd.DataFrame(columns=["AssetID"])    
     return assetRefsDF
 
+# Download Yahoo Finance data and handle possible errors
+def yfload(ticker, start_d, end_d, isin, currency):
+    try:
+        dload = yf.download(ticker, progress=True, 
+            start=start_d, 
+            end=end_d,
+            timeout=10)
+        if len(dload) < 1:
+            dload = yf.download(ticker, progress=True, 
+                timeout=10, period="1d")
+        dload['AssetID'] = isin
+        dload['Currency'] = currency
+        print(dload)
+        return pd.DataFrame(dload)
+    except:
+        return pd.DataFrame({'A' : []})
+
+# Downloading data for a certain ticker symbol
 def isin_data(isin, last_update, u_id):
     ticker = get_ticker(isin, u_id)
     print(isin, ticker)
@@ -657,39 +741,50 @@ def isin_data(isin, last_update, u_id):
         nowDate = datetime.datetime.strptime(day_date, "%Y-%m-%d")
         if fileDate >= nowDate:
             return
-    # Downloading the data from Yahoo with a timeout of 10 seconds.
-    dload = yf.download(ticker, 
-            start=start_d, 
-            end=end_d, 
-            progress=True, timeout=10)
-    dload['AssetID'] = isin
-    dload['Currency'] = currency
-    li = []
-    df = pd.DataFrame(dload)
-    print(df)
+    # Downloading data from Yahoo
+    df = yfload(ticker, start_d, end_d, isin, currency)
+    if len(df) > 0:
+        li = []
+    else:
+        print("Error downloading data:", isin)
+        return    
     try:
         for i, x in df.groupby(df.index.year):
             isin_file = isin_dir + isin + "_" + str(i) + ".csv"
             x.to_csv(isin_file, header=True)
     except:
-        return
+        print("Error saving data:", isin)
+    return
 
+# Checking for missing ticker data for all assets of a user
+# a list of the asset IDs of the user is given in user_aIDs
 def missing_ticker_data(u_id, user_aIDs):
+    # First get all existing data files for all assets
     print("Retrieve missing ticker data")
     myDir = os.path.abspath(os.path.dirname(__file__)) + '/'
     asset_files = list(glob.glob(myDir+"assetdata/*.[cC][sS][vV]"))
+    # List of new asset IDs
     asset_list = []
+    # List of data entries
     li = []
+    # Iterate through all the asset file entries
     for f in asset_files:
+        # Iterate through all the files containing an asset ID
+        # that is in the user specific asset ID list
         if any(aID in f for aID in user_aIDs):
             print(f)
+            # Retrieve the asset ID from the filename
             x = os.path.basename(f).split(".")[0].split("_")[0]
+            # If the asset ID retrieved is not in the new asset list, add it
+            # to the new asset list 
             if x not in asset_list:
                 asset_list.append(x)
+            # Skip information files since these do not contain financial data
             if "_info." in f:
                 continue
             else:
                 li.append(pd.read_csv(f, header=0))
+    # If the new asset list and the data of the files in the li list is not empty
     if len(asset_list) > 0 and len(li) > 0:
         frame = pd.concat(li, axis=0, ignore_index=True)
         for a in asset_list:
@@ -704,6 +799,7 @@ def missing_ticker_data(u_id, user_aIDs):
             isin_data(a, last, u_id)
     return
 
+# Check if a given item is in a list
 def in_list(citem, clist):
     for a in clist:
         if citem[0] == a[0]:

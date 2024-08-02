@@ -33,11 +33,23 @@
             size=8 class="input" max="999999" min="0" step="0.01" 
             value="{{ request.form['TargetPriceHigh'] or asset['TargetPriceHigh'] | round(3) }}">
         </input></td>
-        <td><input type="text" name="Currency" placeholder=""
-            size=3 class="input" 
-            value="{{ request.form['Currency'] or asset['Currency'] }}">
-        </input></td>
-        </tr>
+        <td><select name="Currency" style="font-size: 0.9em;" autofocus>
+            {% if asset['Currency'] == '' %}
+                <option selected>{{ DefaultCurrency }}</option>
+            {% endif %}
+            {% for ckey, cCurr in currencies.iterrows() %}
+                {% if asset['Currency'] == cCurr['Currency'] %}
+                    <option value="{{ cCurr['Currency'] }}" selected>
+                        {{ cCurr['Currency'] }}
+                    </option>
+                {% else %}
+                    <option value="{{ cCurr['Currency'] }}">
+                        {{ cCurr['Currency'] }}
+                    </option>
+                {% endif %}
+            {% endfor %}    
+            </select></td>
+        </tr>       
         {% endfor %}
     </form>
 </table>

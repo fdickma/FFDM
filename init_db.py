@@ -43,10 +43,9 @@ def filterDF(Expression):
         .groupby(accountDF['EntryDate'].dt.to_period('Y'))['Amount'].sum()
 
 def countFilterDF(Expression):
-    return accountDF[accountDF['Reference'].str.contains(Expression, na=0, \
+        return accountDF[accountDF['Reference'].str.contains(Expression, na=0, \
         flags=re.IGNORECASE, regex=True)]\
-        .groupby(accountDF['EntryDate'].dt.to_period('M'))['Amount']\
-        .size().resample('Y').size()
+        .groupby(accountDF['EntryDate'].dt.to_period('M'))['Amount'].size().resample('Y').size()
 
 def getMonths(years):
     curmonth = datetime.datetime.now().strftime("%m")
@@ -496,7 +495,7 @@ if __name__ == '__main__':
         else:
             entriesToDB(account_entries, depot_entries)
     
-    account_entries, depot_entries = fl.get_vl_plans(connection)
+    account_entries, depot_entries = fl.get_vl_plans(myDir, connection)
     entriesToDB(account_entries, depot_entries)
 
     accountDF = pd.DataFrame(connection.execute(sa.text("SELECT Bank,AccountNr,EntryDate,\

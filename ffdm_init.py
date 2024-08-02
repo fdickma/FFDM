@@ -17,7 +17,7 @@ def check_files(user_path):
 
     app_path = os.path.abspath(os.path.dirname(__file__)) + \
         "/static/"
-    ffdm_files = ['AccountTypes.csv', 'AssetTypes.csv']
+    ffdm_files = ['AccountTypes.csv', 'AssetTypes.csv', 'Currencies.csv']
     for f in ffdm_files:
         if not os.path.exists(user_path + 'initdata/' + f):
             shutil.copy(app_path + f, user_path + 'initdata/' + f)

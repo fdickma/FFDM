@@ -17,9 +17,22 @@
         {% set count = [] %}
         {% for key, asset in assets.iterrows() %}
         <tr>
-        <td><input type="text" name="AssetType" placeholder="STK" class="input" 
-            size=3 value="{{ request.form['AssetType'] or asset['AssetType'] }}">
-        </input></td>
+        <td><select name="AssetType" style="font-size: 0.9em;" autofocus>
+            {% if asset['AssetType'] == '' %}
+                <option hidden selected>Select ...</option>
+            {% endif %}
+            {% for akey, aType in assetTypes.iterrows() %}
+                {% if asset['AssetType'] == aType['AssetType'] %}
+                    <option value="{{ aType['AssetType'] }}" selected>
+                        {{ aType['AssetTypeName'] }}
+                    </option>
+                {% else %}
+                    <option value="{{ aType['AssetType'] }}">
+                        {{ aType['AssetTypeName'] }}
+                    </option>
+                {% endif %}
+            {% endfor %}    
+        </select></td>    
         <td><input type="text" name="AssetID" placeholder="" class="input" 
             size=12 value="{{ request.form['AssetID'] or asset['AssetID'] }}">
         </input></td>

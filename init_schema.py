@@ -50,8 +50,8 @@ assetref_t = sa.Table(
     sa.Column('AssetType', sa.String(3), default='', nullable=False),
     sa.Column('AssetName', sa.String(254),default="FFDM default asset name", nullable=False),
     sa.Column('Ticker', sa.String(254), default=None, nullable=True),
-    sa.Column('NetRef1', sa.String(254),default='', nullable=False),
-    sa.Column('NetRef2', sa.String(254),default='', nullable=False),
+    sa.Column('NetRef1', sa.String(254),default='', nullable=True),
+    sa.Column('NetRef2', sa.String(254),default='', nullable=True),
 )
 
 assetprice_t = sa.Table(

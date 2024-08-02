@@ -359,6 +359,7 @@ def assets():
         assetsDF = assetsDF.sort_values(by=['AssetType','AssetName'], ascending=True)
         assetsDF.loc[len(assetsDF)] = pd.Series(dtype='float64')
         assetsDF = assetsDF.fillna('')
+        assetTypesDF = pd.read_csv(myDir+"initdata/AssetTypes.csv", sep=';')
     except:
         return redirect(url_for('nodata'))
     
@@ -390,7 +391,8 @@ def assets():
                 index = False, quoting=csv.QUOTE_ALL, quotechar='"')
             return redirect(url_for('assets'))
 
-    return render_template('assets.html', assets=assetsDF, serverName=serverName)
+    return render_template('assets.html', assets=assetsDF, serverName=serverName, \
+            assetTypes=assetTypesDF)
 
 @app.route('/edit_accounts', methods=('GET', 'POST'))
 def edit_accounts():
@@ -768,12 +770,20 @@ def targets():
         myDir = baseDir + 'users/' + current_user.username + '/'
         fileName = myDir+"initdata/TargetPrices.csv"
         if os.path.isfile(fileName) and os.path.getsize(fileName) > 0:
-            assetsDF = pd.read_csv(fileName, sep=';')
+            assetsDF = pd.read_csv(fileName, sep=';')            
         else:
             assetsDF = pd.DataFrame(columns=["AssetID","TargetPriceLow",\
                 "TargetPriceHigh","Currency"])
             assetsDF.loc[len(assetsDF)] = pd.Series(dtype='float64')
             assetsDF = assetsDF.fillna('')
+        fileName = myDir+"initdata/Currencies.csv"
+        if os.path.isfile(fileName) and os.path.getsize(fileName) > 0:
+            currencyDF = pd.read_csv(fileName, sep=';')            
+        else:
+            currencyDF = pd.DataFrame(columns=["Currency","CurrencyName",\
+                "YF_USD"])
+            currencyDF.loc[len(currencyDF)] = pd.Series(dtype='float64')
+            currencyDF = currencyDF.fillna('')
 
         asset_cols = list(assetsDF.columns)
         namesDF = pd.read_csv(myDir+"initdata/AssetReferences.csv", \
@@ -828,7 +838,8 @@ def targets():
                 index = False, quoting=csv.QUOTE_ALL, quotechar='"')
             return redirect(url_for('targets'))
 
-    return render_template('targets.html', assets=assetsDF, serverName=serverName)
+    return render_template('targets.html', assets=assetsDF, serverName=serverName,\
+                currencies=currencyDF, DefaultCurrency=DefaultCurrency)
 
 @app.route('/split', methods=('GET', 'POST'))
 def split():
@@ -982,7 +993,7 @@ def finance():
             return redirect(url_for('error'))
     else:
         return redirect(url_for('nodata'))
-
+    
 @app.context_processor
 def my_utility_processor():
 
