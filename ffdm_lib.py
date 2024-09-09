@@ -223,16 +223,29 @@ def readStatement(File):
             r'\"(.*)\"\;')                     # Kundenreferenz.
         p_dkb_cash_2024 = re.compile(
             r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Buchungsdatum.
-            r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Wertstellung.
+            r'\"(.*)\"\;'                      # Wertstellung.
             r'\"(.*)\"\;'                      # Status.
             r'\"(.*)\"\;'                      # Zahlungspflichtiger.
             r'\"(.*)\"\;'                      # Zahlungsempfänger.  
             r'\"(.*)\"\;'                      # Verwendungszweck.
             r'\"(.*)\"\;'                      # Umsatztyp.
             r'\"([A-Za-z0-9]*)\"\;'            # IBAN.
-            r'\"([-\d.]*[\,\d]{0,4})\"\;'          # Betrag (EUR).
+            r'\"([-\d.]*[\,\d]{0,4})\"\;'      # Betrag (EUR).
             r'\"(.*)\"\;'                      # Gläubiger-ID.
             r'\"(.*)\"\;'                      # Mandatsreferenz.
+            r'\"(.*)\"')                       # Kundenreferenz.
+        p_dkb_cash_2024comma = re.compile(
+            r'\"(\d{2}\.\d{2}\.\d{2,4})\"\,'   # Buchungsdatum.
+            r'\"(.*)\"\,'                      # Wertstellung.
+            r'\"(.*)\"\,'                      # Status.
+            r'\"(.*)\"\,'                      # Zahlungspflichtiger.
+            r'\"(.*)\"\,'                      # Zahlungsempfänger.  
+            r'\"(.*)\"\,'                      # Verwendungszweck.
+            r'\"(.*)\"\,'                      # Umsatztyp.
+            r'\"([A-Za-z0-9]*)\"\,'            # IBAN.
+            r'\"([-\d.]*[\,\d]{0,4})\"\,'      # Betrag (EUR).
+            r'\"(.*)\"\,'                      # Gläubiger-ID.
+            r'\"(.*)\"\,'                      # Mandatsreferenz.
             r'\"(.*)\"')                       # Kundenreferenz.
         p_dkb_visa = re.compile(
             r'\"(Ja|ja|Nein|nein|NEIN|JA)\"\;' # Umsatz abgerechnet.
@@ -261,6 +274,8 @@ def readStatement(File):
             r'(.*)\"\;')
         p_dkb_account_2024 = re.compile(
             r'\S\"([A-Za-z]*)\"\;\"([A-Za-z]{2}[0-9]*)\"')
+        p_dkb_account_2024comma = re.compile(
+            r'\S\"([A-Za-z]*)\"\,\"([A-Za-z]{2}[0-9]*)\"')
 
         account = None
         i = 0
@@ -275,6 +290,11 @@ def readStatement(File):
             
             if account == None:
                 account_test = p_dkb_account_2024.match(line)
+                if account_test:
+                    account = account_test.group(2)
+
+            if account == None:
+                account_test = p_dkb_account_2024comma.match(line)
                 if account_test:
                     account = account_test.group(2)
 
@@ -364,6 +384,19 @@ def readStatement(File):
                 account = get_account(account)
                 date = shortDate(dkb_cash_2024.group(1))
                 text = dkb_cash_2024.group(6) + " " + dkb_cash_2024.group(5)
+                curr = DefaultCurrency
+                account_entries.append(["DKB", account, date, text, \
+                                    check_float(price), curr])
+
+            dkb_cash_2024comma = p_dkb_cash_2024comma.match(line)
+            if dkb_cash_2024comma and not line_check:
+                i += 1
+                line_check = True
+                price = str(dkb_cash_2024comma.group(9))
+                price = price.replace('.', '').replace(',', '.')
+                account = get_account(account)
+                date = shortDate(dkb_cash_2024comma.group(1))
+                text = dkb_cash_2024comma.group(6) + " " + dkb_cash_2024comma.group(5)
                 curr = DefaultCurrency
                 account_entries.append(["DKB", account, date, text, \
                                     check_float(price), curr])

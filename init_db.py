@@ -438,9 +438,13 @@ if __name__ == '__main__':
                 x = os.path.basename(f).split(".")[0].split("_")[0]
                 td["AssetID"] = x
                 td.to_sql("AssetInfo", con=connection, if_exists='append', index=False, chunksize=__main__.cz)            
+                # Make sure data is committed to database
+                connection.commit()
             else:
                 td = pd.read_csv(f, header=0)
                 td.to_sql("HistoryPrices", con=connection, if_exists='append', index=False, chunksize=__main__.cz)
+                # Make sure data is committed to database
+                connection.commit()
 
     build_assetprices(DefaultCurrency, user_aIDs)
 
@@ -490,11 +494,12 @@ if __name__ == '__main__':
                 tableData = pd.DataFrame([["USD", datetime.datetime(2020, 1, 1),\
                     1, DefaultCurrency]], columns=["AssetID","PriceTime",\
                     "AssetPrice","Currency"])
-
             tableData.to_sql(tableName, con=connection, if_exists='append', index=False, chunksize=__main__.cz)
+            # Make sure data is committed to database
+            connection.commit()
         else:
             entriesToDB(account_entries, depot_entries)
-    
+
     account_entries, depot_entries = fl.get_vl_plans(myDir, connection)
     entriesToDB(account_entries, depot_entries)
 
@@ -507,6 +512,8 @@ if __name__ == '__main__':
     accountBalanceDF = accountBalanceDF.round(2)
     accountBalanceDF.to_sql("qAccountBalances", con=connection, if_exists='replace', \
                             index=False, chunksize=__main__.cz)
+    # Make sure data is committed to database
+    connection.commit()                            
 
     accountDF = pd.DataFrame(connection.execute(sa.text("SELECT Bank,AccountNr,EntryDate,\
                 Reference,Amount,Currency FROM Accounts")).fetchall(), \
@@ -543,6 +550,8 @@ if __name__ == '__main__':
     yearDF['PayMonths'] = yearDF['PayMonths'].fillna(0)
     yearDF['Months'] = getMonths(yearDF['Year'])
     yearDF.to_sql('qYearly', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
+    # Make sure data is committed to database
+    connection.commit()
 
     # Generate yearly cumulative dataframe
     print('Generate: Yearly Cumulative')
@@ -550,6 +559,8 @@ if __name__ == '__main__':
     cumyearDF = yearDF.cumsum()
     cumyearDF['Year'] = yearDF['Year']
     cumyearDF.to_sql('qCumulative', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
+    # Make sure data is committed to database
+    connection.commit()
 
     # Generate monthly average dataframe
     print('Generate: Monthly Data')
@@ -565,6 +576,8 @@ if __name__ == '__main__':
                         yearDF['Saving'] / yearDF['PayMonths'], 0)
     monthDF=monthDF.round(2)
     monthDF.to_sql('qMonthly', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
+    # Make sure data is committed to database
+    connection.commit()
 
     # Generate quarterly cashflow dataframe
     print('Generate: Quarterly Cashflow')
@@ -575,6 +588,8 @@ if __name__ == '__main__':
                             replace(r'(\d+)Q(\d)', r'\1-Q\2', regex=True)
     quarterDF = quarterDF.round(2)
     quarterDF.to_sql('qQuarterly', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
+    # Make sure data is committed to database
+    connection.commit()
 
     # Generate spending dataframe
     print('Generate: Spending')
@@ -585,6 +600,8 @@ if __name__ == '__main__':
     spendDF['Total'] = spendDF.sum(axis=1, numeric_only=True)
     spendDF = spendDF.fillna(0)
     spendDF.to_sql('qSpending', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
+    # Make sure data is committed to database
+    connection.commit()
 
     # Generate depot dataframes
     print('Generate: Depots')
@@ -672,6 +689,8 @@ if __name__ == '__main__':
 
     # Finally writing the watchlist to database
     watchlistDF.to_sql('qWatchlist', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
+    # Make sure data is committed to database
+    connection.commit()
 
     # Generate compound dividend dataframe
     print('Generate: Dividends')
@@ -700,7 +719,9 @@ if __name__ == '__main__':
                                     * 100
         depotviewDF['TotReturn'] = depotviewDF['Return'] + depotviewDF['DivReturn']
         depotviewDF.to_sql('qDepotOverview', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
-
+        # Make sure data is committed to database
+        connection.commit()
+        
     # Generate performance dataframe
     print('Generate: Performance')
     perfDF = pd.DataFrame(columns=['TotalEarnings','CoreEarnings','TotalInvest',\
@@ -737,6 +758,8 @@ if __name__ == '__main__':
 
     perfDF = perfDF.round(2)
     perfDF.to_sql('qPerformance', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
+    # Make sure data is committed to database
+    connection.commit()
 
     # Generate overview dataframe
     print('Generate: Overview')
@@ -819,6 +842,8 @@ if __name__ == '__main__':
         overviewDF = pd.DataFrame([['Total',0,0,0,0,0]], columns=['Position', 'Amount', 'Slice', \
                                 'Earn','Return','Items'])
     overviewDF.to_sql('qOverview', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
+    # Make sure data is committed to database
+    connection.commit()
 
     # Important products dataframe: gold, USD, BTC
     print('Generate: USD-Prices')
@@ -831,6 +856,8 @@ if __name__ == '__main__':
         else:
             valuesDF[p] = [0]
     valuesDF.to_sql('qUSDValues', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
+    # Make sure data is committed to database
+    connection.commit()
 
     # Closing the database
     connection.close()

@@ -121,7 +121,7 @@ def retrieveWebData(link):
         try:
             temp_number = str(re.findall(r'([\d,\.]+)',outs)[0])
         except:
-            temp_number = 0
+            temp_number = "0"
         print("Input:", temp_number)
         # Define RegEx check for EU and US financial numbers
         us_number = re.compile(r'^\d{1,3}(,\d{3})+(\.\d{2,4})')
