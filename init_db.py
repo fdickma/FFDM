@@ -43,9 +43,19 @@ def filterDF(Expression):
         .groupby(accountDF['EntryDate'].dt.to_period('Y'))['Amount'].sum()
 
 def countFilterDF(Expression):
-        return accountDF[accountDF['Reference'].str.contains(Expression, na=0, \
+        # Back and forth conversion due to new pandas versions handling period
+        # index differently 
+        # Calculating monthly occurrences
+        tempDF = accountDF[accountDF['Reference'].str.contains(Expression, na=0, \
         flags=re.IGNORECASE, regex=True)]\
-        .groupby(accountDF['EntryDate'].dt.to_period('M'))['Amount'].size().resample('Y').size()
+        .groupby(accountDF['EntryDate'].dt.to_period('M'))['Amount'].size()
+        # Convert to dataframe
+        tempDF = pd.DataFrame(tempDF)
+        # Convert the period index to datetime
+        tempDF.index = pd.PeriodIndex.to_timestamp(tempDF.index)
+        tempDF.index = pd.DatetimeIndex(tempDF.index)
+        # Return the yearly occurrences
+        return tempDF.groupby(tempDF.index.to_period('Y'))['Amount'].size()
 
 def getMonths(years):
     curmonth = datetime.datetime.now().strftime("%m")
@@ -420,6 +430,19 @@ if __name__ == '__main__':
     engine = sa.create_engine(sql_uri, echo=False) 
     connection = engine.connect()
 
+    print('Reading Currency List')
+    try:
+        fileName = myDir+"initdata/Currencies.csv"
+        if os.path.isfile(fileName) and os.path.getsize(fileName) > 0:
+            currencyDF = pd.read_csv(fileName, sep=';')
+            currencies = currencyDF['Currency'].values.tolist()
+            usd_temp = currencyDF['YF_USD'].values.tolist()
+            usd_values = list(zip(usd_temp, currencies))
+        print(usd_values)
+    except:
+        # If not data exists, define a minimum set of currencies
+        currencies = ['EUR','CHF','JPY','CNY','DKK','GBP','HKD']
+
     print('Import: Historical Asset Prices')
     assetRefsDF = fl.get_assets(user_id)
     history_list = list(glob.glob(baseDir+"assetdata/*.[cC][sS][vV]"))
@@ -427,7 +450,6 @@ if __name__ == '__main__':
     for f in history_list:
         # Check if file contains data for a current investment of the user
         check_aID = check_fileName_aID(assetRefsDF, f)
-        currencies = ['EUR','CHF','JPY','CNY','DKK','GBP','HKD']
         check_CUR = False
         if os.path.basename(f)[:3] in currencies: check_CUR = True  
         if (check_aID != False) or (check_CUR == True):
