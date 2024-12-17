@@ -124,8 +124,8 @@ def retrieveWebData(link):
             temp_number = "0"
         print("Input:", temp_number)
         # Define RegEx check for EU and US financial numbers
-        us_number = re.compile(r'^\d{1,3}(,\d{3})+(\.\d{2,4})')
-        eu_number = re.compile(r'^\d{1,3}(.\d{3})+(\,\d{2,4})')
+        us_number = re.compile(r'\d{1,3}(,\d{3})+(\.\d{1,4})')
+        eu_number = re.compile(r'\d{1,3}(.\d{3})+(\,\d{1,4})')
         us_test = us_number.match(temp_number)
         eu_test = eu_number.match(temp_number)
         # Check if the given number is of US, EU or other format
@@ -140,14 +140,14 @@ def retrieveWebData(link):
         # Common cleaning of the financial number
         clean = clean.lstrip()
         # Check the string number for a two digit floating value
-        p1 = re.compile(r'[A-Z]|[a-z]([\d]+\.\d{2,4})')
+        p1 = re.compile(r'[A-Z]|[a-z]([\d]+\.\d{1,4})')
         m1 = p1.match(clean)
         # If the string contains a floating value after a single character
         # return it as float value 
         if m1:
             return m1.group(1)
         # Filter a float value with 2 to 4 decimals
-        p2 = re.compile(r'([\d]+\.\d{2,4})')
+        p2 = re.compile(r'([\d]+\.\d{1,4})')
         m2 = p2.match(clean)
         if m2:
             # Use the library function to convert the value
@@ -223,19 +223,19 @@ def assetDataScraping(asset, old_price):
         return_price = retrieveBSscraper(a_type, a_id)
     # Using the w3m dumps last
     if return_price <= 0:
-        if (refAvailable[2] == True) and (return_price <= 0):
+        if (refAvailable[2] == True):
             return_price = retrieveWebData(get_Ref2_data(a_type, a_id, refNet1))
         if (old_price > 0):
-            if (abs(old_price-return_price)/old_price > 0.5) and (return_price > 0):
-                print("Major difference to old price")
+            if (abs(old_price-return_price)/old_price > 0.9) and (return_price > 0):
+                print("Major difference to old price (first try)")
                 return_price = -1
         if return_price <= 0:
             print("first service failed...")
             if (refAvailable[1] == True):
                 return_price = retrieveWebData(get_ARD_data(a_type, a_id))
         if (old_price > 0):
-            if (abs(old_price-return_price)/old_price > 0.5) and (return_price > 0):
-                print("Major difference to old price")
+            if (abs(old_price-return_price)/old_price > 0.9) and (return_price > 0):
+                print("Major difference to old price (second try)")
                 return_price = -1
         if return_price <= 0:
             print("second service failed...")
