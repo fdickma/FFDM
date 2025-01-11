@@ -59,6 +59,7 @@ table, th, td {
   font-family: Arial, Helvetica, sans-serif;
   border: none;
   padding: 4px;
+  padding: 0.3vw;
   font-weight:bold;
 }
 
@@ -126,6 +127,7 @@ table {
   border:2px solid #f2f2f2; 
   box-shadow: 2px 2px 2px 2px #888; 
   padding: 2px; 
+  padding: 0.2vw;
   background-color:#f2f2f2;
   font-size: 90%;
   display:table;
@@ -231,6 +233,7 @@ ul li {
     max-width: 100%;
     color: white;
     padding: 5px 5px;
+    padding: 0.4vw;
     margin: 6px 6px 2px 6px;
     font-size: 90%;
     font-size: 1.25vw;
@@ -253,7 +256,7 @@ ul li {
     padding: 0px 8px;
     margin: 0px 0px;
     font-size: 100%;
-    font-size: 1.25vw;
+    font-size: 1.2vw;
     text-align: center;
     font-weight:bold;
     border: none;
@@ -277,6 +280,7 @@ ul li {
     border-radius: 4px;
     display:block;
     padding: 0px 12px;
+    padding: 0px 0.8vw;
     margin: 0px 0px;
     font-size: 90%;
     font-size: 1.1vw;
@@ -303,6 +307,7 @@ ul li {
     border-radius: 4px;
     display:block;
     padding: 0px 12px;
+    padding: 0px 0.8vw;
     margin: 0px 0px;
     font-size: 100%;
     font-size: 1.25vw;
@@ -328,6 +333,7 @@ ul li {
     background-color:#7e0101;
     border-radius: 4px;
     padding: 0px 8px;
+    padding: 0px 0.6vw;
     margin: 0px 0px;
     font-size: 100%;
     font-size: 1.25vw;
@@ -418,11 +424,13 @@ ul li {
 .navbar a {
   float: left;
   font-size: 100%;
+  font-size: 1.2vw;
   color: white;
   border: none;
   outline: none;
   text-align: center;
   padding: 14px 16px;
+  padding: 0.9vw 1.0vw;
   text-decoration: none;
   vertical-align:middle;
   margin:0px;
@@ -432,11 +440,13 @@ ul li {
   pointer-events: none;
   float: left;
   font-size: 100%;
+  font-size: 1.2vw;
   text-align: center;
   border: none;
   outline: none;
   font-weight:bold;
   padding: 14px 16px;
+  padding: 0.9vw 1.0vw;
   vertical-align:middle;
 }
 
@@ -449,11 +459,13 @@ ul li {
 
 .dropdown .dropbtn {
   font-size: 100%;
+  font-size: 1.2vw;
   border: none;
   outline: none;
   color: white;
   font-weight:bold;  
   padding: 14px 16px;
+  padding: 0.9vw 1.0vw;
   background-color: #333;
   vertical-align:middle;
   font-family: inherit;
@@ -478,6 +490,7 @@ ul li {
   float: none;
   color: black;
   padding: 12px 16px;
+  padding: 0.9vw 1.0vw;
   display:block;
   text-decoration: none;
   text-align: left;
@@ -494,6 +507,7 @@ ul li {
 p {
     font-family:Arial, sans-serif;;
     font-size: 100%;
+    font-size: 1.2vw;
     font-weight:bold;
     overflow: hidden;
     padding: 0;
@@ -556,16 +570,16 @@ body {
       }
 
       table, td {
-      padding: 2px;
+      padding: 0.4vw;
       font-size: 100%;
-      font-size: 1.9vw;
+      font-size: 1.8vw;
       overflow: none;
      }
      
       th {
-      padding: 2px;
+      padding: 0.25vw;
       font-size: 100%;
-      font-size: 1.3vw;
+      font-size: 1.2vw;
      }     
      
      .button{
@@ -592,9 +606,9 @@ body {
 
     .logo{
       vertical-align:middle;
-      margin:-12px 4px -12px 2px;
-      width: 3.5vw;
-      height:3.5vw;
+      margin:-6px 6px -4px 6px;
+      width: 2.8vw;
+      height:2.8vw;
       border-radius: 2px;
     }
 
@@ -613,12 +627,12 @@ body {
     
     .del_button {
       font-size: 80%;
-      font-size: 1.5vw;
+      font-size: 1.7vw;
     }
 
     .add_button {
       font-size: 80%;
-      font-size: 1.5vw;
+      font-size: 1.7vw;
     }
 
     .upd_button {
@@ -638,8 +652,9 @@ body {
       margin: 0px;
       border: none;
       outline: none;
-      font-size: 2.0vw;
-      padding: 6px 6px 6px 6px;
+      font-size: 1.8vw;
+      padding: 10px 8px 10px 8px;
+      padding: 1.2vw 1.2vw 1.2vw 1.2vw;
       vertical-align:middle;
     }
 
@@ -649,8 +664,9 @@ body {
       margin: none;
       outline: none;
       pointer-events: none;
-      font-size: 2.0vw;
-      padding: 6px 6px 6px 6px;
+      font-size: 1.8vw;
+      padding: 10px 8px 10px 8px;
+      padding: 1.2vw 1.2vw 1.2vw 1.2vw;
       vertical-align:middle;
     }
     
@@ -661,7 +677,7 @@ body {
       text-decoration: none;
       float: left;
       border: none;
-      font-size: 2.0vw;
+      font-size: 1.8vw;
       outline: none;
       display:block;
     }
@@ -672,8 +688,9 @@ body {
       margin: none;
       outline: none;
       vertical-align:middle;
-      font-size: 2.0vw;
-      padding: 6px 6px 6px 6px;
+      font-size: 1.8vw;
+      padding: 10px 8px 10px 8px;
+      padding: 1.2vw 1.2vw 1.2vw 1.2vw;
       vertical-align:middle;
     }
 
@@ -722,7 +739,7 @@ body {
     }
 
     .kpi{
-     font-size: 2.5vw;
+     font-size: 2.2vw;
     }
 
 }
