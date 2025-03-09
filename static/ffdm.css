@@ -570,14 +570,14 @@ body {
       }
 
       table, td {
-      padding: 0.4vw;
+      padding: 0.35vw;
       font-size: 100%;
-      font-size: 1.8vw;
+      font-size: 1.7vw;
       overflow: none;
      }
      
       th {
-      padding: 0.25vw;
+      padding: 0.3vw;
       font-size: 100%;
       font-size: 1.2vw;
      }     
@@ -595,7 +595,7 @@ body {
       border-radius:6px;
       padding: 10px 20px 10px 20px;
       border:none;
-      width: 128px;
+      width: 192px;
       height:auto;
     }
 
@@ -606,7 +606,7 @@ body {
 
     .logo{
       vertical-align:middle;
-      margin:-6px 6px -4px 6px;
+      margin:-4px 6px -4px 2px;
       width: 2.8vw;
       height:2.8vw;
       border-radius: 2px;

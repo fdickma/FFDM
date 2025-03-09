@@ -268,11 +268,11 @@ def build_assetprices(DefaultCurrency, user_aIDs):
 
     try:
         histpDF = pd.DataFrame(__main__.connection.execute(sa.text("SELECT * \
-                FROM HistoryPrices")).fetchall(), columns=["Date","Open",\
-                "High","Low","Close","Adj Close","Volume","AssetID","Currency"])
+                FROM HistoryPrices")).fetchall(), columns=["Date",\
+                "Close","Volume","AssetID","Currency"])
     except:
-        histpDF = pd.DataFrame(columns=["Date","Open",\
-                "High","Low","Close","Adj Close","Volume","AssetID","Currency"])
+        histpDF = pd.DataFrame(columns=["Date",\
+                "Close","Volume","AssetID","Currency"])
         
     if DefaultCurrency != "USD":
         defDF = histpDF[(histpDF["AssetID"] == DefaultCurrency)][["Date","AssetID",\
@@ -356,7 +356,11 @@ def build_assetprices(DefaultCurrency, user_aIDs):
 
     # But USD needs to be added
     if DefaultCurrency != "USD":
-        currency = get_currency(x)
+        try:
+            currency = get_currency(x)
+        except:
+            # currency = get_currency(DefaultCurrency)
+            return
         cuffDF = get_currency_data(currency)
         y = histpDF[(histpDF["AssetID"] == DefaultCurrency)]\
             [["Date","AssetID","Close"]].sort_values(by='Date')
@@ -464,6 +468,15 @@ if __name__ == '__main__':
                 connection.commit()
             else:
                 td = pd.read_csv(f, header=0)
+                if 'Price' in td.columns:
+                    try:
+                        td = td.rename(columns={'Price': 'Date'})
+                        td = td[td.AssetID.notnull()]
+                    except:
+                        print("Failed to rename column")
+                td = td[['Date', 'Close', 'Volume', 'AssetID', 'Currency']]
+                td['Close'] = td['Close'].astype(float)
+                td['Volume'] = td['Volume'].astype(int)
                 td.to_sql("HistoryPrices", con=connection, if_exists='append', index=False, chunksize=__main__.cz)
                 # Make sure data is committed to database
                 connection.commit()

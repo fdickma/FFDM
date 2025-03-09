@@ -651,6 +651,7 @@ def get_ticker_currency(ticker, file):
         return 'USD'
 
 def dl_ticker_data(isin, ticker, years):
+    print(isin, ticker, years)
     if ticker != None:
         now_date = datetime.datetime.now()
         end_d = convert_date(now_date)
@@ -679,6 +680,9 @@ def dl_ticker_data(isin, ticker, years):
         start_d = str(start_year) + "-01-01"
         if len(li) > 0:
             ticker_data = pd.concat(li, axis=0, ignore_index=True)
+        # for file_year in range(int(start_year) - years, int(start_year) + 1, 1):
+        #    print(file_year)
+
         # Check if the data file is older than today
         if os.path.exists(ticker_dir + isin + "_" + str(end_d)[:4] + ".csv") == True:
             filetime = os.path.getmtime(ticker_dir + isin + "_" + str(end_d)[:4] + ".csv")
@@ -688,6 +692,7 @@ def dl_ticker_data(isin, ticker, years):
             nowDate = datetime.datetime.strptime(day_date, "%Y-%m-%d")
             if fileDate >= nowDate:
                 return
+        if os.path.exists(ticker_dir + isin + "_" + str(end_d)[:4] + ".csv") == False:
             df = yfload(ticker, start_d, end_d, isin, currency)
             if len(df) > 0:
                 li = []
@@ -700,6 +705,7 @@ def dl_ticker_data(isin, ticker, years):
             else:
                 print("Error downloading data:", isin)
                 return None
+        return
     else:
         return None
 
@@ -822,8 +828,12 @@ def missing_ticker_data(u_id, user_aIDs):
         frame = pd.concat(li, axis=0, ignore_index=True)
         for a in asset_list:
             aDF = frame[(frame["AssetID"] == a)]
-            last = aDF.sort_values(['Date']).drop_duplicates('Date', keep='last')\
+            #print(aDF)
+            try:
+                last = aDF.sort_values(['Date']).drop_duplicates('Date', keep='last')\
                 ['Date'].max()
+            except:
+                last = aDF.sort_values(['Date']).drop_duplicates('Date', keep='last')
             # Check if a date could be determined            
             if type(last) != str:
                 # If not, get the year from 5 years ago
