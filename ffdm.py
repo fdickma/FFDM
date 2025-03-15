@@ -126,13 +126,6 @@ def writeFileChk(Files):
         f.write(chk+"\n")
     f.close()
     
-# Generate a hash for a list of strings
-def hashList(List):
-    Complete = ""
-    for l in List:
-        Complete = Complete + l.replace("\n",'')
-    return hash(Complete)
-    
 def assetsUpdate():
     scrape.check_online()
 
@@ -249,6 +242,9 @@ def accountsUpdate():
             u_id = str(user_id[0])
         else:
             u_id = user_id
+        # Don't work on the sample user
+        if u_id == "empty":
+            continue
         print('Re-initilize data for:', u_id)
         fl.get_currencies()
         subprocess.run(["python3 " + baseDir + "init_db.py " + u_id], shell=True, check=True)
@@ -288,6 +284,8 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        '-u', '--unlock', help='Delete lock file', action='store_true')
+    parser.add_argument(
         '-t', '--test', help='Dry run', action='store_true')
     parser.add_argument(
         '-w', '--web', help='Get web data', action='store_true')
@@ -295,8 +293,6 @@ if __name__ == '__main__':
         '-d', '--tdu', help='Update ticker data', action='store_true')
     parser.add_argument(
         '-l', '--lock', help='Set lock file', action='store_true')
-    parser.add_argument(
-        '-u', '--unlock', help='Delete lock file', action='store_true')
     parser.add_argument(
         '-f', '--force', help='Force accounts update', action='store_true')
     parser.add_argument(
@@ -385,16 +381,17 @@ if __name__ == '__main__':
         deleteLock()
         sys.exit(0)
         
-    oldFileList = readFileChk()
-    FileList = getFileList()
+    oldFileHash = hash(str(readFileChk()))
+    newFileList = getFileList()
+    newFileHash = hash(str(newFileList))
     
-    if hashList(FileList) == hashList(oldFileList):
+    if newFileHash == oldFileHash:
         print("No new data found to update.")
     else:
         print("New data found to update")
         if checkLock(): sys.exit()
         createLock()
         accountsUpdate()
-        writeFileChk(FileList)
+        writeFileChk(newFileList)
         deleteLock()
       

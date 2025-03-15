@@ -394,6 +394,9 @@ if __name__ == '__main__':
     if len(user_id) == 0 or user_id == '-f':
         user_id = 'test'
     print(user_id)
+    # Don't work on the sample user
+    if user_id == "empty":
+        exit(0)
 
     baseDir = os.path.abspath(os.path.dirname(__file__)) + '/'
     myDir = baseDir + 'users/' + user_id + '/'
@@ -469,6 +472,7 @@ if __name__ == '__main__':
                 connection.commit()
             else:
                 td = pd.read_csv(f, header=0)
+                # Handling new data format with price column as date name
                 if 'Price' in td.columns:
                     try:
                         td = td.rename(columns={'Price': 'Date'})
@@ -476,9 +480,14 @@ if __name__ == '__main__':
                     except:
                         print("Failed to rename column")
                 td = td[['Date', 'Close', 'Volume', 'AssetID', 'Currency']]
-                # Convert columns to numeric values
+                # Convert columns
+                tmp = pd.DataFrame()
+                # Using a temporary dataframe to avoid copy on write errors 
+                tmp[['AssetID', 'Currency']] = td[['AssetID', 'Currency']].astype(str)
+                td[['AssetID', 'Currency']] = tmp[['AssetID', 'Currency']]
                 td['Close'] = pd.to_numeric(td['Close'])
                 td['Volume'] = pd.to_numeric(td['Volume'])
+                td['Date'] = pd.to_datetime(td['Date'])
                 # Remove statistical outliers with more than three times of standard deviation 
                 td = td[np.abs(stats.zscore(td['Close'])) < 3]
                 td.to_sql("HistoryPrices", con=connection, if_exists='append', index=False, chunksize=__main__.cz)
