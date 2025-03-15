@@ -1,9 +1,11 @@
 psutil
+chardet
 numpy
 bcrypt
-pandas<2.0
+pandas
+scipy
 pyarrow
-sqlalchemy<2.0
+sqlalchemy
 sqlalchemy.orm
 matplotlib
 flask
@@ -11,5 +13,6 @@ flask-login
 flask-sqlalchemy
 openpyxl
 gunicorn
+bs4
 yahoofinancials
 yfinance

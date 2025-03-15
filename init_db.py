@@ -16,6 +16,7 @@ import csv
 import re
 import subprocess
 from datetime import date, timedelta
+from scipy import stats
 import __main__
 
 # Import FFDM function library
@@ -475,8 +476,11 @@ if __name__ == '__main__':
                     except:
                         print("Failed to rename column")
                 td = td[['Date', 'Close', 'Volume', 'AssetID', 'Currency']]
-                td['Close'] = td['Close'].astype(float)
-                td['Volume'] = td['Volume'].astype(int)
+                # Convert columns to numeric values
+                td['Close'] = pd.to_numeric(td['Close'])
+                td['Volume'] = pd.to_numeric(td['Volume'])
+                # Remove statistical outliers with more than three times of standard deviation 
+                td = td[np.abs(stats.zscore(td['Close'])) < 3]
                 td.to_sql("HistoryPrices", con=connection, if_exists='append', index=False, chunksize=__main__.cz)
                 # Make sure data is committed to database
                 connection.commit()
