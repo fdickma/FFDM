@@ -692,19 +692,18 @@ def dl_ticker_data(isin, ticker, years):
             nowDate = datetime.datetime.strptime(day_date, "%Y-%m-%d")
             if fileDate >= nowDate:
                 return
-        if os.path.exists(ticker_dir + isin + "_" + str(end_d)[:4] + ".csv") == False:
-            df = yfload(ticker, start_d, end_d, isin, currency)
-            if len(df) > 0:
-                li = []
-                for i, x in df.groupby(df.index.year):
-                    ticker_file = ticker_dir + isin + "_" + str(i) + ".csv"
-                    x.to_csv(ticker_file, header=True)
-                    df = pd.read_csv(ticker_file, index_col=None, header=0)
-                    li.append(df)
-                ticker_data = pd.concat(li, axis=0, ignore_index=True)
-            else:
-                print("Error downloading data:", isin)
-                return None
+        df = yfload(ticker, start_d, end_d, isin, currency)
+        if len(df) > 0:
+            li = []
+            for i, x in df.groupby(df.index.year):
+                ticker_file = ticker_dir + isin + "_" + str(i) + ".csv"
+                x.to_csv(ticker_file, header=True)
+                df = pd.read_csv(ticker_file, index_col=None, header=0)
+                li.append(df)
+            ticker_data = pd.concat(li, axis=0, ignore_index=True)
+        else:
+            print("Error downloading data:", isin)
+            return None
         return
     else:
         return None
@@ -790,6 +789,7 @@ def isin_data(isin, last_update, u_id):
     try:
         for i, x in df.groupby(df.index.year):
             isin_file = isin_dir + isin + "_" + str(i) + ".csv"
+            print("Saving", i, isin_file)
             x.to_csv(isin_file, header=True)
     except:
         print("Error saving data:", isin)
