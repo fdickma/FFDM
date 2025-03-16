@@ -124,7 +124,13 @@ def writeFileChk(Files):
     f = open(TempDir + 'ffdm_files.chk', 'w')
     for chk in Files:
         f.write(chk+"\n")
-    f.close()
+        
+# Generate a hash for a list of strings
+def hashList(List):
+    Complete = ""
+    for l in List:
+        Complete = Complete + l.replace("\n",'')
+    return hash(Complete)
     
 def assetsUpdate():
     scrape.check_online()
@@ -286,8 +292,6 @@ if __name__ == '__main__':
     parser.add_argument(
         '-u', '--unlock', help='Delete lock file', action='store_true')
     parser.add_argument(
-        '-t', '--test', help='Dry run', action='store_true')
-    parser.add_argument(
         '-w', '--web', help='Get web data', action='store_true')
     parser.add_argument(
         '-d', '--tdu', help='Update ticker data', action='store_true')
@@ -301,7 +305,7 @@ if __name__ == '__main__':
         '-g', '--target', help='Check target prices', action='store_true')
     
     # The last parameter is the username
-    parser.add_argument('rest', nargs=argparse.REMAINDER)
+    parser.add_argument('username', nargs=argparse.REMAINDER)
     args = parser.parse_args()
 
     now = datetime.datetime.now()
@@ -310,55 +314,44 @@ if __name__ == '__main__':
     # In case a username is given check it against the userlist
     # If the username exists append it to an empty userlist as the single 
     # username to be processed
-    if args.rest:
+    if args.username:
         if userlist != None:
-            if fl.in_list(args.rest, userlist):
+            if fl.in_list(args.username, userlist):
                 userlist = []
-                userlist.append(args.rest)
+                userlist.append(args.username)
         else:
             print("Username does not exist.")
             exit()
 
     print(userlist)
 
-    if args.test:
-        if checkLock(): sys.exit()
-        print('Test run only.')
-        sys.exit(0)
-
-    if args.lock:
+    # Call procedures according to parameters
+    if args.unlock == True and args.lock == False:
+        print('Delete lock file.')
+        deleteLock()
+        
+    if args.lock == True and args.unlock == False:
         if checkLock(): sys.exit()
         print('Set lock file.')
         createLock()
-        sys.exit(0)
 
-    if args.target:
-        if checkLock(): sys.exit()
-        createLock()
-        print('Checking target prices.')
-        targetTest()
-        deleteLock()
-        sys.exit(0)
-
-    if args.tdu:
+    if args.tdu == True:
         if checkLock(): sys.exit()
         createLock()
         print('Update ticker data.')
         tickerDataUpdate()
         accountsUpdate()
         deleteLock()
-        sys.exit(0)
 
-    if args.all:
+    if args.all == True and args.web == False and args.force == False:
         if checkLock(): sys.exit()
         createLock()
         print('Updating all data.')
         assetsUpdate()
         accountsUpdate()
         deleteLock()
-        sys.exit(0)
 
-    if args.web:
+    if args.web == True and args.force == False and args.all == False:
         if checkLock(): sys.exit()
         createLock()
         print('Updating web data.')
@@ -366,32 +359,36 @@ if __name__ == '__main__':
         accountsUpdate()
         targetTest()
         deleteLock()
-        sys.exit(0)
 
-    if args.force:
+    if args.force == True and args.web == False and args.all == False:
         if checkLock(): sys.exit()
         createLock()
         print('Force update without updating prices.')
         accountsUpdate()
         deleteLock()
-        sys.exit(0)
 
-    if args.unlock:
-        print('Delete lock file.')
-        deleteLock()
-        sys.exit(0)
-        
-    oldFileHash = hash(str(readFileChk()))
-    newFileList = getFileList()
-    newFileHash = hash(str(newFileList))
-    
-    if newFileHash == oldFileHash:
-        print("No new data found to update.")
-    else:
-        print("New data found to update")
+    if args.target == True:
         if checkLock(): sys.exit()
         createLock()
-        accountsUpdate()
-        writeFileChk(newFileList)
+        print('Checking target prices.')
+        targetTest()
         deleteLock()
+
+    # In case no arguments are given, check for file changes
+    if not len(sys.argv) > 1:
+        oldFileHash = hashList(readFileChk())
+        newFileList = getFileList()
+        newFileHash = hashList(newFileList)
+        
+        if newFileHash == oldFileHash:
+            print("No new data found to update.")
+        else:
+            print("New data found to update")
+            if checkLock(): sys.exit()
+            createLock()
+            accountsUpdate()
+            writeFileChk(newFileList)
+            deleteLock()
+    sys.exit(0)
+
       
