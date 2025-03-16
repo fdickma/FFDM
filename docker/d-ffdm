@@ -23,7 +23,8 @@ start()
 	-v $BASEDIR/_ffdm/ssl:/ssl:ro \
 	-v $BASEDIR/_ffdm/assetdata:/ffdm/assetdata \
 	-v $BASEDIR/_ffdm/of_ticker:/ffdm/of_ticker \
-	-v $USERDIR/:/ffdm/users \
+	-v $BASEDIR/_ffdm/logs:/ffdm/logs \
+       	-v $USERDIR/:/ffdm/users \
 	-v $BASEDIR/SPK:/ffdm/users/<your FFDM user name>/SPK:ro \
 	-v $BASEDIR/DKB:/ffdm/users/<your FFDM user name>/DKB:ro \
 	ffdm

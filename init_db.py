@@ -421,6 +421,10 @@ if __name__ == '__main__':
     dataDir=config['Accounts']['Dir']
     accountDir = []
 
+    # Redirect output to files for easier debugging
+    sys.stdout = open(baseDir + 'logs/ffdm_init_' + user_id + '.out', 'w')
+    sys.stderr = open(baseDir + 'logs/ffdm_init_' + user_id + '.err', 'a+')
+
     # Iterating account directory entries
     dir_count = 0
     for cdir in config['Accounts']:

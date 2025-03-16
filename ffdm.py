@@ -274,6 +274,10 @@ if __name__ == '__main__':
     TempDir = os.path.dirname(os.path.realpath(__file__)) + "/"
     LockFile = TempDir + 'ffdm.lock'
 
+    # Redirect output to files for easier debugging
+    sys.stdout = open(baseDir + 'logs/ffdm.out', 'w')
+    sys.stderr = open(baseDir + 'logs/ffdm.err', 'a+')
+
     # Check if the script is already running, this instance adds
     # one instance. Therefore, check for more than one instance.
     ps_i = 0
