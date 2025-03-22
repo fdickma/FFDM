@@ -27,7 +27,7 @@ metadata_obj = sa.MetaData()
 
 for t in ['Accounts', 'HistoryPrices', 'AssetInfo', 'CurrencyRates', \
     'AssetReferences', 'AssetPrices', 'AssetTypes', 'TargetPrices', \
-    'Depots', 'VLplans']:
+    'Depots', 'VLplans', 'index_FearAndGreed']:
     del_table(t, metadata_obj, engine)
 
 accounts_t = sa.Table(

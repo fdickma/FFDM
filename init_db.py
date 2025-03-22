@@ -390,7 +390,10 @@ if __name__ == '__main__':
     cz = 100
     
     # Get user ID from main process
-    user_id = sys.argv[1]
+    try:
+        user_id = sys.argv[1]
+    except:
+        exit(0)
     if len(user_id) == 0 or user_id == '-f':
         user_id = 'test'
     print(user_id)

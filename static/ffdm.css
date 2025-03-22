@@ -391,6 +391,24 @@ ul li {
   height:auto;
 }
 
+.chart{
+  color:white;
+  background-color: #003366;
+  margin:0px 40px 0px 40px;
+  padding: 10px 20px 10px 20px;
+  border:none;
+  width: 50vw;
+  height:auto;
+}
+
+.idxparagraph{
+  color:white;
+  background-color: #003366;
+  margin:10px 40px 0px 40px;
+  padding: 10px 20px 10px 20px;
+  width: 50vw;
+}
+
 .versiontext{
   margin:0px;
   padding: 0px 70px 0px 70px;
@@ -741,5 +759,24 @@ body {
     .kpi{
      font-size: 2.2vw;
     }
+
+.chart{
+  color:white;
+  background-color: #003366;
+  margin:0px 40px 0px 40px;
+  padding: 10px 20px 10px 20px;
+  border:none;
+  width: 70vw;
+  height:auto;
+}
+
+.idxparagraph{
+  font-size: 2.2vw;
+  color:white;
+  background-color: #003366;
+  margin:10px 40px 0px 40px;
+  padding: 10px 20px 10px 20px;
+  width: 70vw;
+}
 
 }

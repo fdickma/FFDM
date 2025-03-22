@@ -24,6 +24,7 @@ import __main__
 # Import FFDM function library
 import ffdm_lib as fl
 import ffdm_scrape as scrape
+import ffdm_indexes as findex
 scrape.refAvailable = []
 
 # Define main variables as global
@@ -133,8 +134,12 @@ def hashList(List):
     return hash(Complete)
     
 def assetsUpdate():
-    scrape.check_online()
 
+    # Update indexes first
+    findex.index_data()
+
+    # Check for scraping sources to be online
+    scrape.check_online()
     if (scrape.refAvailable[0] == False) and (scrape.refAvailable[1] == False) \
         and (scrape.refAvailable[2] == False):
         print("No online services available...")
@@ -298,6 +303,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '-w', '--web', help='Get web data', action='store_true')
     parser.add_argument(
+        '-i', '--index', help='Get index data', action='store_true')
+    parser.add_argument(
         '-d', '--tdu', help='Update ticker data', action='store_true')
     parser.add_argument(
         '-l', '--lock', help='Set lock file', action='store_true')
@@ -353,6 +360,7 @@ if __name__ == '__main__':
         print('Updating all data.')
         assetsUpdate()
         accountsUpdate()
+        findex.index_data()
         deleteLock()
 
     if args.web == True and args.force == False and args.all == False:
@@ -361,7 +369,15 @@ if __name__ == '__main__':
         print('Updating web data.')
         assetsUpdate()
         accountsUpdate()
+        findex.index_data()
         targetTest()
+        deleteLock()
+
+    if args.index == True and args.force == False and args.all == False:
+        if checkLock(): sys.exit()
+        createLock()
+        print('Updating index data.')
+        findex.index_data()
         deleteLock()
 
     if args.force == True and args.web == False and args.all == False:
@@ -369,6 +385,7 @@ if __name__ == '__main__':
         createLock()
         print('Force update without updating prices.')
         accountsUpdate()
+        findex.index_data()
         deleteLock()
 
     if args.target == True:
@@ -380,6 +397,8 @@ if __name__ == '__main__':
 
     # In case no arguments are given, check for file changes
     if not len(sys.argv) > 1:
+        print(now)
+        print("Checking data for update...")
         oldFileHash = hashList(readFileChk())
         newFileList = getFileList()
         newFileHash = hashList(newFileList)

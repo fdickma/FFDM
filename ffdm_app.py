@@ -51,6 +51,18 @@ def check_db(dbt, u_id):
     else:
         return 0
 
+def get_db_idxdata():
+    idx_db_data = []
+    try:
+        appdir = os.path.abspath(os.path.dirname(__file__))
+        idx_sql_uri = 'sqlite:///' + os.path.join(appdir, 'indexes.sqlite')
+        idx_engine = sa.create_engine(idx_sql_uri, echo=False) 
+        with idx_engine.connect() as idx_connection:
+            idx_db_data = pd.read_sql('SELECT * FROM index_FearAndGreed', idx_connection)
+        return idx_db_data
+    except:
+        return None
+
 def get_myDir(user_id):
     baseDir = os.path.abspath(os.path.dirname(__file__)) + '/'
     return baseDir + 'users/' + user_id + '/'
@@ -908,11 +920,12 @@ def watchlist():
     return render_template('watchlist.html', watchlist=watchlist, \
                             investlist=investlist, serverName=serverName)
 
-@app.route('/') 
-def index():
+@app.route('/about') 
+def about():
     ffdm_ver = fl.ffdm_version(myDir=baseDir)
+
     if current_user.is_authenticated == False:
-        return render_template('index.html', serverName=serverName, ver=ffdm_ver)
+        return render_template('about.html', serverName=serverName, ver=ffdm_ver)
     else:
         try:
             filesToCheck = ["AccountRegistry.csv", "Accounts.csv", "AssetReferences.csv", \
@@ -933,11 +946,34 @@ def index():
                     if cFile == "VLplans.csv":
                         failedText = failedText + "  No savings plans have been defined!\n"
             print(failedText)
-            return render_template('index.html', failedText=failedText, serverName=serverName,\
+            return render_template('about.html', failedText=failedText, serverName=serverName,\
                 ver=ffdm_ver)
         except:
-            return render_template('index.html', serverName=serverName, ver=ffdm_ver)
+            return render_template('about.html', serverName=serverName, ver=ffdm_ver)
     return render_template('index.html', serverName=serverName, ver=ffdm_ver)
+
+@app.route('/') 
+def index():
+    ffdm_ver = fl.ffdm_version(myDir=baseDir)
+
+    if current_user.is_authenticated == False:
+        return render_template('about.html', serverName=serverName, ver=ffdm_ver)
+    if not os.path.exists(baseDir + '/indexes.sqlite'):
+        try:
+            subprocess.run(["python3 ffdm.py -i"], shell=True, check=True)
+        except:
+            return render_template('about.html', serverName=serverName, ver=ffdm_ver)
+    else:
+        try:
+            idxDF = get_db_idxdata()
+            fng = int(round(idxDF["y"].tail(1).values[0], 0))
+            fngf = idxDF["rating"].tail(1).values[0]
+
+            return render_template('index.html', fng=fng, fngf=fngf, failedText=failedText, \
+                serverName=serverName, ver=ffdm_ver)
+        except:
+            return render_template('index.html', fng=fng, fngf=fngf, serverName=serverName, ver=ffdm_ver)
+    return render_template('index.html', fng=fng, fngf=fngf, serverName=serverName, ver=ffdm_ver)
 
 @app.route('/nodata') 
 def nodata():
