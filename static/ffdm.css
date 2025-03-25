@@ -395,7 +395,7 @@ ul li {
   color:white;
   background-color: #003366;
   margin:0px 40px 0px 40px;
-  padding: 10px 20px 10px 20px;
+  padding: 20px 20px 20px 20px;
   border:none;
   width: 50vw;
   height:auto;
@@ -405,7 +405,7 @@ ul li {
   color:white;
   background-color: #003366;
   margin:10px 40px 0px 40px;
-  padding: 10px 20px 10px 20px;
+  padding: 20px 20px 0px 20px;
   width: 50vw;
 }
 
@@ -764,7 +764,7 @@ body {
   color:white;
   background-color: #003366;
   margin:0px 40px 0px 40px;
-  padding: 10px 20px 10px 20px;
+  padding: 20px 20px 20px 20px;
   border:none;
   width: 70vw;
   height:auto;
@@ -775,7 +775,7 @@ body {
   color:white;
   background-color: #003366;
   margin:10px 40px 0px 40px;
-  padding: 10px 20px 10px 20px;
+  padding: 20px 20px 0px 20px;
   width: 70vw;
 }
 

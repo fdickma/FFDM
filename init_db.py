@@ -153,7 +153,7 @@ def watchlist_asset(assets, proc_num):
         frame1 = plt.gca()
         frame1.axes.get_xaxis().set_label_text('')
         try:
-            plt.savefig(__main__.baseDir+"static/charts/"+a+".png")
+            plt.savefig(__main__.baseDir + "static/charts/" + a + ".png")
         except:
             print("Plot for " + a + " not saved!")
 

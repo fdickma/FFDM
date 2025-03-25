@@ -55,7 +55,7 @@ def get_db_idxdata():
     idx_db_data = []
     try:
         appdir = os.path.abspath(os.path.dirname(__file__))
-        idx_sql_uri = 'sqlite:///' + os.path.join(appdir, 'indexes.sqlite')
+        idx_sql_uri = 'sqlite:///' + os.path.join(appdir, 'indices.sqlite')
         idx_engine = sa.create_engine(idx_sql_uri, echo=False) 
         with idx_engine.connect() as idx_connection:
             idx_db_data = pd.read_sql('SELECT * FROM index_FearAndGreed', idx_connection)
@@ -955,10 +955,12 @@ def about():
 @app.route('/') 
 def index():
     ffdm_ver = fl.ffdm_version(myDir=baseDir)
+    fng = 0
+    fngf = ""
 
     if current_user.is_authenticated == False:
         return render_template('about.html', serverName=serverName, ver=ffdm_ver)
-    if not os.path.exists(baseDir + '/indexes.sqlite'):
+    if not os.path.exists(baseDir + '/indices.sqlite'):
         try:
             subprocess.run(["python3 ffdm.py -i"], shell=True, check=True)
         except:

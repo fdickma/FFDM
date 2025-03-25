@@ -24,7 +24,7 @@ import __main__
 # Import FFDM function library
 import ffdm_lib as fl
 import ffdm_scrape as scrape
-import ffdm_indexes as findex
+import ffdm_indices as findex
 scrape.refAvailable = []
 
 # Define main variables as global
@@ -134,9 +134,6 @@ def hashList(List):
     return hash(Complete)
     
 def assetsUpdate():
-
-    # Update indexes first
-    findex.index_data()
 
     # Check for scraping sources to be online
     scrape.check_online()
@@ -279,6 +276,9 @@ if __name__ == '__main__':
     TempDir = os.path.dirname(os.path.realpath(__file__)) + "/"
     LockFile = TempDir + 'ffdm.lock'
 
+    # Count the number of given parameters
+    paramnum = len(sys.argv)
+
     # Redirect output to files for easier debugging
     sys.stdout = open(baseDir + 'logs/ffdm.out', 'w')
     sys.stderr = open(baseDir + 'logs/ffdm.err', 'a+')
@@ -330,6 +330,8 @@ if __name__ == '__main__':
             if fl.in_list(args.username, userlist):
                 userlist = []
                 userlist.append(args.username)
+                # If a username is given, the number of parameters is to be reduced
+                paramnum = paramnum - 1
         else:
             print("Username does not exist.")
             exit()
@@ -396,7 +398,8 @@ if __name__ == '__main__':
         deleteLock()
 
     # In case no arguments are given, check for file changes
-    if not len(sys.argv) > 1:
+    # One system argument is the ffdm.py script itself
+    if not paramnum > 1:
         print(now)
         print("Checking data for update...")
         oldFileHash = hashList(readFileChk())
