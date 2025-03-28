@@ -347,6 +347,7 @@ if __name__ == '__main__':
         if checkLock(): sys.exit()
         print('Set lock file.')
         createLock()
+        sys.exit()
 
     if args.tdu == True:
         if checkLock(): sys.exit()
@@ -355,6 +356,7 @@ if __name__ == '__main__':
         tickerDataUpdate()
         accountsUpdate()
         deleteLock()
+        sys.exit()
 
     if args.all == True and args.web == False and args.force == False:
         if checkLock(): sys.exit()
@@ -396,6 +398,7 @@ if __name__ == '__main__':
         print('Checking target prices.')
         targetTest()
         deleteLock()
+        sys.exit()
 
     # In case no arguments are given, check for file changes
     # One system argument is the ffdm.py script itself
@@ -406,6 +409,7 @@ if __name__ == '__main__':
         newFileList = getFileList()
         newFileHash = hashList(newFileList)
         
+        # Check for any changes by using hashes
         if newFileHash == oldFileHash:
             print("No new data found to update.")
         else:

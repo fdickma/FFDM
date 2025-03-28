@@ -48,11 +48,12 @@ def idx_graph(idx_name, df, baseDir):
     plt.gca().set_xlabel("")
     plt.gca().set_title("")
     plt.gcf().autofmt_xdate()
+    
     # Remove the unnecessary x-axis title 
     frame1 = plt.gca()
     frame1.axes.get_xaxis().set_label_text('')
-
     currVal = int(round(chartDF["y"].tail(1).values[0], 0))
+    
     # currDate = chartDF.index.values[-1]
     bbox_props = dict(boxstyle='round',fc='w', ec='k',lw=1)
     frame1.annotate(str(currVal), (100, currVal), xytext = (260, currVal), bbox=bbox_props)
@@ -76,6 +77,7 @@ def index_data():
     IndicesList = ['fearandgreed']
     for indexName in IndicesList: 
         print(indexName)
+        doUpdate = False
         indexDir = baseDir + "indices/"
         if not os.path.exists(indexDir):
             os.makedirs(indexDir)
@@ -87,27 +89,26 @@ def index_data():
             fileDate = datetime.datetime.strptime(filetimeConv, "%Y-%m-%d")
             nowDate = datetime.datetime.strptime(str(datetime.datetime.now())[:10], "%Y-%m-%d")
             if fileDate >= nowDate:
-                indexDF = pd.read_csv(indexFile)
-                indexDF.to_sql("index_FearAndGreed", con=idx_connection, if_exists='replace', index=False, chunksize=100)
-                # Make sure data is committed to database
-                idx_connection.commit()
-                idx_graph(indexName, indexDF, baseDir)
-                continue
-        # Downloading index data
-        if indexName == 'fearandgreed':
-            indexDF = fear_n_greed()
-        if len(indexDF) < 1:
-            print("Error downloading data")
-            continue    
-        try:
+                doUpdate = True
+        if os.path.exists(indexFile) == False or doUpdate == True:
+            # Downloading index data
+            if indexName == 'fearandgreed':
+                readidxDF = fear_n_greed()
+            if len(readidxDF) < 1:
+                print("Error downloading data")
+                continue    
+            try:
+                readidxDF.to_csv(indexFile, header=True)
+                print("Saving", indexName)
+            except:
+                print("Error saving index data")
+        indexDF = pd.read_csv(indexFile)
+        print(indexDF)
+        if len(indexDF) > 0:
             indexDF.to_sql("index_FearAndGreed", con=idx_connection, if_exists='replace', index=False, chunksize=100)
             # Make sure data is committed to database
             idx_connection.commit()
             idx_graph(indexName, indexDF, baseDir)
-            print("Saving", indexName)
-            indexDF.to_csv(indexFile, header=True)
-        except:
-            print("Error saving data:", isin)
     # Closing the database
     idx_connection.close()    
     return
