@@ -40,6 +40,7 @@ def idx_graph(idx_name, df, baseDir):
     #chartDF['SMA50'] = chartDF['y'].rolling(50).mean()
     chartDF.plot(title=idx_name,figsize=(8,4), linewidth = '2.0')
     plt.grid(color = 'grey', linestyle = '--', linewidth = 0.25)
+
     if idx_name == 'fearandgreed':
         plt.ylim(0, 100)
         plt.yticks([25, 45, 50, 55, 75], ['Extreme \nFear', ' Fear', 'Neutral', 'Greed', 'Extreme \nGreed'])
@@ -48,6 +49,7 @@ def idx_graph(idx_name, df, baseDir):
     plt.gca().set_xlabel("")
     plt.gca().set_title("")
     plt.gcf().autofmt_xdate()
+    #plt.gca().set_facecolor('black')
     
     # Remove the unnecessary x-axis title 
     frame1 = plt.gca()
@@ -56,7 +58,13 @@ def idx_graph(idx_name, df, baseDir):
     
     # currDate = chartDF.index.values[-1]
     bbox_props = dict(boxstyle='round',fc='w', ec='k',lw=1)
-    frame1.annotate(str(currVal), (100, currVal), xytext = (260, currVal), bbox=bbox_props)
+    frame1.annotate(str(currVal), (100, currVal), xytext = (260, currVal), bbox=bbox_props)    
+
+    plt.fill_between(chartDF.index.values, 0, 25, color='red', alpha=0.2)
+    plt.fill_between(chartDF.index.values, 25, 45, color='red', alpha=0.1)
+    plt.fill_between(chartDF.index.values, 45, 55, color='yellow', alpha=0.2)
+    plt.fill_between(chartDF.index.values, 55, 75, color='green', alpha=0.1)
+    plt.fill_between(chartDF.index.values, 75, 100, color='green', alpha=0.2)
 
     try:
         plt.savefig(baseDir + "static/idxcharts/" + idx_name + ".png")
@@ -103,7 +111,6 @@ def index_data():
             except:
                 print("Error saving index data")
         indexDF = pd.read_csv(indexFile)
-        print(indexDF)
         if len(indexDF) > 0:
             indexDF.to_sql("index_FearAndGreed", con=idx_connection, if_exists='replace', index=False, chunksize=100)
             # Make sure data is committed to database
