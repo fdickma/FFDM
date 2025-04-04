@@ -96,7 +96,7 @@ def index_data():
             filetimeConv = time.strftime("%Y-%m-%d",time.localtime(filetime))
             fileDate = datetime.datetime.strptime(filetimeConv, "%Y-%m-%d")
             nowDate = datetime.datetime.strptime(str(datetime.datetime.now())[:10], "%Y-%m-%d")
-            if fileDate >= nowDate:
+            if fileDate <= nowDate:
                 doUpdate = True
         if os.path.exists(indexFile) == False or doUpdate == True:
             # Downloading index data

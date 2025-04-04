@@ -786,9 +786,8 @@ if __name__ == '__main__':
         perfDF['TotalEarnings'] = [depotviewDF['Earn'].sum() + depotviewDF['Dividend'].sum()]
         perfDF['CoreEarnings'] = [depotviewDF['Earn'].sum()]
         perfDF['TotalInvest'] = [yearDF['Invest'].sum()]
-        perfDF['BTCInvest'] = depotviewDF.loc[(depotviewDF['AssetID']=='BTC')]['AssetBuyPrice']
-        perfDF['BTCEarn'] = depotviewDF.loc[(depotviewDF['AssetID']=='BTC')]['Earn']
-
+        perfDF['BTCInvest'] = depotviewDF.loc[(depotviewDF['AssetID']=='BTC')]['AssetBuyPrice'].values[0]
+        perfDF['BTCEarn'] = depotviewDF.loc[(depotviewDF['AssetID']=='BTC')]['Earn'].values[0]
         perfDF['TotalPerformance'] = (perfDF['TotalEarnings'] / perfDF['TotalInvest']) * 100
         perfDF['AverageInvest'] = (cumyearDF['Invest'].mean())
         perfDF['AveragePerformance'] = (perfDF['TotalEarnings'] / perfDF['AverageInvest'])
@@ -804,8 +803,8 @@ if __name__ == '__main__':
     perfDF['YearPerformance'] = (((1 + (perfDF['AveragePerformance'])) ** \
                                 (year_factor)) - 1) * 100 
     
-    coreearn = perfDF['TotalEarnings'] - perfDF['BTCEarn']
-    coreinvest = perfDF['AverageInvest'] - perfDF['BTCInvest']
+    coreearn = perfDF['TotalEarnings'].values[0] - perfDF['BTCEarn'].values[0]
+    coreinvest = perfDF['AverageInvest'].values[0] - perfDF['BTCInvest'].values[0]
     coreperf = coreearn / coreinvest
 
     perfDF['YearCorePerformance'] = (((1 + (coreperf)) ** \
