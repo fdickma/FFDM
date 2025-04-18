@@ -778,6 +778,7 @@ def isin_data(isin, last_update, u_id):
         fileDate = datetime.datetime.strptime(lastfile, "%Y-%m-%d")
         nowDate = datetime.datetime.strptime(day_date, "%Y-%m-%d")
         if fileDate >= nowDate:
+            print(isin, ": no further update today...")
             return
     # Downloading data from Yahoo
     df = yfload(ticker, start_d, end_d, isin, currency)
@@ -822,13 +823,21 @@ def missing_ticker_data(u_id, user_aIDs):
             if "_info." in f:
                 continue
             else:
-                li.append(pd.read_csv(f, header=0))
+                td = pd.read_csv(f, header=0)
+                # Handling new data format with price column as date name
+                if 'Price' in td.columns:
+                    try:
+                        td = td.rename(columns={'Price': 'Date'})
+                        td = td[td.AssetID.notnull()]
+                    except:
+                        print("Failed to rename column")
+                td = td[['Date', 'Close', 'Volume', 'AssetID', 'Currency']]
+                li.append(td)
     # If the new asset list and the data of the files in the li list is not empty
     if len(asset_list) > 0 and len(li) > 0:
         frame = pd.concat(li, axis=0, ignore_index=True)
         for a in asset_list:
             aDF = frame[(frame["AssetID"] == a)]
-            #print(aDF)
             try:
                 last = aDF.sort_values(['Date']).drop_duplicates('Date', keep='last')\
                 ['Date'].max()

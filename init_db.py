@@ -343,7 +343,9 @@ def build_assetprices(DefaultCurrency, user_aIDs):
         if x in currency_list:
             continue
         currency = get_currency(x)
+        print("Currency:", currency)
         cuffDF = get_currency_data(currency)
+        print("Currency data:", cuffDF)
         y = histpDF[(histpDF["AssetID"] == x)]\
             [["Date","AssetID","Close"]].sort_values(by='Date')
         h = y.merge(cuffDF[['Date','Div']], how="inner", on="Date")
@@ -457,6 +459,8 @@ if __name__ == '__main__':
     except:
         # If not data exists, define a minimum set of currencies
         currencies = ['EUR','CHF','JPY','CNY','DKK','GBP','HKD']
+
+    print("Currencies:", currencies)
 
     print('Import: Historical Asset Prices')
     assetRefsDF = fl.get_assets(user_id)
