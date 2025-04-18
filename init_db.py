@@ -458,7 +458,7 @@ if __name__ == '__main__':
         print(usd_values)
     except:
         # If not data exists, define a minimum set of currencies
-        currencies = ['EUR','CHF','JPY','CNY','DKK','GBP','HKD']
+        currencies = ['EUR','CHF','JPY','CNY','DKK','GBP','HKD','AUD']
 
     print("Currencies:", currencies)
 

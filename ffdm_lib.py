@@ -610,7 +610,8 @@ def get_existing_ticker(isin, u_id):
     print('________________')
     usd_values = [['EUR=X', 'EUR'], ['CHF=X', 'CHF'], ['JPY=X', 'JPY'], \
                 ['BTC-USD', 'BTC'], ['GC=F', 'Gold'], ['GBP=X', 'GBP'], \
-                ['HKD=X', 'HKD'], ['CNY=X', 'CNY'], ['DKK=X', 'DKK']]
+                ['HKD=X', 'HKD'], ['CNY=X', 'CNY'], ['DKK=X', 'DKK'], \
+                ['AUD=X', 'AUD']]
     cyDF = pd.DataFrame(usd_values, columns =['Ticker', 'AssetID'])
     try:
         return cyDF[(cyDF['AssetID'] == isin)]['Ticker'].iloc[0]
