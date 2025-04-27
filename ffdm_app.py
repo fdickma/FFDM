@@ -968,14 +968,26 @@ def index():
     else:
         try:
             idxDF = get_db_idxdata()
-            fng = int(round(idxDF["y"].tail(1).values[0], 0))
-            fngf = idxDF["rating"].tail(1).values[0]
+            fng = int(round(idxDF["FearAndGreed"].tail(1).values[0], 0))
+            if (fng <= 25): 
+                fngf = "Extreme Fear"
+            if (fng >= 75): 
+                fngf = "Extreme Greed"
+            if (fng > 25) and (fng < 45): 
+                fngf = "Fear"
+            if (fng > 55) and (fng < 75): 
+                fngf = "Greed"
+            if (fng >= 45) and (fng <= 55): 
+                fngf = "Neutral"
+            fngavg = int(round(idxDF["FearAndGreed"].mean(), 0))
 
-            return render_template('index.html', fng=fng, fngf=fngf, failedText=failedText, \
-                serverName=serverName, ver=ffdm_ver)
+            return render_template('index.html', fng=fng, fngf=fngf, fngavg=fngavg, \
+                failedText=failedText, serverName=serverName, ver=ffdm_ver)
         except:
-            return render_template('index.html', fng=fng, fngf=fngf, serverName=serverName, ver=ffdm_ver)
-    return render_template('index.html', fng=fng, fngf=fngf, serverName=serverName, ver=ffdm_ver)
+            return render_template('index.html', fng=fng, fngf=fngf, fngavg=fngavg, \
+                            serverName=serverName, ver=ffdm_ver)
+    return render_template('index.html', fng=fng, fngf=fngf, fngavg=fngavg, \
+                            serverName=serverName, ver=ffdm_ver)
 
 @app.route('/nodata') 
 def nodata():
