@@ -13,6 +13,7 @@ def check_online():
     refAvailable.append(check_url("https://tagesschau.de"))
     refAvailable.append(check_url("https://ariva.de"))
     refAvailable.append(check_url("https://alleaktien.de"))
+    refAvailable.append(check_url("https://www.comdirect.de"))
 
 # Check a service to be online
 def check_url(url):
@@ -57,6 +58,7 @@ def get_Ref2_data(a_type, a_id, refFnet):
         link = "https://www.ariva.de/" + a_id \
             +" | grep -m 1 '[0-9] €' | grep -o [0-9.,]* | head -1"
     if link != "":
+        print("Ariva/OKX data...")
         return link
     else:
         return 0
@@ -68,6 +70,7 @@ def get_Ref3_data(a_type, a_id, refFnet):
         link = "https://www.alleaktien.de/data/" + a_id \
             +" | grep -m 1 ' EUR' | grep -o [0-9.,]* | head -1"
     if link != "":
+        print("Alleaktien data...")
         return link
     else:
         return 0
@@ -79,6 +82,7 @@ def get_Ref0_data(a_type, a_id, refFnet):
         link = "https://boerse.de/wertpapier/" \
             + a_id +" | grep -m 1 '[0-9] EUR' | grep -o [0-9.,]* | head -1"
     if link != "":
+        print("Boerse.de data...")
         return link
     else:
         return 0
@@ -102,6 +106,20 @@ def get_ARD_data(a_type, a_id):
         extract = r" | grep -E -m1 '([[:digit:]]{0,3}\.)?([[:digit:]]"\
         +r"{0,3}\.)?[[:digit:]]{1,3},[[:digit:]]{2}' | grep -o [0-9.,]*$"
     if extract != "":
+        print("ARD data...")
+        return link + a_id + extract
+    else:
+        return 0
+
+# Links for Comdirect
+def get_Com_data(a_type, a_id):
+    link = ""
+    extract = ""
+    if a_type == "STK":
+        link = "https://www.comdirect.de/inf/aktien/"
+        extract = r" | grep Xetra | grep -o [0-9.,]* | head  -1"
+    if extract != "":
+        print("Comdirect data...")
         return link + a_id + extract
     else:
         return 0
@@ -156,7 +174,7 @@ def retrieveWebData(link):
             return fl.check_float(m2.group(1))
     return -1
 
-def retrieveBSscraper(a_type, a_id):
+def retrieveBSscraper_old(a_type, a_id):
     results = None
     if a_type == "FND" or a_type == "ETF" or a_type == "STK":
         URL = "https://www.ariva.de/" + a_id
@@ -221,9 +239,11 @@ def assetDataScraping(asset, old_price):
         print("Checking alternative first")
         return_price = retrieveWebData(get_Alt_data(a_type, a_id, refNet0))
     # Trying the BeautifulSoup scraper next
-    if return_price <= 0:
-        return_price = retrieveBSscraper(a_type, a_id)
+    # if return_price <= 0:
+    #    return_price = retrieveBSscraper(a_type, a_id)
     # Using the w3m dumps last
+    if return_price <= 0 and a_type == 'STK':
+        return_price = retrieveWebData(get_Com_data(a_type, a_id))
     if return_price <= 0:
         if (refAvailable[2] == True):
             return_price = retrieveWebData(get_Ref2_data(a_type, a_id, refNet1))

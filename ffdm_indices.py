@@ -33,12 +33,15 @@ def get_user_agent() -> str:
     return random.choice(user_agent_strings)
 
 # Generate graphs
-def idx_graph(idx_name, df, baseDir):
+def idx_graph(idx_name, inputDF, baseDir):
     plt.rcParams["figure.dpi"] = 150
-    chartDF = (df[['date','y']]).set_index('date').copy()
-    chartDF['SMA20'] = chartDF['y'].rolling(20).mean()
+    chartDF = (inputDF[['Date','FearAndGreed']]).set_index('Date').copy()
+    chartDF['SMA20'] = chartDF['FearAndGreed'].rolling(20).mean()
     #chartDF['SMA50'] = chartDF['y'].rolling(50).mean()
-    chartDF.plot(title=idx_name,figsize=(8,4), linewidth = '2.0')
+    if len(chartDF) < 400:
+        chartDF.plot(title=idx_name,figsize=(8,4), linewidth = '2.0')
+    else:
+        chartDF.plot(title=idx_name,figsize=(16,4), linewidth = '2.0')
     plt.grid(color = 'grey', linestyle = '--', linewidth = 0.25)
 
     if idx_name == 'fearandgreed':
@@ -54,11 +57,12 @@ def idx_graph(idx_name, df, baseDir):
     # Remove the unnecessary x-axis title 
     frame1 = plt.gca()
     frame1.axes.get_xaxis().set_label_text('')
-    currVal = int(round(chartDF["y"].tail(1).values[0], 0))
+    currVal = int(round(chartDF["FearAndGreed"].tail(1).values[0], 0))
     
     # currDate = chartDF.index.values[-1]
-    bbox_props = dict(boxstyle='round',fc='w', ec='k',lw=1)
-    frame1.annotate(str(currVal), (100, currVal), xytext = (260, currVal), bbox=bbox_props)    
+    if idx_name[-7:] != 'history':
+        bbox_props = dict(boxstyle='round',fc='w', ec='k',lw=1)
+        frame1.annotate(str(currVal), (100, currVal), xytext = (260, currVal), bbox=bbox_props)    
 
     plt.fill_between(chartDF.index.values, 0, 25, color='red', alpha=0.2)
     plt.fill_between(chartDF.index.values, 25, 45, color='red', alpha=0.1)
@@ -90,13 +94,15 @@ def index_data():
         if not os.path.exists(indexDir):
             os.makedirs(indexDir)
         indexFile = indexDir + indexName + ".csv"
+        indexHistFile = indexDir + indexName + "_history.csv"
         # Check if the data file is older than today
         if os.path.exists(indexFile) == True:
             filetime = os.path.getmtime(indexFile)
             filetimeConv = time.strftime("%Y-%m-%d",time.localtime(filetime))
             fileDate = datetime.datetime.strptime(filetimeConv, "%Y-%m-%d")
             nowDate = datetime.datetime.strptime(str(datetime.datetime.now())[:10], "%Y-%m-%d")
-            if fileDate <= nowDate:
+            print("Now:", nowDate, "File:", fileDate)
+            if fileDate < nowDate:
                 doUpdate = True
         if os.path.exists(indexFile) == False or doUpdate == True:
             # Downloading index data
@@ -111,11 +117,33 @@ def index_data():
             except:
                 print("Error saving index data")
         indexDF = pd.read_csv(indexFile)
-        if len(indexDF) > 0:
-            indexDF.to_sql("index_FearAndGreed", con=idx_connection, if_exists='replace', index=False, chunksize=100)
-            # Make sure data is committed to database
-            idx_connection.commit()
-            idx_graph(indexName, indexDF, baseDir)
+        standardDF = (indexDF[['date','y']]).copy()
+        standardDF = standardDF.rename(columns={"date": "Date", "y": "FearAndGreed"})
+        standardDF['FearAndGreed'] = standardDF['FearAndGreed'].astype(int)
+        if len(indexDF) > 0 and doUpdate == True:
+            if os.path.exists(indexHistFile) == True:
+                indexHistDF = pd.read_csv(indexHistFile, sep=';')
+            DFs = [indexHistDF, standardDF]
+            result = pd.concat(DFs)
+            result = result.drop_duplicates(subset=['Date'], keep='last')
+            result.to_csv(indexHistFile, header=True, sep=';', index=None)
+        if os.path.exists(indexHistFile) == True:
+            resultDF = pd.read_csv(indexHistFile, sep=';')
+            if indexName == 'fearandgreed':
+                if doUpdate == True:
+                    result.to_sql("index_FearAndGreed", con=idx_connection, if_exists='replace', index=False, chunksize=100)
+                # Make sure data is committed to database
+                yaverageDF = (resultDF[['Date','FearAndGreed']]).copy()
+                yaverageDF['Date'] = pd.to_datetime(yaverageDF['Date'])
+                yaverageDF = pd.DataFrame( \
+                    yaverageDF.groupby(yaverageDF['Date'].dt.year)['FearAndGreed'].mean() \
+                    )
+                yaverageDF['Date'] = yaverageDF.index
+                yaverageDF = yaverageDF.reset_index(drop=True)
+                idx_connection.commit()
+                idx_graph(indexName, standardDF, baseDir)
+                idx_graph(indexName + 'averages', yaverageDF, baseDir)
+                idx_graph(indexName + 'history', resultDF, baseDir)
     # Closing the database
     idx_connection.close()    
     return
