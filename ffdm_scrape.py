@@ -39,23 +39,29 @@ def get_Alt_data(a_type, a_id, refFnet):
         return 0
 
 # Links for ariva.de
+# remove the Call/Put numbers first, otherwise the price will
+# not be extracted correctly
 def get_Ref2_data(a_type, a_id, refFnet):
     link = ""
     if a_type == "COM":
         link = "https://www.ariva.de/" + refFnet \
+            +" | grep -v 'Call' | grep -v 'Put' "\
             +" | grep -m 1 '[0-9] €' | grep -o [0-9.,]* | head -1"
     elif a_type == "CRP" and a_id == "BTC":
         link = "https://www.okx.com/convert/btc-to-eur" \
+            +" | grep -v 'Call' | grep -v 'Put' "\
             +" | grep -m 1 '€[0-9,.]' | grep -o '€[0-9.,]*' \
             | grep -o '[0-9.,]*' | head -1"
     elif a_type == "CRP" and a_id == "ETH":
         link = "https://www.okx.com/convert/eth-to-eur" \
+            +" | grep -v 'Call' | grep -v 'Put' "\
             +" | grep -m 1 '€[0-9,.]' | grep -o '€[0-9.,]*' \
             | grep -o '[0-9.,]*' | head -1"
     elif a_type == "CUR":
         return 0
     else:
         link = "https://www.ariva.de/" + a_id \
+            +" | grep -v 'Call' | grep -v 'Put' "\
             +" | grep -m 1 '[0-9] €' | grep -o [0-9.,]* | head -1"
     if link != "":
         print("Ariva/OKX data...")
