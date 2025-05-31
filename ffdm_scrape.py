@@ -102,7 +102,7 @@ def get_ARD_data(a_type, a_id):
         extract = r" | grep -E -m1 '([[:digit:]]{0,3}\.)?([[:digit:]]"\
         +r"{0,3}\.)?[[:digit:]]{1,3},[[:digit:]]{2}' | grep -o [0-9.,]*$"
     if a_type == "CUR" and a_id == "USD":
-        link = "https://www.tagesschau.de/wirtschaft/boersenkurse/eu0009652759-25108390/"
+        link = "https://www.tagesschau.de/wirtschaft/boersenkurse/eu0009652759-204423052/"
         extract = r" | grep '[$]' | grep Kurs | grep -o [0-9,.]*"
         return link + extract
     if a_type == "CRP" and len(a_id) < 5:
