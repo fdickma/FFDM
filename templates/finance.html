@@ -58,19 +58,25 @@
     <table class="table fintab_top">
     <tr>
         <th>Year</th>
+        <th>Tot.Inc.</th>
         <th>Income</th>
         <th>Spend</th>
         <th>Invest</th>
         <th>Saving</th>
     </tr>
     {% for month in monthly %}
-        {% if month['Income'] >= 0: %}
+        {% if month['TotIncome'] >= 0: %}
             <tr class="row-success">
         {% else %}
             <tr class="row-danger">
         {% endif %}      
             <td>
                 <span><b>{{ month['Year'] }}</b></span>
+            </td>
+            <td align="right">
+                <span>
+                    <b>{{ format_dec(month['TotIncome']) }}</b>
+                </span>
             </td>
             <td align="right">
                 <span>
