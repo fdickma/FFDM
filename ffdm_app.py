@@ -952,19 +952,19 @@ def about():
             return render_template('about.html', serverName=serverName, ver=ffdm_ver)
     return render_template('index.html', serverName=serverName, ver=ffdm_ver)
 
-@app.route('/') 
-def index():
+@app.route('/indices') 
+def indices():
     ffdm_ver = fl.ffdm_version(myDir=baseDir)
     fng = 0
     fngf = ""
 
     if current_user.is_authenticated == False:
-        return render_template('about.html', serverName=serverName, ver=ffdm_ver)
+        return render_template('indices.html', serverName=serverName, ver=ffdm_ver)
     if not os.path.exists(baseDir + '/indices.sqlite'):
         try:
             subprocess.run(["python3 ffdm.py -i"], shell=True, check=True)
         except:
-            return render_template('about.html', serverName=serverName, ver=ffdm_ver)
+            return render_template('indices.html', serverName=serverName, ver=ffdm_ver)
     else:
         try:
             idxDF = get_db_idxdata()
@@ -981,13 +981,18 @@ def index():
                 fngf = "Neutral"
             fngavg = int(round(idxDF["FearAndGreed"].mean(), 0))
 
-            return render_template('index.html', fng=fng, fngf=fngf, fngavg=fngavg, \
+            return render_template('indices.html', fng=fng, fngf=fngf, fngavg=fngavg, \
                 failedText=failedText, serverName=serverName, ver=ffdm_ver)
         except:
-            return render_template('index.html', fng=fng, fngf=fngf, fngavg=fngavg, \
+            return render_template('indices.html', fng=fng, fngf=fngf, fngavg=fngavg, \
                             serverName=serverName, ver=ffdm_ver)
-    return render_template('index.html', fng=fng, fngf=fngf, fngavg=fngavg, \
+    return render_template('indices.html', fng=fng, fngf=fngf, fngavg=fngavg, \
                             serverName=serverName, ver=ffdm_ver)
+
+@app.route('/')
+def index():
+    ffdm_ver = fl.ffdm_version(myDir=baseDir)
+    return render_template('index.html', serverName=serverName, ver=ffdm_ver)
 
 @app.route('/nodata') 
 def nodata():
