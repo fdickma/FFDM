@@ -54,15 +54,26 @@ In the docker folder is a Dockerfile and scripts to run FFDM within a container.
 
 ### Screenshots
 
+#### Login
+
+![alt text](img/FFDM_2025-07_01_login.png)
+
 #### Main view
 
-![alt text](img/ffdm_01.png)
+![alt text](img/FFDM_2025-07_02_about.png)
+
+#### Indices
+
+Currently only the fear and greed index is provided.
+
+![alt text](img/FFDM_2025-07_03_indices1.png)
+![alt text](img/FFDM_2025-07_04_indices2.png)
 
 #### Watchlist
 
 The left/first table shows the financial products that have no current investment. The right/second table shows the financial products with current investment. 
 
-![alt text](img/ffdm_02.png)
+![alt text](img/FFDM_2025-07_05_watchlist.png)
 
 #### Charts
 
@@ -76,8 +87,9 @@ The first (upper/left) table shows an aggregated overview over all investment cl
 
 On the second line, the left table shows a complete list of the investments. The right table contains key performance indicators on a yearly basis. Below the left table shows similar key performance indictors per year on a compounding basis. Beginning right next to the compounding table is a list of quarterly cashflows. The last table contains the yearly spending divided between total, cash payments, card payments, and spending on Amazon.
 
-![alt text](img/ffdm_03.png)
-![alt text](img/ffdm_04.png)
+![alt text](img/FFDM_2025-07_06_finance1.png)
+![alt text](img/FFDM_2025-07_07_finance2.png)
+![alt text](img/FFDM_2025-07_08_finance3.png)
 
 #### Menu example
 
@@ -85,20 +97,20 @@ On the second line, the left table shows a complete list of the investments. The
 
 #### Manual account data
 
-![alt text](img/ffdm_06.png)
+![alt text](img/FFDM_2025-07_09_manualacc.png)
 
 #### Manual depot data
 
-![alt text](img/ffdm_07.png)
+![alt text](img/FFDM_2025-07_10_manualdept.png)
 
 #### Setting up accounts and depots
 
-![alt text](img/ffdm_08.png)
+![alt text](img/FFDM_2025-07_13_accdept.png)
 
 #### Setting up assets
 
-![alt text](img/ffdm_09.png)
+![alt text](img/FFDM_2025-07_14_assets.png)
 
 #### Defining target values for assets
 
-![alt text](img/ffdm_10.png)
+![alt text](img/FFDM_2025-07_15_target.png)
