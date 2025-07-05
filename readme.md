@@ -93,7 +93,7 @@ On the second line, the left table shows a complete list of the investments. The
 
 #### Menu example
 
-![alt text](img/ffdm_05.png)
+![alt text](img/FFDM_2025-07_18_updates.png)
 
 #### Manual account data
 
