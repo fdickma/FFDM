@@ -13,8 +13,6 @@
         <th class="p-1 text-right primary">20&#x00D8;</th>
         <th class="p-1 text-right primary">200&#x00D8;</th>
         <th class="p-1 text-right primary">Trend</th>
-        <th class="p-1 text-right primary">r61,8</th>
-        <th class="p-1 text-right primary">e38,2</th>
         <th class="p-1 text-right primary">MaxDD</th>
     </tr>
     {% for asset in watchlist %}
@@ -95,28 +93,6 @@
                     <span class="text-danger">&#8600;</span>
                 {% endif %}
             </td>
-            <td align="right" class="p-1 fs-6">
-                {% if asset['Fib_r618'] >= 0: %}
-                    <span>
-                        <b>{{ format_number(asset['Fib_r618']) }}</b>
-                    </span>
-                {% else %}
-                    <span>
-                        <b>{{ format_number(asset['Fib_r618']) }}</b>
-                    </span>
-                {% endif %}
-            </td>
-            <td align="right" class="p-1 fs-6">
-                {% if asset['Fib_e382'] >= 0: %}
-                    <span>
-                        <b>{{ format_number(asset['Fib_e382']) }}</b>
-                    </span>
-                {% else %}
-                    <span>
-                        <b>{{ format_number(asset['Fib_e382']) }}</b>
-                    </span>
-                {% endif %}
-            </td>
             <td align="right" class="p-1">
                 <span>
                     <b>{{ format_percent(asset['MaxDD']) }}%</b>
@@ -132,11 +108,10 @@
         <th class="p-1 text-right primary">&Delta;(20&#x00D8;)</th>
         <th class="p-1 text-right primary">&Delta;</th>
         <th class="p-1 text-right primary">Value</th>
+        <th class="p-1 text-right primary">Buy</th>
         <th class="p-1 text-right primary">20&#x00D8;</th>
         <th class="p-1 text-right primary">200&#x00D8;</th>
         <th class="p-1 text-right primary">Trend</th>
-        <th class="p-1 text-right primary">r61,8</th>
-        <th class="p-1 text-right primary">e38,2</th>
         <th class="p-1 text-right primary">MaxDD</th>
     </tr>
     {% for asset in investlist %}
@@ -194,13 +169,24 @@
                 {% endif %}
             </td>
             <td align="right" class="p-1">
+                {% if asset['AssetAvgPrice'] >= 0: %}
+                    <span>
+                        <b>{{ format_number(asset['AssetAvgPrice']) }}</b>
+                    </span>
+                {% else %}
+                    <span>
+                        <b>0</b>
+                    </span>
+                {% endif %}
+            </td>
+            <td align="right" class="p-1">
                 {% if asset['Avg20Price'] >= 0: %}
                     <span>
                         <b>{{ format_number(asset['Avg20Price']) }}</b>
                     </span>
                 {% else %}
                     <span>
-                        <b>{{ format_number(asset['Avg20Price']) }}</b>
+                        <b>0</b>
                     </span>
                 {% endif %}
             </td>
@@ -216,28 +202,6 @@
                     <span class="text-success">&#8599;</span>
                 {% else %}
                     <span class="text-danger">&#8600;</span>
-                {% endif %}
-            </td>
-            <td align="right" class="p-1 fs-6">
-                {% if asset['Fib_r618'] >= 0: %}
-                    <span>
-                        <b>{{ format_number(asset['Fib_r618']) }}</b>
-                    </span>
-                {% else %}
-                    <span>
-                        <b>{{ format_number(asset['Fib_r618']) }}</b>
-                    </span>
-                {% endif %}
-            </td>
-            <td align="right" class="p-1 fs-6">
-                {% if asset['Fib_e382'] >= 0: %}
-                    <span>
-                        <b>{{ format_number(asset['Fib_e382']) }}</b>
-                    </span>
-                {% else %}
-                    <span>
-                        <b>{{ format_number(asset['Fib_e382']) }}</b>
-                    </span>
                 {% endif %}
             </td>
             <td align="right" class="p-1">

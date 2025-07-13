@@ -39,7 +39,7 @@ def entriesToDB(account_entries, depot_entries):
     return
 
 def filterDF(Expression):
-    return accountDF[accountDF['Reference'].str.contains(Expression, na=0,\
+    return accountDF[accountDF['Reference'].str.contains(Expression, na=False,\
         flags=re.IGNORECASE, regex=True)]\
         .groupby(accountDF['EntryDate'].dt.to_period('Y'))['Amount'].sum()
 
@@ -47,7 +47,7 @@ def countFilterDF(Expression):
         # Back and forth conversion due to new pandas versions handling period
         # index differently 
         # Calculating monthly occurrences
-        tempDF = accountDF[accountDF['Reference'].str.contains(Expression, na=0, \
+        tempDF = accountDF[accountDF['Reference'].str.contains(Expression, na=False, \
         flags=re.IGNORECASE, regex=True)]\
         .groupby(accountDF['EntryDate'].dt.to_period('M'))['Amount'].size()
         # Convert to dataframe
@@ -784,6 +784,14 @@ if __name__ == '__main__':
                         watchlistDF['Avg200Price'] * 100
     watchlistDF['MaxDD']=(watchlistDF['MaxPrice'] - watchlistDF['MinPrice']) / \
                         watchlistDF['MaxPrice'] * -100
+
+    # Adding the average buying price for assets in the portfolio
+    if len(depotDF) > 0:
+        tempDepotDF = depotDF.copy()
+        tempDepotDF = tempDepotDF.groupby(['AssetID']).sum(['AssetAmount','AssetBuyPrice'])
+        tempDepotDF['AssetAvgPrice'] = tempDepotDF['AssetBuyPrice'] / tempDepotDF['AssetAmount']
+        watchlistDF = pd.merge(watchlistDF,tempDepotDF[['AssetAvgPrice']], on="AssetID", how='left')\
+            .infer_objects(copy=False)
 
     # Finally writing the watchlist to database
     watchlistDF.to_sql('qWatchlist', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
