@@ -254,8 +254,9 @@ def readStatement(File):
             r'\"(.*)\"\;'                      # Beschreibung.
             r'\"([-\d.]*\,\d*)\"\;'            # Betrag (EUR).
             r'\"(.*)\"\;')                     # Ursprünglicher Betrag.
-        p_spk = re.compile(
-            r'\"([A-Za-z0-9]*)"\;'             # Auftragskonto.
+        # Sparkasse CSV-MT-940
+        p_spk = re.compile(                     
+            r'\"([A-Za-z0-9]*)\"\;'             # Auftragskonto.
             r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Buchungstag.
             r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Valutadatum.
             r'\"(.*)\"\;'                      # Buchungstext.
@@ -266,6 +267,20 @@ def readStatement(File):
             r'\"([-\d.]*\,\d*)\"\;'            # Betrag.
             r'\"(.*)\"\;'                      # Waehrung.
             r'\"Umsatz.*\"')                   # Info.
+        # Sparkasse general CSV (MT-940 etc. will be disabled in 2025)
+        p_spk_2025 = re.compile(
+            r'\"([A-Za-z0-9]*)\"\;'             # Auftragskonto.
+            r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Buchungstag.
+            r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Valutadatum.
+            r'\"(.*)\"\;'                      # Buchungstext.
+            r'\"(.*)\"\;'                      # Verwendungszweck.
+            r'\"(.*)\"\;'                      # Beguenstigter.
+            r'\"([A-Za-z0-9]*)\"\;'            # Kontonummer/IBAN.
+            r'\"([A-Za-z0-9]*)\"\;'            # BIC (SWIFT-Code).
+            r'\"([-\d.]*\,\d*)\"\;'            # Betrag.
+            r'\"(.*)\"\;'                      # Waehrung.
+            r'\"Umsatz.*\"\;'                  # Info.
+            r'\"(.*)\"')                       # Kategorie.
         p_dkb_account = re.compile(
             r'\"([A-Za-z]*\:)\"\;'
             r'\"([A-Za-z]{2}[0-9]*|'
@@ -341,7 +356,21 @@ def readStatement(File):
                 curr = str(spk.group(10))
                 account_entries.append(["SPK", account, date, text, \
                                     check_float(price), curr])
-            
+
+            spk_2025 = p_spk_2025.match(line)
+            if spk_2025 and not line_check:
+                i += 1
+                line_check = True
+                price = str(spk_2025.group(9))
+                price = price.replace('.', '').replace(',', '.')
+                account = get_account(spk_2025.group(1))
+                date = shortDate(spk_2025.group(2))
+                text = spk_2025.group(4) + " " + spk_2025.group(5) + \
+                        " " + spk_2025.group(6)
+                curr = str(spk_2025.group(10))
+                account_entries.append(["SPK", account, date, text, \
+                                    check_float(price), curr])
+
             dkb_depot = p_dkb_depot.match(line)
             if dkb_depot and not line_check:
                 i += 1
