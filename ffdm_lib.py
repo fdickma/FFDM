@@ -759,12 +759,12 @@ def get_assets(u_id):
 # Download Yahoo Finance data and handle possible errors
 def yfload(ticker, start_d, end_d, isin, currency):
     try:
-        dload = yf.download(ticker, progress=True, 
+        dload = yf.download(ticker, progress=True, auto_adjust=True,
             start=start_d, 
             end=end_d,
             timeout=10)
         if len(dload) < 1:
-            dload = yf.download(ticker, progress=True, 
+            dload = yf.download(ticker, progress=True, auto_adjust=True,
                 timeout=10, period="1d")
         dload['AssetID'] = isin
         dload['Currency'] = currency
