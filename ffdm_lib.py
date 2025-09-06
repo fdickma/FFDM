@@ -276,7 +276,7 @@ def readStatement(File):
             r'\"(.*)\"\;'                      # Verwendungszweck.
             r'\"(.*)\"\;'                      # Beguenstigter.
             r'\"([A-Za-z0-9]*)\"\;'            # Kontonummer/IBAN.
-            r'\"([A-Za-z0-9]*)\"\;'            # BIC (SWIFT-Code).
+            r'\"([A-Za-z0-9 ]*)\"\;'           # BIC (SWIFT-Code).
             r'\"([-\d.]*\,\d*)\"\;'            # Betrag.
             r'\"(.*)\"\;'                      # Waehrung.
             r'\"Umsatz.*\"\;'                  # Info.
