@@ -1,6 +1,7 @@
 .vscode/
 .env
 .idea/
+env/
 logs
 *.log
 *.key
