@@ -875,7 +875,7 @@ if __name__ == '__main__':
     o_bonds = depotviewDF[(depotviewDF['AssetType'] == 'BND')]['Value'].sum()
     o_fund = depotviewDF[(depotviewDF['AssetType'] == 'FND')]['Value'].sum()
     o_real = depotviewDF[(depotviewDF['AssetType'] == 'RET')]['Value'].sum()
-    o_gold = depotviewDF[(depotviewDF['AssetID'] == 'Gold')]['Value'].sum()
+    o_commodity = depotviewDF[(depotviewDF['AssetType'] == 'COM')]['Value'].sum()
     o_crypto = depotviewDF[(depotviewDF['AssetType'] == 'CRP')]['Value'].sum()
 
     if len(depotviewDF) > 0:
@@ -885,7 +885,7 @@ if __name__ == '__main__':
         o_bonds_b = depotviewDF[(depotviewDF['AssetType'] == 'BND')]['AssetBuyPrice'].sum()
         o_fund_b = depotviewDF[(depotviewDF['AssetType'] == 'FND')]['AssetBuyPrice'].sum()
         o_real_b = depotviewDF[(depotviewDF['AssetType'] == 'RET')]['AssetBuyPrice'].sum()
-        o_gold_b = depotviewDF[(depotviewDF['AssetID'] == 'Gold')]['AssetBuyPrice'].sum()
+        o_commodity_b = depotviewDF[(depotviewDF['AssetType'] == 'COM')]['AssetBuyPrice'].sum()
         o_crypto_b = depotviewDF[(depotviewDF['AssetType'] == 'CRP')]['AssetBuyPrice'].sum()
     else:
         o_portfolio_b = 0
@@ -894,7 +894,7 @@ if __name__ == '__main__':
         o_bonds_b = 0
         o_fund_b = 0
         o_real_b = 0
-        o_gold_b = 0
+        o_commodity_b = 0
         o_crypto_b = 0
 
     o_portfolio_e = depotviewDF['Earn'].sum()
@@ -907,7 +907,7 @@ if __name__ == '__main__':
     o_bonds_e += depotviewDF[(depotviewDF['AssetType'] == 'BND')]['Dividend'].sum()
     o_fund_e = depotviewDF[(depotviewDF['AssetType'] == 'FND')]['Earn'].sum()
     o_fund_e += depotviewDF[(depotviewDF['AssetType'] == 'FND')]['Dividend'].sum()
-    o_gold_e = depotviewDF[(depotviewDF['AssetID'] == 'Gold')]['Earn'].sum()
+    o_commodity_e = depotviewDF[(depotviewDF['AssetType'] == 'COM')]['Earn'].sum()
     o_crypto_e = depotviewDF[(depotviewDF['AssetType'] == 'CRP')]['Earn'].sum()
     o_cash_e = yearDF['Interest'].sum()
     o_cash_b = o_cash - o_cash_e
@@ -936,8 +936,8 @@ if __name__ == '__main__':
                         o_bonds_e/o_bonds_b*100, num_bonds])
         overviewS.append(['Funds', o_fund, o_fund/o_total*100, o_fund_e, \
                         o_fund_e/o_fund_b*100, num_fund])
-        overviewS.append(['Gold', o_gold, o_gold/o_total*100, o_gold_e, \
-                        o_gold_e/o_gold_b*100, 1])
+        overviewS.append(['Commodities', o_commodity, o_commodity/o_total*100, o_commodity_e, \
+                        o_commodity_e/o_commodity_b*100, 1])
         overviewS.append(['Crypto', o_crypto, o_crypto/o_total*100, o_crypto_e, \
                         o_crypto_e/o_crypto_b*100, num_crypto])
         overviewDF = pd.DataFrame(overviewS, columns=['Position', 'Amount', 'Slice', \
