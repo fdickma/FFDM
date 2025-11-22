@@ -296,10 +296,14 @@
         <th>Sav.Rate</th>
     </tr>
     {% for year in yearly %}
-    {% if year['Saving'] >= 0: %}
-        <tr class="row-success">
+    {% if year['Year']|length > 4 %}
+        <tr class="row-extra">
     {% else %}
-        <tr class="row-danger">
+        {% if year['Saving'] >= 0: %}
+            <tr class="row-success">
+        {% else %}
+            <tr class="row-danger">
+        {% endif %}
     {% endif %}
             <td align="left">
                 <span><b>{{ year['Year'] }}</b></span>
@@ -383,12 +387,16 @@
             <th>Rent</th>
         </tr>
         {% for year in cumyear %}
-        {% if year['Saving'] > -0.2 and year['Saving'] < 0.2 %}
-            <tr class="row-neutral">
-        {% elif year['Saving'] >= 0 %}
-            <tr class="row-success">
+        {% if year['Year']|length > 4 %}
+            <tr class="row-extra">
         {% else %}
-            <tr class="row-danger">
+            {% if year['Saving'] > -0.2 and year['Saving'] < 0.2 %}
+                <tr class="row-neutral">
+            {% elif year['Saving'] >= 0 %}
+                <tr class="row-success">
+            {% else %}
+                <tr class="row-danger">
+            {% endif %}
         {% endif %}
             <td align="left">
                 <span>

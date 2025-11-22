@@ -608,20 +608,21 @@ if __name__ == '__main__':
     yearDF['PayMonths'] = countFilterDF(filterList[0][1])
     yearDF['PayMonths'] = yearDF['PayMonths'].fillna(0)
     paymonths =  int(yearDF['PayMonths'].loc[yearDF.index[-1]])
+    current_month = datetime.now().month
     yearDF['Months'] = getMonths(yearDF['Year'])
     yearDF.loc[len(yearDF)] = [str(yearDF['Year'].loc[yearDF.index[-1]]) + "e", \
                             yearDF['Cashflow'].loc[yearDF.index[-1]] / paymonths * 12, \
                             yearDF['Income'].loc[yearDF.index[-1]] / paymonths * 12, \
-                            yearDF['Dividend'].loc[yearDF.index[-1]] / paymonths * 12, \
-                            yearDF['Interest'].loc[yearDF.index[-1]] / paymonths * 12, \
-                            yearDF['Rent'].loc[yearDF.index[-1]] / paymonths * 12, \
-                            yearDF['Stock'].loc[yearDF.index[-1]] / paymonths * 12, \
-                            yearDF['Metal'].loc[yearDF.index[-1]] / paymonths * 12, \
-                            yearDF['Sales'].loc[yearDF.index[-1]] / paymonths * 12, \
+                            yearDF['Dividend'].loc[yearDF.index[-1]] / current_month * 12, \
+                            yearDF['Interest'].loc[yearDF.index[-1]] / current_month * 12, \
+                            yearDF['Rent'].loc[yearDF.index[-1]] / current_month * 12, \
+                            yearDF['Stock'].loc[yearDF.index[-1]] / current_month * 12, \
+                            yearDF['Metal'].loc[yearDF.index[-1]] / current_month * 12, \
+                            yearDF['Sales'].loc[yearDF.index[-1]] / current_month * 12, \
                             yearDF['TotalIncome'].loc[yearDF.index[-1]] / paymonths * 12, \
-                            yearDF['Invest'].loc[yearDF.index[-1]] / paymonths * 12, \
-                            yearDF['Saving'].loc[yearDF.index[-1]] / paymonths * 12, \
-                            yearDF['Spending'].loc[yearDF.index[-1]] / paymonths * 12, \
+                            yearDF['Invest'].loc[yearDF.index[-1]] / current_month * 12, \
+                            yearDF['Saving'].loc[yearDF.index[-1]] / current_month * 12, \
+                            yearDF['Spending'].loc[yearDF.index[-1]] / current_month * 12, \
                             yearDF['SavingRate'].loc[yearDF.index[-1]], \
                             12, \
                             12] 
@@ -639,18 +640,18 @@ if __name__ == '__main__':
     cumyearDF = yearDF.cumsum()
     cumyearDF['Year'] = yearDF['Year']
     cumyearDF.loc[len(cumyearDF)] = [str(yearDF['Year'].loc[yearDF.index[-1]]) + "e", \
-                            cumyearDF['Cashflow'].loc[cumyearDF.index[-1]] + yearDF['Cashflow'].loc[yearDF.index[-1]], \
-                            cumyearDF['Income'].loc[cumyearDF.index[-1]] + yearDF['Income'].loc[yearDF.index[-1]], \
-                            cumyearDF['Dividend'].loc[cumyearDF.index[-1]] + yearDF['Dividend'].loc[yearDF.index[-1]], \
-                            cumyearDF['Interest'].loc[cumyearDF.index[-1]] + yearDF['Interest'].loc[yearDF.index[-1]], \
-                            cumyearDF['Rent'].loc[cumyearDF.index[-1]] + yearDF['Rent'].loc[yearDF.index[-1]], \
-                            cumyearDF['Stock'].loc[cumyearDF.index[-1]] + yearDF['Stock'].loc[yearDF.index[-1]], \
-                            cumyearDF['Metal'].loc[cumyearDF.index[-1]] + yearDF['Metal'].loc[yearDF.index[-1]], \
-                            cumyearDF['Sales'].loc[cumyearDF.index[-1]] + yearDF['Sales'].loc[yearDF.index[-1]], \
-                            cumyearDF['TotalIncome'].loc[cumyearDF.index[-1]] + yearDF['TotalIncome'].loc[yearDF.index[-1]], \
-                            cumyearDF['Invest'].loc[cumyearDF.index[-1]] + yearDF['Invest'].loc[yearDF.index[-1]], \
-                            cumyearDF['Saving'].loc[cumyearDF.index[-1]] + yearDF['Saving'].loc[yearDF.index[-1]], \
-                            cumyearDF['Spending'].loc[cumyearDF.index[-1]] + yearDF['Spending'].loc[yearDF.index[-1]], \
+                            cumyearDF['Cashflow'].loc[cumyearDF.index[-1]] + (yearDF['Cashflow'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
+                            cumyearDF['Income'].loc[cumyearDF.index[-1]] + (yearDF['Income'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
+                            cumyearDF['Dividend'].loc[cumyearDF.index[-1]] + (yearDF['Dividend'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
+                            cumyearDF['Interest'].loc[cumyearDF.index[-1]] + (yearDF['Interest'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
+                            cumyearDF['Rent'].loc[cumyearDF.index[-1]] + (yearDF['Rent'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
+                            cumyearDF['Stock'].loc[cumyearDF.index[-1]] + (yearDF['Stock'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
+                            cumyearDF['Metal'].loc[cumyearDF.index[-1]] + (yearDF['Metal'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
+                            cumyearDF['Sales'].loc[cumyearDF.index[-1]] + (yearDF['Sales'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
+                            cumyearDF['TotalIncome'].loc[cumyearDF.index[-1]] + (yearDF['TotalIncome'].loc[yearDF.index[-1]] / (12 - paymonths)), \
+                            cumyearDF['Invest'].loc[cumyearDF.index[-1]] + (yearDF['Invest'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
+                            cumyearDF['Saving'].loc[cumyearDF.index[-1]] + (yearDF['Saving'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
+                            cumyearDF['Spending'].loc[cumyearDF.index[-1]] + (yearDF['Spending'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
                             yearDF['SavingRate'].loc[yearDF.index[-1]], \
                             12, \
                             12] 
@@ -921,6 +922,7 @@ if __name__ == '__main__':
     num_stock = depotviewDF[(depotviewDF['AssetType'] == 'STK')]['AssetID'].nunique()
     num_bonds = depotviewDF[(depotviewDF['AssetType'] == 'BND')]['AssetID'].nunique()
     num_fund = depotviewDF[(depotviewDF['AssetType'] == 'FND')]['AssetID'].nunique()
+    num_commodity = depotviewDF[(depotviewDF['AssetType'] == 'COM')]['AssetID'].nunique()
     num_crypto = depotviewDF[(depotviewDF['AssetType'] == 'CRP')]['AssetID'].nunique()
     
     if len(depotviewDF) > 0:
@@ -937,7 +939,7 @@ if __name__ == '__main__':
         overviewS.append(['Funds', o_fund, o_fund/o_total*100, o_fund_e, \
                         o_fund_e/o_fund_b*100, num_fund])
         overviewS.append(['Commodities', o_commodity, o_commodity/o_total*100, o_commodity_e, \
-                        o_commodity_e/o_commodity_b*100, 1])
+                        o_commodity_e/o_commodity_b*100, num_commodity])
         overviewS.append(['Crypto', o_crypto, o_crypto/o_total*100, o_crypto_e, \
                         o_crypto_e/o_crypto_b*100, num_crypto])
         overviewDF = pd.DataFrame(overviewS, columns=['Position', 'Amount', 'Slice', \
