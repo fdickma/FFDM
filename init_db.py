@@ -15,6 +15,7 @@ import configparser
 import csv
 import re
 import subprocess
+import datetime
 from datetime import date, timedelta
 from scipy import stats
 import __main__
@@ -608,7 +609,7 @@ if __name__ == '__main__':
     yearDF['PayMonths'] = countFilterDF(filterList[0][1])
     yearDF['PayMonths'] = yearDF['PayMonths'].fillna(0)
     paymonths =  int(yearDF['PayMonths'].loc[yearDF.index[-1]])
-    current_month = datetime.now().month
+    current_month = datetime.datetime.now().month
     yearDF['Months'] = getMonths(yearDF['Year'])
     yearDF.loc[len(yearDF)] = [str(yearDF['Year'].loc[yearDF.index[-1]]) + "e", \
                             yearDF['Cashflow'].loc[yearDF.index[-1]] / paymonths * 12, \
