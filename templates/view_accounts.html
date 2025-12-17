@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<script src="/static/ffdm.js"></script>
+<div class="form-group">
+<form method="post">
+<select name="AccountNr" style="font-size: 0.9em;" autofocus onchange="this.form.submit()">
+            {% if account_sel == '' %}
+                <option hidden selected>Select Account...</option>
+            {% endif %}
+            {% for akey, account in accountReg.iterrows() %}
+                {% if account_sel == account['AccountNr'] %}
+                    <option value="{{ account['AccountNr'] }}" selected>
+                        {{ account['Name'] }}
+                    </option>
+                {% else %}
+                    <option value="{{ account['AccountNr'] }}">
+                        {{ account['Name'] }}
+                    </option>
+                {% endif %}
+            {% endfor %}
+</select>
+<br>
+<table id="FFDMTable">
+    <tr>
+        <th>EntryDate</th>
+        <th>Account</th>
+        <th>Reference</th>
+        <th>Amount</th>
+        <th>Currency</th>
+    </tr>
+        {% for key, entry in acc_data.iterrows() %}
+        <tr>
+        <td style="font-size: 1.1em;">{{ entry['EntryDate'] }}</td>
+        <td style="font-size: 1.1em;">{{ entry['AccountNr'] }}</td>
+        <td style="font-size: 1.1em;">{{ entry['Reference'] }}</td>
+        <td style="font-size: 1.1em;">{{ entry['Amount'] }}</td>
+        <td style="font-size: 1.1em;">{{ entry['Currency'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</form>
+</div>
+
+{% endblock %}

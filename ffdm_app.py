@@ -5,6 +5,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, curren
 from fileinput import filename
 from werkzeug.utils import secure_filename
 import sqlalchemy as sa
+import sqlite3
 import io
 import os
 import subprocess
@@ -405,6 +406,51 @@ def assets():
 
     return render_template('assets.html', assets=assetsDF, serverName=serverName, \
             assetTypes=assetTypesDF)
+
+@app.route('/view_accounts', methods=('GET', 'POST'))
+def view_accounts():
+    if current_user.is_authenticated == False:
+        return render_template('index.html', serverName=serverName)
+
+    today_date = datetime.date.today()
+    account_sel = request.args.get('account_sel')
+    
+    # Read the account registry
+    try:
+        myDir = baseDir + 'users/' + current_user.username + '/'
+        accountRegDF = pd.read_csv(myDir+"initdata/AccountRegistry.csv", \
+                            sep=';')
+        depot_list = ['Depot', 'Wallet']
+        accountRegDF = accountRegDF[~accountRegDF['Type'].isin(depot_list)]
+        accountRegDF['AccountNr'] = accountRegDF['AccountNr'].apply(lambda x: fl.get_account(x))    
+        accountRegDF = accountRegDF.sort_values(by=['Name'])
+        try:
+            if len(account_sel) > 0:
+                pass
+        except:
+            account_sel = accountRegDF.iloc[0]['AccountNr']
+
+    except:
+        return redirect(url_for('nodata'))
+
+    try:
+        con = sqlite3.connect(myDir + "ffdm.sqlite")
+        acc_data = pd.read_sql_query("SELECT * from Accounts", con)
+        acc_data = acc_data[acc_data['AccountNr'] == account_sel]
+        acc_data = acc_data.sort_values(by='EntryDate', ascending=False)
+        con.close()
+
+    except:
+        return redirect(url_for('error'))
+    
+    if request.method == 'POST':
+        req_data = request.form.to_dict(flat=False)
+        account_sel = fl.get_account(req_data['AccountNr'][0])
+        return redirect(url_for('view_accounts', account_sel=account_sel))
+
+    return render_template('view_accounts.html', acc_data=acc_data, \
+        accountReg=accountRegDF, today_date=str(today_date), serverName=serverName, \
+        account_sel=account_sel, currency=DefaultCurrency)
 
 @app.route('/edit_accounts', methods=('GET', 'POST'))
 def edit_accounts():
