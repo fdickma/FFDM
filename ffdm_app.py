@@ -22,6 +22,7 @@ import bcrypt
 import ffdm_lib as fl
 import ffdm_init as fi
 import init_db as init_run
+import math
 
 def get_db_data(sql_string, u_id):
     db_data = []
@@ -84,6 +85,13 @@ def get_account_dirs(user_id):
                 accountDir.append(user_config['Accounts']['dat' + str(dir_count)])
     return accountDir
 
+def get_pagelen(user_id):
+    myDir = get_myDir(user_id)
+    user_config = configparser.ConfigParser()
+    user_config.sections()
+    user_config.read(myDir + 'ffdm.ini')
+    return int(user_config['Accounts']['pagelen'])
+
 def get_account_files(user_id):
     myDir = get_myDir(user_id)
     accountDir = get_account_dirs(user_id)
@@ -102,6 +110,7 @@ keyconf = configparser.ConfigParser()
 keyconf.read(baseDir + 'ffdm.key')
 
 app = Flask(__name__)
+
 # Load the app key
 app.config['SECRET_KEY'] = keyconf['Key']['key']
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -127,6 +136,7 @@ dataDir=config['Accounts']['Dir']
 serverPort=int(config['Server']['Port'])
 serverName=config['Server']['Name']
 DefaultCurrency=config['Accounts']['DefaultCurrency']
+PageLenDefault = 10
 
 # Secure file uploads
 ALLOWED_EXTENSIONS = {'csv'}
@@ -412,8 +422,27 @@ def view_accounts():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
 
+    PageLen = get_pagelen(current_user.username)
+    if PageLen < 5:
+        PageLen = PageLenDefault
+
     today_date = datetime.date.today()
     account_sel = request.args.get('account_sel')
+    page_num = request.args.get('page_num')
+    if page_num == None:
+        page_num = 0
+    else:
+        page_num = int(page_num)
+    win_min = request.args.get('win_min')
+    if win_min == None:
+        win_min = 0
+    else:
+        win_min = int(win_min)
+    win_max = request.args.get('win_max')
+    if win_max == None:
+        win_max = 0
+    else:
+        win_max = int(win_max)
     
     # Read the account registry
     try:
@@ -424,10 +453,9 @@ def view_accounts():
         accountRegDF = accountRegDF[~accountRegDF['Type'].isin(depot_list)]
         accountRegDF['AccountNr'] = accountRegDF['AccountNr'].apply(lambda x: fl.get_account(x))    
         accountRegDF = accountRegDF.sort_values(by=['Name'])
-        try:
-            if len(account_sel) > 0:
-                pass
-        except:
+        if account_sel == None:
+            account_sel = accountRegDF.iloc[0]['AccountNr']
+        elif len(account_sel) < 1:
             account_sel = accountRegDF.iloc[0]['AccountNr']
 
     except:
@@ -442,7 +470,42 @@ def view_accounts():
 
     except:
         return redirect(url_for('error'))
-    
+
+    # Get only the 10 rows of current page
+    pages = math.ceil(len(acc_data) / PageLen)
+    if page_num < 0:
+        page_num = 0
+    if page_num > pages - 1:
+        page_num = pages - 1
+    offset = page_num * PageLen
+    acc_data = acc_data.iloc[offset:offset + PageLen]
+
+    if pages > 10:
+        if page_num <= win_min:
+            win_min = page_num - 5
+            if win_max > win_min + 9:
+                win_max = win_max - 5
+            else:
+                win_max = pages
+        elif page_num >= win_max:
+            win_max = page_num + 5
+            if win_min > win_min + 9:
+                win_min = win_min + 5
+            else:
+                win_min = win_max - 10
+
+        if win_max > pages:
+            win_max = pages 
+            win_min = win_max - 10
+        if win_min < 0:
+            win_min = 0
+            win_max = 10
+    else:
+        win_min = 0
+        win_max = pages
+
+    page_window = list(range(win_min, win_max, 1))
+
     if request.method == 'POST':
         req_data = request.form.to_dict(flat=False)
         account_sel = fl.get_account(req_data['AccountNr'][0])
@@ -450,15 +513,35 @@ def view_accounts():
 
     return render_template('view_accounts.html', acc_data=acc_data, \
         accountReg=accountRegDF, today_date=str(today_date), serverName=serverName, \
-        account_sel=account_sel, currency=DefaultCurrency)
+        page_window=page_window, account_sel=account_sel, page_num=page_num, pages=pages, \
+        win_min=win_min, win_max=win_max, currency=DefaultCurrency)
 
 @app.route('/edit_accounts', methods=('GET', 'POST'))
 def edit_accounts():
     if current_user.is_authenticated == False:
         return render_template('index.html', serverName=serverName)
 
+    PageLen = get_pagelen(current_user.username)
+    if PageLen < 5:
+        PageLen = PageLenDefault
+
     today_date = datetime.date.today()
-    
+    page_num = request.args.get('page_num')
+    if page_num == None:
+        page_num = 0
+    else:
+        page_num = int(page_num)
+    win_min = request.args.get('win_min')
+    if win_min == None:
+        win_min = 0
+    else:
+        win_min = int(win_min)
+    win_max = request.args.get('win_max')
+    if win_max == None:
+        win_max = 0
+    else:
+        win_max = int(win_max)
+
     # Read the account registry
     try:
         myDir = baseDir + 'users/' + current_user.username + '/'
@@ -489,11 +572,49 @@ def edit_accounts():
         accountsDF.loc[len(accountsDF)] = pd.Series(dtype='float64')
         accountsDF.loc[len(accountsDF) -1, 'EntryDate'] = today_date 
         accountsDF = accountsDF.sort_values(by=['EntryDate', 'AccountNr'], \
-            ascending=False, na_position='first')
+            ascending=False, na_position='first', ignore_index=True)
         accountsDF = accountsDF.fillna('')
     except:
         return redirect(url_for('error'))
+
+    # Get only the 10 rows of current page
+    pages = math.ceil(len(accountsDF) / PageLen)
+    if page_num < 0:
+        page_num = 0
+    if page_num > pages - 1:
+        page_num = pages - 1
+    offset = page_num * PageLen
+    acc_page_data = accountsDF.loc[offset:offset + PageLen - 1]
+    org_len = len(acc_page_data)
+    clean_accountsDF = accountsDF.loc[0:offset - 1]
+    clean_accountsDF = pd.concat([clean_accountsDF, accountsDF.loc[offset + PageLen:]], ignore_index=True)
     
+    if pages > 10:
+        if page_num <= win_min:
+            win_min = page_num - 5
+            if win_max > win_min + 9:
+                win_max = win_max - 5
+            else:
+                win_max = pages
+        elif page_num >= win_max:
+            win_max = page_num + 5
+            if win_min > win_min + 9:
+                win_min = win_min + 5
+            else:
+                win_min = win_max - 10
+
+        if win_max > pages:
+            win_max = pages 
+            win_min = win_max - 10
+        if win_min < 0:
+            win_min = 0
+            win_max = 10
+    else:
+        win_min = 0
+        win_max = pages
+
+    page_window = list(range(win_min, win_max, 1))
+
     if request.method == 'POST':
 
         requestDF = pd.DataFrame()
@@ -510,13 +631,21 @@ def edit_accounts():
             (requestDF['AccountNr'] != "Select Account...") & \
             (requestDF['Amount'] != "None") & \
             (requestDF['Reference'] != "None"))]
+        requestDF = requestDF.merge(accountRegDF[["AccountNr", "Bank"]], on=["AccountNr"], how="left")
+        requestDF = requestDF[["Bank","AccountNr","EntryDate","Reference","Amount","Currency"]]
+        clean_accountsDF = clean_accountsDF.loc[((clean_accountsDF['AccountNr'].str.len() > 0) & \
+            (clean_accountsDF['Bank'].str.len() > 0) & \
+            (clean_accountsDF['Reference'].str.len() > 0))]
+
+        requestDF = pd.concat([requestDF, clean_accountsDF], ignore_index=True)
+        print(clean_accountsDF)
+        print(requestDF)
         requestDF['EntryDate'] = pd.to_datetime(requestDF['EntryDate'])\
                             .dt.strftime("%d.%m.%y")
         requestDF['Amount'] = requestDF['Amount'].astype(float)\
                             .map('{:.2f}'.format).str.replace(".", ",", regex=False)
 
-        requestDF = requestDF.merge(accountRegDF[["AccountNr", "Bank"]], on=["AccountNr"], how="left")
-        requestDF = requestDF[["Bank","AccountNr","EntryDate","Reference","Amount","Currency"]]
+        print(requestDF)
 
         if len(requestDF) < 1:
             flash('Error!')
@@ -525,9 +654,10 @@ def edit_accounts():
                             index = False, quoting=csv.QUOTE_ALL, quotechar='"')
             return redirect(url_for('edit_accounts'))
 
-    return render_template('edit_accounts.html', accounts=accountsDF, \
+    return render_template('edit_accounts.html', accounts=acc_page_data, \
         accountReg=accountRegDF, today_date=str(today_date), serverName=serverName, \
-            currency=DefaultCurrency)
+        page_window=page_window, page_num=page_num, pages=pages, \
+        win_min=win_min, win_max=win_max,currency=DefaultCurrency)
 
 @app.route('/edit_depots', methods=('GET', 'POST'))
 def edit_depots():
