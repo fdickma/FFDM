@@ -21,6 +21,7 @@ import configparser
 import bcrypt
 import ffdm_lib as fl
 import ffdm_init as fi
+import ffdm_webindex as fwi
 import init_db as init_run
 import math
 
@@ -428,6 +429,9 @@ def view_accounts():
 
     today_date = datetime.date.today()
     account_sel = request.args.get('account_sel')
+    search_text = request.args.get('SearchText')
+    if search_text == None:
+        search_text = ""
     page_num = request.args.get('page_num')
     if page_num == None:
         page_num = 0
@@ -465,6 +469,8 @@ def view_accounts():
         con = sqlite3.connect(myDir + "ffdm.sqlite")
         acc_data = pd.read_sql_query("SELECT * from Accounts", con)
         acc_data = acc_data[acc_data['AccountNr'] == account_sel]
+        if len(search_text) > 0:
+            acc_data = acc_data[acc_data['Reference'].str.contains(search_text, case=False)]
         acc_data = acc_data.sort_values(by='EntryDate', ascending=False)
         con.close()
 
@@ -509,9 +515,11 @@ def view_accounts():
     if request.method == 'POST':
         req_data = request.form.to_dict(flat=False)
         account_sel = fl.get_account(req_data['AccountNr'][0])
-        return redirect(url_for('view_accounts', account_sel=account_sel))
+        search_text = req_data['SearchText'][0]
+        return redirect(url_for('view_accounts', account_sel=account_sel, \
+            SearchText=search_text))
 
-    return render_template('view_accounts.html', acc_data=acc_data, \
+    return render_template('view_accounts.html', acc_data=acc_data, SearchText=search_text, \
         accountReg=accountRegDF, today_date=str(today_date), serverName=serverName, \
         page_window=page_window, account_sel=account_sel, page_num=page_num, pages=pages, \
         win_min=win_min, win_max=win_max, currency=DefaultCurrency)
@@ -1133,9 +1141,11 @@ def indices():
     ffdm_ver = fl.ffdm_version(myDir=baseDir)
     fng = 0
     fngf = ""
+    failedText = "Error in retrieving indices..."
 
     if current_user.is_authenticated == False:
         return render_template('indices.html', serverName=serverName, ver=ffdm_ver)
+
     if not os.path.exists(baseDir + '/indices.sqlite'):
         try:
             subprocess.run(["python3 ffdm.py -i"], shell=True, check=True)
@@ -1143,6 +1153,7 @@ def indices():
             return render_template('indices.html', serverName=serverName, ver=ffdm_ver)
     else:
         try:
+            indicesDF = fwi.get_indices().drop_duplicates()
             idxDF = get_db_idxdata()
             fng = int(round(idxDF["FearAndGreed"].tail(1).values[0], 0))
             if (fng <= 25): 
@@ -1158,12 +1169,12 @@ def indices():
             fngavg = int(round(idxDF["FearAndGreed"].mean(), 0))
 
             return render_template('indices.html', fng=fng, fngf=fngf, fngavg=fngavg, \
-                failedText=failedText, serverName=serverName, ver=ffdm_ver)
+                idcDF=indicesDF, failedText=failedText, serverName=serverName, ver=ffdm_ver)
         except:
             return render_template('indices.html', fng=fng, fngf=fngf, fngavg=fngavg, \
-                            serverName=serverName, ver=ffdm_ver)
+                            idcDF=indicesDF, serverName=serverName, ver=ffdm_ver)
     return render_template('indices.html', fng=fng, fngf=fngf, fngavg=fngavg, \
-                            serverName=serverName, ver=ffdm_ver)
+                            idcDF=indicesDF, serverName=serverName, ver=ffdm_ver)
 
 @app.route('/')
 def index():

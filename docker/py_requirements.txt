@@ -14,5 +14,7 @@ flask-sqlalchemy
 openpyxl
 gunicorn
 bs4
+curl-cffi
 yahoofinancials
 yfinance
+urllib3

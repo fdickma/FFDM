@@ -11,6 +11,36 @@
    </div>
    {% endif %}
 
+
+   <div class="row">
+   <div class="top_column">
+    <table>
+    <tr>
+        <th>Index</th>
+        <th>Value</th>
+        <th>Time</th>
+        <th>Delta</th>
+    </tr>
+    {% for key,idx_item in idcDF.iterrows() %}
+        <tr>
+        <td align="left">
+            <span><b>{{ idx_item['ind_title'] }}</b></span>
+        </td>
+        <td align="right">
+            <span><b>{{ format_dec(idx_item['ind_num']) }}</b></span>
+        </td>
+        <td align="right">
+            <span><b>{{ idx_item['ind_date'][:16] }}</b></span>
+        </td>
+        <td align="right">
+            <span><b>{{ format_percent(idx_item['ind_diff']) }}%</b></span>
+        </td>
+        </tr>
+    {% endfor %}
+    </table>
+   </div>
+
+   <div class="top_column">
    <div class="idxparagraph">
         Fear-And-Greed: {{ fng }} ({{ fngf }})
    </div>
@@ -23,5 +53,7 @@
         Fear-And-Greed historical:
    </div>
    <img src="/static/idxcharts/fearandgreedhistory.png" class="chart"></img>
+
+   </div>
 
 {% endblock %}

@@ -17,4 +17,5 @@ of_ticker/
 assetdata/
 currencies/
 static/charts/*.png
-indexes/*.*
+indices/*.htm*
+indices/indices.csv*

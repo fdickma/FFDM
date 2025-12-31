@@ -20,27 +20,44 @@
                 {% endif %}
             {% endfor %}
 </select>
+&nbsp;Search:&nbsp;<input type="text" name="SearchText" placeholder="" class="input" style="background:white;"
+size=30 value="{{ request.form['SearchText'] or SearchText }}">
+</input>
 <br>
-
 {% if pages > 1 %}
 <table id="paginationTable"><tr>
-<td style="font-size: 1.1em; width: 2.1em; text-align: center;"><a href="{{ url_for('view_accounts', page_num = 0, account_sel = account_sel, win_min = 0, win_max = 10 ) }}" style="text-decoration:none;">|<</a></td>
-<td style="font-size: 1.1em; width: 2.1em; text-align: center;"><a href="{{ url_for('view_accounts', page_num = page_num - 1, account_sel = account_sel, win_min = win_min, win_max = win_max ) }}" style="text-decoration:none;"><</a></td>
+<td style="font-size: 1.1em; width: 2.1em; text-align: center;">
+    <a href="{{ url_for('view_accounts', page_num = 0, account_sel = account_sel, 
+    SearchText = SearchText, win_min = 0, win_max = 10 ) }}" style="text-decoration:none;">|<</a>
+</td>
+<td style="font-size: 1.1em; width: 2.1em; text-align: center;">
+    <a href="{{ url_for('view_accounts', page_num = page_num - 1, account_sel = account_sel, 
+    SearchText = SearchText, win_min = win_min, win_max = win_max ) }}" style="text-decoration:none;"><</a>
+</td>
 {% for p in page_window %}
 <td style="font-size: 1.1em; width: 2.1em; text-align: center;">
     {% if p == page_num %}
-        <a href="{{ url_for('view_accounts', page_num = p, account_sel = account_sel, win_min = win_min, win_max = win_max ) }}" style="font-weight:bold; text-decoration:none">[{{ p + 1 }}]</a>
+        <a href="{{ url_for('view_accounts', page_num = p, account_sel = account_sel, 
+        SearchText = SearchText, win_min = win_min, win_max = win_max ) }}" 
+        style="font-weight:bold; text-decoration:none">[{{ p + 1 }}]</a>
     {% else %}
-        <a href="{{ url_for('view_accounts', page_num = p, account_sel = account_sel, win_min = win_min, win_max = win_max ) }}" style="text-decoration:none;">{{ p + 1 }}</a>
+        <a href="{{ url_for('view_accounts', page_num = p, account_sel = account_sel, 
+        SearchText = SearchText, win_min = win_min, win_max = win_max ) }}" 
+        style="text-decoration:none;">{{ p + 1 }}</a>
     {% endif %}
 </td>
 {% endfor %}
-<td style="font-size: 1.1em; width: 2.1em; text-align: center;"><a href="{{ url_for('view_accounts', page_num = page_num + 1, account_sel = account_sel, win_min = win_min, win_max = win_max ) }}" style="text-decoration:none;">></a></td>
-<td style="font-size: 1.1em; width: 2.1em; text-align: center;"><a href="{{ url_for('view_accounts', page_num = pages - 1, account_sel = account_sel, win_min = pages - 11, win_max = pages -1 ) }}" style="text-decoration:none;">>|</a></td>
+<td style="font-size: 1.1em; width: 2.1em; text-align: center;">
+    <a href="{{ url_for('view_accounts', page_num = page_num + 1, account_sel = account_sel, 
+    SearchText = SearchText, win_min = win_min, win_max = win_max ) }}" style="text-decoration:none;">></a>
+</td>
+<td style="font-size: 1.1em; width: 2.1em; text-align: center;">
+    <a href="{{ url_for('view_accounts', page_num = pages - 1, account_sel = account_sel, 
+    SearchText = SearchText, win_min = pages - 11, win_max = pages -1 ) }}" style="text-decoration:none;">>|</a>
+</td>
 </tr></table>
 <div style="clear:both;"></div>
 {% endif %}
-
 <div>
 <table id="FFDMTable">
     <tr>
