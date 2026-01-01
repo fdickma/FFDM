@@ -95,12 +95,19 @@ def convert_indices(filename, idx_date):
 
     outs = outs.replace('Index','').splitlines()
     idx_data = []
+
+    idx_list =['DAX', 'SMI', 'TECDAX', 'NASDAQ', 'Dow', 'S&P']
+
     for o in outs:
-        if o[:3] != 'CAC' and o[1:5] != "Euro":
+        if o.split()[0].lower() in (item.lower() for item in idx_list):
+        #if o[:3] != 'CAC' and o[1:5] != "Euro" and o[1:6] != "INDEX":
             row = o.split('PTS', 1)[0].split()
+            if len(row) > 2:
+                del row[1]
             row.append(idx_date)
             row[1] = re.sub(r'[^\d,]', '', row[1])
             row[1] = float(row[1].replace(",", "."))
+            print(row)
             idx_data.append(row)
 
     return pd.DataFrame(idx_data, columns=["ind_title", "ind_num", "ind_date"])
@@ -149,10 +156,14 @@ def get_indices():
         prev_ind = today_df[today_df['ind_date'] == today_df['ind_date'].min()].copy()
 
     current_ind = indDF[indDF['ind_date'] == indDF['ind_date'].max()].copy()
-    current_ind['prev_num'] = prev_ind['ind_num'].values
+    if len(prev_ind) > 0:
+        current_ind['prev_num'] = prev_ind['ind_num'].values
 
-    current_ind['ind_diff'] = round((current_ind['ind_num'] - \
-        current_ind['prev_num']) / current_ind['prev_num'] * 100, 2)
+        current_ind['ind_diff'] = round((current_ind['ind_num'] - \
+            current_ind['prev_num']) / current_ind['prev_num'] * 100, 2)
+
+    else:
+        current_ind['ind_diff'] = 0
 
     current_ind['ind_date'] = current_ind['ind_date'].map(str)
     

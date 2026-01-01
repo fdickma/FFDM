@@ -609,6 +609,8 @@ if __name__ == '__main__':
     yearDF['PayMonths'] = countFilterDF(filterList[0][1])
     yearDF['PayMonths'] = yearDF['PayMonths'].fillna(0)
     paymonths =  int(yearDF['PayMonths'].loc[yearDF.index[-1]])
+    if paymonths < 1:
+        paymonths = 1
     current_month = datetime.datetime.now().month
     yearDF['Months'] = getMonths(yearDF['Year'])
     yearDF.loc[len(yearDF)] = [str(yearDF['Year'].loc[yearDF.index[-1]]) + "e", \
