@@ -173,4 +173,4 @@ def get_indices():
 
     return current_ind
 
-get_indices()
+#get_indices()

@@ -22,7 +22,13 @@
         <th>Delta</th>
     </tr>
     {% for key,idx_item in idcDF.iterrows() %}
-        <tr>
+       {% if idx_item['ind_diff'] > -0.01 and idx_item['ind_diff'] < 0.01 %}
+            <tr class="row-neutral">
+        {% elif idx_item['ind_diff'] >= 0.01 %}
+            <tr class="row-success">
+        {% else %}
+            <tr class="row-danger">
+        {% endif %}
         <td align="left">
             <span><b>{{ idx_item['ind_title'] }}</b></span>
         </td>
