@@ -414,6 +414,12 @@ ul li {
   width: 50vw;
 }
 
+.idxtable{
+  margin: 0px 40px 0px 40px;
+  padding: 0px 20px 0px 20px;
+  width: 50vw;
+}
+
 .versiontext{
   margin:0px;
   padding: 0px 70px 0px 70px;

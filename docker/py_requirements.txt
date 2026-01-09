@@ -17,4 +17,3 @@ bs4
 curl-cffi
 yahoofinancials
 yfinance
-urllib3
