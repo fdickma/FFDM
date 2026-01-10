@@ -664,8 +664,11 @@ def convert_date(now):
 
 def get_ticker_info(ticker, file):
     ticker_object = yf.Ticker(ticker)
+    info = ticker_object.info
     try:
-        temp = pd.DataFrame.from_dict(ticker_object.info, orient="index")
+        for key in info:
+            info[key] = str(info[key])        
+        temp = pd.DataFrame.from_dict(info, orient="index")
         temp.to_csv(file, header=True)
     except:
         return

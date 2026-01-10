@@ -639,22 +639,25 @@ if __name__ == '__main__':
 
     # Generate yearly cumulative dataframe
     print('Generate: Yearly Cumulative')
+    cumyear_months = 12 - paymonths
+    if cumyear_months < 1:
+        cumyear_months = 1
     cumyearDF = pd.DataFrame()
     cumyearDF = yearDF.cumsum()
     cumyearDF['Year'] = yearDF['Year']
     cumyearDF.loc[len(cumyearDF)] = [str(yearDF['Year'].loc[yearDF.index[-1]]) + "e", \
-                            cumyearDF['Cashflow'].loc[cumyearDF.index[-1]] + (yearDF['Cashflow'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
-                            cumyearDF['Income'].loc[cumyearDF.index[-1]] + (yearDF['Income'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
-                            cumyearDF['Dividend'].loc[cumyearDF.index[-1]] + (yearDF['Dividend'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
-                            cumyearDF['Interest'].loc[cumyearDF.index[-1]] + (yearDF['Interest'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
-                            cumyearDF['Rent'].loc[cumyearDF.index[-1]] + (yearDF['Rent'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
-                            cumyearDF['Stock'].loc[cumyearDF.index[-1]] + (yearDF['Stock'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
-                            cumyearDF['Metal'].loc[cumyearDF.index[-1]] + (yearDF['Metal'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
-                            cumyearDF['Sales'].loc[cumyearDF.index[-1]] + (yearDF['Sales'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
-                            cumyearDF['TotalIncome'].loc[cumyearDF.index[-1]] + (yearDF['TotalIncome'].loc[yearDF.index[-1]] / (12 - paymonths)), \
-                            cumyearDF['Invest'].loc[cumyearDF.index[-1]] + (yearDF['Invest'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
-                            cumyearDF['Saving'].loc[cumyearDF.index[-1]] + (yearDF['Saving'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
-                            cumyearDF['Spending'].loc[cumyearDF.index[-1]] + (yearDF['Spending'].loc[yearDF.index[-1]] / paymonths * (12 - paymonths)), \
+                            cumyearDF['Cashflow'].loc[cumyearDF.index[-1]] + (yearDF['Cashflow'].loc[yearDF.index[-1]] / paymonths * (cumyear_months)), \
+                            cumyearDF['Income'].loc[cumyearDF.index[-1]] + (yearDF['Income'].loc[yearDF.index[-1]] / paymonths * (cumyear_months)), \
+                            cumyearDF['Dividend'].loc[cumyearDF.index[-1]] + (yearDF['Dividend'].loc[yearDF.index[-1]] / paymonths * (cumyear_months)), \
+                            cumyearDF['Interest'].loc[cumyearDF.index[-1]] + (yearDF['Interest'].loc[yearDF.index[-1]] / paymonths * (cumyear_months)), \
+                            cumyearDF['Rent'].loc[cumyearDF.index[-1]] + (yearDF['Rent'].loc[yearDF.index[-1]] / paymonths * (cumyear_months)), \
+                            cumyearDF['Stock'].loc[cumyearDF.index[-1]] + (yearDF['Stock'].loc[yearDF.index[-1]] / paymonths * (cumyear_months)), \
+                            cumyearDF['Metal'].loc[cumyearDF.index[-1]] + (yearDF['Metal'].loc[yearDF.index[-1]] / paymonths * (cumyear_months)), \
+                            cumyearDF['Sales'].loc[cumyearDF.index[-1]] + (yearDF['Sales'].loc[yearDF.index[-1]] / paymonths * (cumyear_months)), \
+                            cumyearDF['TotalIncome'].loc[cumyearDF.index[-1]] + (yearDF['TotalIncome'].loc[yearDF.index[-1]] / (cumyear_months)), \
+                            cumyearDF['Invest'].loc[cumyearDF.index[-1]] + (yearDF['Invest'].loc[yearDF.index[-1]] / paymonths * (cumyear_months)), \
+                            cumyearDF['Saving'].loc[cumyearDF.index[-1]] + (yearDF['Saving'].loc[yearDF.index[-1]] / paymonths * (cumyear_months)), \
+                            cumyearDF['Spending'].loc[cumyearDF.index[-1]] + (yearDF['Spending'].loc[yearDF.index[-1]] / paymonths * (cumyear_months)), \
                             yearDF['SavingRate'].loc[yearDF.index[-1]], \
                             12, \
                             12] 

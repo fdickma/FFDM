@@ -8,6 +8,7 @@
 "ETF";"IE00BKM4GZ66";"iShares MSCI EM";"IS3N.F";"ishares_core_msci_emerging_markets_imi_ucits_etf";"IE00BKM4GZ66"
 "FND";"LU0100187060";"Deka Euro Value CF";"DED6.F";"LU0100187060";"LU0100187060"
 "FND";"DE0008474503";"Dekafonds CF";"0P00000EHB.F";"dekafonds";"DE0008474503"
+"STK";"AU000000BHP4";"BHP";"BHP.AX";"bhp";"AU000000BHP4"
 "STK";"US0846707026";"Berkshire Hathaway";"BRK-B";"berkshire_hathaway_b";"US0846707026"
 "STK";"US1912161007";"CocaCola";"KO";"Coca-Cola";"US1912161007"
 "STK";"US56035L1044";"Main Street Capital";"MAIN";"main_street_capital";"US56035L1044"
@@ -18,4 +19,4 @@
 "STK";"DE0007165607";"Sartorius";"SRT.DE";"sartorius";"DE0007165607"
 "STK";"GB00B03MLX29";"Shell";"R6C0.DE";"shell";"GB00B03MLX29"
 "STK";"JP3358000002";"Shimano";"7309.T";"shimano";"JP3358000002"
-"STK";"AU000000BHP4";"BHP";"BHP.AX";"bhp";"AU000000BHP4"
+"BND";"IE00B4PY7Y77";"iShares USD HY Corp Bond";"IS0R.DE";"IE00B4PY7Y77";"IE00B4PY7Y77"
