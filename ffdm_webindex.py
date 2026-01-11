@@ -115,17 +115,25 @@ def convert_indices(filename, idx_date):
 def get_indices():
 
     current_file = set_filename('index_data.html')
-    
+    datafile = set_directory() + "indices.csv"
+    today = date.today()
+    last_update = pd.DataFrame()
+
+    if os.path.exists(datafile):
+        indDF = pd.read_csv(datafile, sep=';')
+        indDF['ind_date'] = pd.to_datetime(indDF['ind_date'])
+        print(indDF)
+        last_update = indDF[indDF['ind_date'].dt.strftime('%Y-%m-%d').between(str(today), str(today))] 
+   
     weekday_num = date.today().weekday()
     
-    if weekday_num < 5:
+    if weekday_num < 5 or len(last_update) < 1:
         new = retrieve_indices(current_file)
     else:
         new = False
 
     current_ind = convert_indices(current_file, get_filedate(current_file))
 
-    datafile = set_directory() + "indices.csv"
     if new == True:
         if os.path.exists(datafile):
             indDF = pd.read_csv(datafile, sep=';')
@@ -145,7 +153,6 @@ def get_indices():
     prev_date = indDF['ind_date'].drop_duplicates().nlargest(2).iloc[-1]
     prev_ind = indDF[indDF['ind_date'] == prev_date].copy()
 
-    today = date.today()
     yesterday = today - timedelta(days = 1)
     lastyear = today - timedelta(days = 365)
 
@@ -161,7 +168,6 @@ def get_indices():
 
         current_ind['ind_diff'] = round((current_ind['ind_num'] - \
             current_ind['prev_num']) / current_ind['prev_num'] * 100, 2)
-
     else:
         current_ind['ind_diff'] = 0
 
