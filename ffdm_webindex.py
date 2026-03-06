@@ -96,7 +96,7 @@ def convert_indices(filename, idx_date):
     outs = outs.replace('Index','').splitlines()
     idx_data = []
 
-    idx_list =['DAX', 'SMI', 'TECDAX', 'NASDAQ', 'Dow', 'S&P']
+    idx_list =['DAX', 'SMI', 'TECDAX', 'NASDAQ', 'INDUSTRIAL', 'S&P']
 
     for o in outs:
         if o.split()[0].lower() in (item.lower() for item in idx_list):
@@ -106,10 +106,19 @@ def convert_indices(filename, idx_date):
                 del row[1]
             row.append(idx_date)
             row[1] = re.sub(r'[^\d,]', '', row[1])
-            row[1] = float(row[1].replace(",", "."))
-            print(row)
-            idx_data.append(row)
+            if len(str(row[1])) > 0:
+                row[1] = float(row[1].replace(",", "."))
+            else:
+                del row[1]
+                row[1] = re.sub(r'[^\d,]', '', row[1])
+                row[1] = float(row[1].replace(",", "."))
 
+            if str(row[0]) == "INDUSTRIAL":
+                row[0] = "Dow"
+
+            idx_data.append(row)
+    
+    print(idx_data)
     return pd.DataFrame(idx_data, columns=["ind_title", "ind_num", "ind_date"])
 
 def get_indices():
@@ -179,4 +188,4 @@ def get_indices():
 
     return current_ind
 
-#get_indices()
+get_indices()
