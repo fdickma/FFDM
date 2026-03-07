@@ -143,7 +143,7 @@ def get_vl_plans(myDir, connection):
 
 # Get a 10 character account ID / number
 def get_account(account):
-    
+
     # Replace credit card anonymizing stars and fill up to 10 digits
     account = account.replace("********", "00")
 
@@ -174,6 +174,8 @@ def readStatement(File):
         enc_type = "utf-8"
     elif fileType['encoding'] == "utf-8":
         enc_type = "utf-8"
+    elif fileType['encoding'] == "utf-8-sig":
+        enc_type = "utf-8"
     else:
         enc_type = "latin-1"
     try:
@@ -181,7 +183,7 @@ def readStatement(File):
     except FileNotFoundError:
         print('File ' + File + ' not found.')
     else:
-               
+        print("Encryption:", enc_type)
         p_init_accounts = re.compile(   
             r'\"([A-Za-z0-9]{3,10})\"\;'       # Bank.
             r'\"([A-Za-z0-9]*)\"\;'            # Konto.
@@ -297,7 +299,7 @@ def readStatement(File):
 
         for line in rf:
             line_check = False
-         
+
             if account == None:
                 account_test = p_dkb_account.match(line)
                 if account_test:
@@ -633,7 +635,8 @@ def get_existing_ticker(isin, u_id):
         assetRefsDF = assetRefsDF.rename(columns={"Currency": "Asset",  "CurrencyName": "AssetName"})
     else:
         assetRefsDF = pd.DataFrame(columns=["Asset", "AssetName", "YF_USD"])    
-    assetRefsDF = assetRefsDF._append(basicRefsDF)
+    #assetRefsDF = assetRefsDF._append(basicRefsDF)
+    assetRefsDF = pd.concat([assetRefsDF, basicRefsDF], ignore_index=True)
     print('________________')
     print(assetRefsDF)
     print('________________')

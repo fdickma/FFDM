@@ -16,15 +16,18 @@ import csv
 import re
 import subprocess
 import datetime
+from itertools import repeat
 from datetime import date, timedelta
 from scipy import stats
-import __main__
 
 # Import FFDM function library
 import ffdm_lib as fl
 
 import locale
 locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
+
+import __main__
+
 
 def entriesToDB(account_entries, depot_entries):
     
@@ -70,21 +73,21 @@ def getMonths(years):
             ymonth.append(int(curmonth))
     return ymonth
 
-def watchlist_asset(assets, proc_num):
+def watchlist_asset(assets, assetpriceDF, assetrefDF, oldwlist, proc_num):
     watchlistDF = pd.DataFrame()
     for a in assets:
         print("Process: {0:<2}  /  Asset: {1:12}".format(proc_num, a))
         recalc = False
         try:
-            pricetime = (__main__.assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
-                        [(__main__.assetpriceDF['AssetID']==a)]["PriceTime"].max())
-            lastprice = (__main__.assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
-                        [(__main__.assetpriceDF['PriceTime']==pricetime) \
-                        & (__main__.assetpriceDF['AssetID']==a)]['AssetPrice'].iloc[0])
+            pricetime = (assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
+                        [(assetpriceDF['AssetID']==a)]["PriceTime"].max())
+            lastprice = (assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
+                        [(assetpriceDF['PriceTime']==pricetime) \
+                        & (assetpriceDF['AssetID']==a)]['AssetPrice'].iloc[0])
             if lastprice == None:
                 lastprice = 0
-            pricetimesDF = (__main__.assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
-                        [(__main__.assetpriceDF['AssetID']==a)])
+            pricetimesDF = (assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
+                        [(assetpriceDF['AssetID']==a)])
             
             amaxpriceDF = pricetimesDF.loc[pricetimesDF.groupby(pricetimesDF['PriceTime']\
                        .dt.normalize())['PriceTime'].idxmax().values]
@@ -94,45 +97,45 @@ def watchlist_asset(assets, proc_num):
             # Since len -1 equals the current one we need to reduce the counter by 2 
             prevpricetime = amaxpriceDF['PriceTime'].iloc[(len(amaxpriceDF['PriceTime'])-2)]
 
-            prevprice = (__main__.assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
-                        [(__main__.assetpriceDF['PriceTime']==prevpricetime) \
-                        & (__main__.assetpriceDF['AssetID']==a)]['AssetPrice'].iloc[0])
+            prevprice = (assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
+                        [(assetpriceDF['PriceTime']==prevpricetime) \
+                        & (assetpriceDF['AssetID']==a)]['AssetPrice'].iloc[0])
             if (prevprice == None) or (prevprice == 0):
                 prevprice = lastprice
-            aname = (__main__.assetrefDF[['AssetID','AssetName']]\
-                        [(__main__.assetrefDF['AssetID']==a)]['AssetName'].iloc[0])
+            aname = (assetrefDF[['AssetID','AssetName']]\
+                        [(assetrefDF['AssetID']==a)]['AssetName'].iloc[0])
         except:
             print(a," not finished 1")
             continue
-        if len(__main__.oldwlist) > 0:
+        if len(oldwlist) > 0:
             try:
-                lastprice_o = (__main__.oldwlist[(__main__.oldwlist['AssetID']==a)]\
+                lastprice_o = (oldwlist[(oldwlist['AssetID']==a)]\
                     ['LastPrice']).iloc[0]
             except:
                 lastprice_o = 0
             try:
-                prevprice_o = (__main__.oldwlist[(__main__.oldwlist['AssetID']==a)]\
+                prevprice_o = (oldwlist[(oldwlist['AssetID']==a)]\
                     ['PrevPrice']).iloc[0]
             except:
                 prevprice_o = 0
             if prevprice == prevprice_o and lastprice == lastprice_o:
-                delta = (__main__.oldwlist[(__main__.oldwlist['AssetID']==a)]\
+                delta = (oldwlist[(oldwlist['AssetID']==a)]\
                     ['Delta']).iloc[0]
-                deltaprice = (__main__.oldwlist[(__main__.oldwlist['AssetID']==a)]\
+                deltaprice = (oldwlist[(oldwlist['AssetID']==a)]\
                     ['DeltaPrice']).iloc[0]
-                price20av = (__main__.oldwlist[(__main__.oldwlist['AssetID']==a)]\
+                price20av = (oldwlist[(oldwlist['AssetID']==a)]\
                     ['Avg20Price']).iloc[0]
-                price200av = (__main__.oldwlist[(__main__.oldwlist['AssetID']==a)]\
+                price200av = (oldwlist[(oldwlist['AssetID']==a)]\
                     ['Avg200Price']).iloc[0]
-                lowtarget = (__main__.oldwlist[(__main__.oldwlist['AssetID']==a)]\
+                lowtarget = (oldwlist[(oldwlist['AssetID']==a)]\
                     ['TargetLow']).iloc[0]
-                hightarget = (__main__.oldwlist[(__main__.oldwlist['AssetID']==a)]\
+                hightarget = (oldwlist[(oldwlist['AssetID']==a)]\
                     ['TargetHigh']).iloc[0]
-                minprice = (__main__.oldwlist[(__main__.oldwlist['AssetID']==a)]\
+                minprice = (oldwlist[(oldwlist['AssetID']==a)]\
                     ['MinPrice']).iloc[0]
-                maxprice = (__main__.oldwlist[(__main__.oldwlist['AssetID']==a)]\
+                maxprice = (oldwlist[(oldwlist['AssetID']==a)]\
                     ['MaxPrice']).iloc[0]
-                lowprice = (__main__.oldwlist[(__main__.oldwlist['AssetID']==a)]\
+                lowprice = (oldwlist[(oldwlist['AssetID']==a)]\
                     ['LowPrice']).iloc[0]
                 if lastprice < minprice: minprice = lastprice
                 if lastprice < lowprice: lowprice = lastprice
@@ -141,8 +144,8 @@ def watchlist_asset(assets, proc_num):
                 recalc = True
 
         plt.rcParams["figure.dpi"] = 150
-        chartDF = (__main__.assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
-        [(__main__.assetpriceDF['AssetID']==a)][['PriceTime','AssetPrice']])\
+        chartDF = (assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
+        [(assetpriceDF['AssetID']==a)][['PriceTime','AssetPrice']])\
         .set_index('PriceTime').copy()
         chartDF['SMA20'] = chartDF['AssetPrice'].rolling(20).mean()
         chartDF['SMA200'] = chartDF['AssetPrice'].rolling(200).mean()
@@ -164,46 +167,46 @@ def watchlist_asset(assets, proc_num):
         price200time = datetime.datetime.strptime(str(pricetime)[:-9], '%Y-%m-%d')\
                     - timedelta(days=199)
         
-        if len(__main__.oldwlist) == 0 or recalc == True:
+        if len(oldwlist) == 0 or recalc == True:
             try:
 
-                price20av = round((__main__.assetpriceDF[['PriceTime','AssetID',\
+                price20av = round((assetpriceDF[['PriceTime','AssetID',\
                             'AssetPrice']]\
-                            [(__main__.assetpriceDF['PriceTime']>price20time) \
-                            & (__main__.assetpriceDF['AssetID']==a)]['AssetPrice'])\
+                            [(assetpriceDF['PriceTime']>price20time) \
+                            & (assetpriceDF['AssetID']==a)]['AssetPrice'])\
                             .values.mean(),4)
-                price200av = round((__main__.assetpriceDF[['PriceTime','AssetID',\
+                price200av = round((assetpriceDF[['PriceTime','AssetID',\
                             'AssetPrice']]\
-                            [(__main__.assetpriceDF['PriceTime']>price200time) \
-                            & (__main__.assetpriceDF['AssetID']==a)]['AssetPrice'])\
+                            [(assetpriceDF['PriceTime']>price200time) \
+                            & (assetpriceDF['AssetID']==a)]['AssetPrice'])\
                             .values.mean(),4)
-                maxprice = (__main__.assetpriceDF[['PriceTime','AssetID',\
+                maxprice = (assetpriceDF[['PriceTime','AssetID',\
                             'AssetPrice']]\
-                            [(__main__.assetpriceDF['AssetID']==a)]['AssetPrice'])\
+                            [(assetpriceDF['AssetID']==a)]['AssetPrice'])\
                             .values.max()
-                maxdate = (__main__.assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
-                            [(__main__.assetpriceDF['AssetPrice']==maxprice) \
-                            & (__main__.assetpriceDF['AssetID']==a)]['PriceTime']).iloc[0]
-                lowprice = (__main__.assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
-                    [(__main__.assetpriceDF['AssetID']==a)]['AssetPrice']).values.min()
+                maxdate = (assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
+                            [(assetpriceDF['AssetPrice']==maxprice) \
+                            & (assetpriceDF['AssetID']==a)]['PriceTime']).iloc[0]
+                lowprice = (assetpriceDF[['PriceTime','AssetID','AssetPrice']]\
+                    [(assetpriceDF['AssetID']==a)]['AssetPrice']).values.min()
                 if maxdate < pricetime:
-                    minprice = round((__main__.assetpriceDF[['PriceTime','AssetID',\
+                    minprice = round((assetpriceDF[['PriceTime','AssetID',\
                                 'AssetPrice']]\
-                                [(__main__.assetpriceDF['PriceTime']>maxdate) & \
-                                (__main__.assetpriceDF['AssetID']==a)]['AssetPrice'])\
+                                [(assetpriceDF['PriceTime']>maxdate) & \
+                                (assetpriceDF['AssetID']==a)]['AssetPrice'])\
                                 .values.min(),4)
                 else:
                     minprice = maxprice
                 # print(a,"MinPrice:",minprice,"MaxPrice:",maxprice,"MaxDate:",maxdate)
                 try:
-                    lowtarget = (__main__.targetpriceDF[['AssetID','TargetPriceLow']]\
-                                [(__main__.targetpriceDF['AssetID']==a)]\
+                    lowtarget = (targetpriceDF[['AssetID','TargetPriceLow']]\
+                                [(targetpriceDF['AssetID']==a)]\
                                 ['TargetPriceLow']).iloc[0]
                 except:
                     lowtarget = 0
                 try:
-                    hightarget = (__main__.targetpriceDF[['AssetID','TargetPriceHigh']]\
-                                [(__main__.targetpriceDF['AssetID']==a)]\
+                    hightarget = (targetpriceDF[['AssetID','TargetPriceHigh']]\
+                                [(targetpriceDF['AssetID']==a)]\
                                 ['TargetPriceHigh']).iloc[0]
                 except:
                     hightarget = 0
@@ -388,7 +391,7 @@ def check_fileName_aID(assetRefsDF, f):
 if __name__ == '__main__':
     # Get the start time
     start_time = time.time()
-
+    
     cores = os.cpu_count()
     cz = 100
     
@@ -748,7 +751,7 @@ if __name__ == '__main__':
 
     if cores < 2:
         # One process means all data for that process and one process only
-        watchlistDF = watchlist_asset(assetrefDF['AssetID'], 1)
+        watchlistDF = watchlist_asset(assetrefDF['AssetID'], assetpriceDF, assetrefDF, oldwlist, 1)
         
     # multiple processes need the data to be separated
     else:
@@ -758,7 +761,8 @@ if __name__ == '__main__':
         proc_num = [*range(1, cores + 1)]
         pool = mp.Pool(processes = cores)
     
-        pqueue = pool.starmap(watchlist_asset, zip(assets, proc_num))
+        pqueue = pool.starmap(watchlist_asset, zip(assets, repeat(assetpriceDF), \
+                repeat(assetrefDF), repeat(oldwlist), proc_num))
         pool.close()
         pool.join()
     
@@ -770,7 +774,7 @@ if __name__ == '__main__':
             except:
                 if len(q) > 0:
                     watchlistDF = q
-    
+
     if len(watchlistDF) < 1:
         watchlistDF = pd.DataFrame(columns=['AssetID','AssetName','Delta','DeltaPrice','LastPrice',\
                             'PriceTime','PrevPrice','Avg20Price','Avg200Price','TargetLow',\
@@ -795,10 +799,12 @@ if __name__ == '__main__':
     # Adding the average buying price for assets in the portfolio
     if len(depotDF) > 0:
         tempDepotDF = depotDF.copy()
-        tempDepotDF = tempDepotDF.groupby(['AssetID']).sum(['AssetAmount','AssetBuyPrice'])
+        #tempDepotDF = tempDepotDF.groupby(['AssetID']).sum()
+        tempDepotDF = tempDepotDF.groupby(['AssetID'])[['AssetAmount','AssetBuyPrice']].sum()
         tempDepotDF['AssetAvgPrice'] = tempDepotDF['AssetBuyPrice'] / tempDepotDF['AssetAmount']
-        watchlistDF = pd.merge(watchlistDF,tempDepotDF[['AssetAvgPrice']], on="AssetID", how='left')\
-            .infer_objects(copy=False)
+        watchlistDF = watchlistDF.merge(tempDepotDF[['AssetAvgPrice']], on="AssetID", how='left')
+        #watchlistDF = pd.merge(watchlistDF,tempDepotDF[['AssetAvgPrice']], on="AssetID", how='left')\
+        #    .infer_objects(copy=False)
 
     # Finally writing the watchlist to database
     watchlistDF.to_sql('qWatchlist', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
@@ -818,13 +824,18 @@ if __name__ == '__main__':
     print('Generate: Depot Overview')
     depotviewDF = pd.DataFrame(columns=['AssetID','AssetAmount','AssetType','AssetName',\
         'Dividend','LastPrice','Value','Earn','DivReturn','TotReturn'])
+    
     if len(depotDF) > 0:
         depotviewDF = depotDF.copy()
-        depotviewDF = depotviewDF.groupby(['AssetID']).sum(['AssetAmount', 'AssetBuyPrice'])
-        depotviewDF = pd.merge(depotviewDF,assetrefDF[['AssetID','AssetType']], on="AssetID")
-        depotviewDF = pd.merge(depotviewDF,assetrefDF[['AssetID','AssetName']], on="AssetID")
-        depotviewDF = pd.merge(depotviewDF,dividendDF[['AssetID','Dividend']], on="AssetID")
-        depotviewDF = pd.merge(depotviewDF,watchlistDF[['AssetID','LastPrice']], on="AssetID")
+        #depotviewDF = depotviewDF.groupby(['AssetID']).sum()
+        depotviewDF = depotviewDF.groupby(['AssetID'])[['AssetAmount', 'AssetBuyPrice']].sum()
+        depotviewDF = depotviewDF.merge(assetrefDF[['AssetID','AssetType']], how='left', on='AssetID')
+        depotviewDF = depotviewDF.merge(dividendDF[['AssetID','Dividend']], how='left', on='AssetID')
+        depotviewDF = depotviewDF.merge(watchlistDF[['AssetID','LastPrice']], how='left', on='AssetID')
+        #depotviewDF = pd.merge(depotviewDF,assetrefDF[['AssetID','AssetType']], on="AssetID")
+        #depotviewDF = pd.merge(depotviewDF,assetrefDF[['AssetID','AssetName']], on="AssetID")
+        #depotviewDF = pd.merge(depotviewDF,dividendDF[['AssetID','Dividend']], on="AssetID")
+        #depotviewDF = pd.merge(depotviewDF,watchlistDF[['AssetID','LastPrice']], on="AssetID")
         depotviewDF['Value'] = (depotviewDF['LastPrice'] * depotviewDF['AssetAmount'])
         depotviewDF['Earn'] = depotviewDF['Value'] - depotviewDF['AssetBuyPrice']
         depotviewDF['Return'] = (depotviewDF['Earn'] / depotviewDF['AssetBuyPrice']) * 100
@@ -834,7 +845,7 @@ if __name__ == '__main__':
         depotviewDF.to_sql('qDepotOverview', con=connection, if_exists='replace', index=False, chunksize=__main__.cz)
         # Make sure data is committed to database
         connection.commit()
-        
+
     # Generate performance dataframe
     print('Generate: Performance')
     perfDF = pd.DataFrame(columns=['TotalEarnings','CoreEarnings','TotalInvest',\
