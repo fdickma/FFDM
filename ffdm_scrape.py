@@ -197,6 +197,11 @@ def retrieveBSscraper_old(a_type, a_id):
         page = requests.get(URL)
         soup = BeautifulSoup(page.content, "html.parser")
         results = soup.find("span", {"itemprop": "price"})
+    if a_type == "COM" and a_id != "Gold":
+        URL = "https://www.ariva.de/" + a_id
+        page = requests.get(URL)
+        soup = BeautifulSoup(page.content, "html.parser")
+        results = soup.find("div", {"class": "instrument-header-quote"})
     if results == None:
         return -1
     else:
@@ -248,7 +253,7 @@ def assetDataScraping(asset, old_price):
     # if return_price <= 0:
     #    return_price = retrieveBSscraper(a_type, a_id)
     # Using the w3m dumps last
-    if return_price <= 0 and a_type == 'STK':
+    if (return_price <= 0 and a_type == 'STK') or (a_type=='COM' and a_id!='Gold'):
         return_price = retrieveWebData(get_Com_data(a_type, a_id))
     if return_price <= 0:
         if (refAvailable[2] == True):
