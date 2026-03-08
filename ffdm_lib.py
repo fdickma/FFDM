@@ -24,6 +24,17 @@ import numpy as np
 import sqlalchemy as sa
 from dateutil.relativedelta import relativedelta
 
+def check_ISIN(teststr: str):
+    # ISIN is always 12 characters long
+    if len(teststr) != 12:
+        return False
+    
+    # Check the format of the ISIN
+    if not re.match(r'[A-Z]{2}[A-Z0-9]{10}', teststr):
+        return False
+
+    return True
+
 def get_db_data(sql_string, u_id):
     db_data = []
     try:

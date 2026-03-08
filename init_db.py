@@ -73,7 +73,7 @@ def getMonths(years):
             ymonth.append(int(curmonth))
     return ymonth
 
-def watchlist_asset(assets, assetpriceDF, assetrefDF, oldwlist, proc_num):
+def watchlist_asset(assets, assetpriceDF, assetrefDF, oldwlist, baseDir, proc_num):
     watchlistDF = pd.DataFrame()
     for a in assets:
         print("Process: {0:<2}  /  Asset: {1:12}".format(proc_num, a))
@@ -157,7 +157,7 @@ def watchlist_asset(assets, assetpriceDF, assetrefDF, oldwlist, proc_num):
         frame1 = plt.gca()
         frame1.axes.get_xaxis().set_label_text('')
         try:
-            plt.savefig(__main__.baseDir + "static/charts/" + a + ".png")
+            plt.savefig(baseDir + "static/charts/" + a + ".png")
         except:
             print("Plot for " + a + " not saved!")
 
@@ -751,7 +751,8 @@ if __name__ == '__main__':
 
     if cores < 2:
         # One process means all data for that process and one process only
-        watchlistDF = watchlist_asset(assetrefDF['AssetID'], assetpriceDF, assetrefDF, oldwlist, 1)
+        watchlistDF = watchlist_asset(assetrefDF['AssetID'], assetpriceDF, assetrefDF, \
+                    baseDir, oldwlist, 1)
         
     # multiple processes need the data to be separated
     else:
@@ -762,7 +763,7 @@ if __name__ == '__main__':
         pool = mp.Pool(processes = cores)
     
         pqueue = pool.starmap(watchlist_asset, zip(assets, repeat(assetpriceDF), \
-                repeat(assetrefDF), repeat(oldwlist), proc_num))
+                repeat(assetrefDF), repeat(oldwlist), repeat(baseDir), proc_num))
         pool.close()
         pool.join()
     
