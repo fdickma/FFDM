@@ -584,6 +584,12 @@ if __name__ == '__main__':
 
     accountDF['EntryDate'] = pd.to_datetime(accountDF['EntryDate'])
 
+    stockhistDF = accountDF[accountDF['Reference'].str.contains('Stück')].copy()
+    print(stockhistDF)
+    print(len(stockhistDF))
+    stockhistDF['Reference'] = stockhistDF['Reference'].str.replace(r'^[-]?[0-9]*\,?[0-9]*', '', regex=True).astype('str')
+    print(stockhistDF)
+
     # Initialize the separate index for the years with data
     tmpDF = pd.DataFrame()
     tmpDF['Year'] = accountDF.groupby(accountDF['EntryDate']\
@@ -830,6 +836,7 @@ if __name__ == '__main__':
         depotviewDF = depotDF.copy()
         #depotviewDF = depotviewDF.groupby(['AssetID']).sum()
         depotviewDF = depotviewDF.groupby(['AssetID'])[['AssetAmount', 'AssetBuyPrice']].sum()
+        depotviewDF = depotviewDF.merge(assetrefDF[['AssetID','AssetName']], how='left', on='AssetID')
         depotviewDF = depotviewDF.merge(assetrefDF[['AssetID','AssetType']], how='left', on='AssetID')
         depotviewDF = depotviewDF.merge(dividendDF[['AssetID','Dividend']], how='left', on='AssetID')
         depotviewDF = depotviewDF.merge(watchlistDF[['AssetID','LastPrice']], how='left', on='AssetID')

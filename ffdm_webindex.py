@@ -94,9 +94,10 @@ def convert_indices(filename, idx_date):
         outs, errs = proc.communicate()
 
     outs = outs.replace('Index','').splitlines()
+    print(outs)
     idx_data = []
 
-    idx_list =['DAX', 'SMI', 'TECDAX', 'NASDAQ', 'INDUSTRIAL', 'S&P']
+    idx_list =['DAX', 'SMI', 'TECDAX', 'NASDAQ', 'DOW', 'S&P']
 
     for o in outs:
         if o.split()[0].lower() in (item.lower() for item in idx_list):
@@ -114,6 +115,8 @@ def convert_indices(filename, idx_date):
                 row[1] = float(row[1].replace(",", "."))
 
             if str(row[0]) == "INDUSTRIAL":
+                row[0] = "Dow"
+            if str(row[0]) == "DOW":
                 row[0] = "Dow"
 
             idx_data.append(row)
@@ -173,10 +176,13 @@ def get_indices():
 
     current_ind = indDF[indDF['ind_date'] == indDF['ind_date'].max()].copy()
     if len(prev_ind) > 0:
-        current_ind['prev_num'] = prev_ind['ind_num'].values
+        try:
+            current_ind['prev_num'] = prev_ind['ind_num'].values
 
-        current_ind['ind_diff'] = round((current_ind['ind_num'] - \
-            current_ind['prev_num']) / current_ind['prev_num'] * 100, 2)
+            current_ind['ind_diff'] = round((current_ind['ind_num'] - \
+                current_ind['prev_num']) / current_ind['prev_num'] * 100, 2)
+        except:
+            current_ind['ind_diff'] = 0
     else:
         current_ind['ind_diff'] = 0
 
