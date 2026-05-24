@@ -1,5 +1,7 @@
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup as bs
+import urllib.request, urllib.parse, urllib.error
+import ssl
 import os
 import time
 import re
@@ -27,8 +29,11 @@ def get_filecheckdate(filename):
     return str(datevar.strftime('%Y-%m-%d-%H-')) + str(int(int(datevar.strftime('%M')) / 5))
 
 def get_filedate(filename):
+    if os.path.exists(filename):
     #return str(datetime.fromtimestamp(os.path.getmtime(filename)))[:16]
-    return str(datetime.fromtimestamp(os.path.getmtime(filename)))
+        return str(datetime.fromtimestamp(os.path.getmtime(filename)))
+    else:
+        return "0"
 
 def set_date_filename():
     return set_directory() + 'index_data_' + set_time() + '.html'
@@ -38,22 +43,62 @@ def set_filename(filename):
 
 def retrieve_indices(current_file):
 
-    if not get_filecheckdate(current_file) == set_time():
+    update_required = False
+
+    try:
+        if not get_filecheckdate(current_file) == set_time():
+            update_required = True
+    except:
+        pass
+
+    if not os.path.exists(current_file):
+        update_required = True
+
+    print(update_required)
+
+    if update_required:
 
         print("Retrieving web indices...")
-        webheader = "'User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/122.0'"
-        Browser = "w3m -header " + webheader + " -no-cookie -dump "
-        URL = "https://de.marketscreener.com/boerse/indizes/"
-        proc = subprocess.Popen(Browser + URL, shell=True, text=True,\
-                                stdout=subprocess.PIPE)
-        try:
-            outs, errs = proc.communicate(timeout=10)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            outs, errs = proc.communicate()
+        url = 'https://de.marketscreener.com/boerse/indizes/'
+        header = {
+            'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 6.1) AppleWebKit/534.23.7 (KHTML, like Gecko) Version/4.0.5 Safari/534.23.7',
+        }
+        # Get HTML Content
+        proxies = { 'http': "http://174.137.134.182:2999",
+                'https': "http://174.137.134.182:2999"}
 
-        with open(current_file, "w") as file:
-                file.write(str(outs))
+        proxy = "128.140.113.110:8080"
+        proxy = "154.197.75.25:80"
+
+        proxies = { 'http': proxy,
+                'https': proxy}
+
+        #r = requests.get(url, headers=header, proxies=proxies)
+
+        session = requests.Session()
+        r = session.get(url, headers=header, timeout=10)
+
+        #html = urllib.request.urlopen(url, context=ctx).read()
+
+        #soup = bs(html, 'html.parser')
+        print("Status", r.status_code)
+        if r.status_code == 200:
+            #soup = bs(r.content, 'html.parser')
+            #print(soup)
+
+            #webheader = "'User-Agent:Mozilla/5.0 (X11; Linux x86_64; rv:151.0) Gecko/20100101 Firefox/151.0'"
+            #Browser = "w3m -header " + webheader + " -no-cookie -dump "
+            #URL = "https://de.marketscreener.com/boerse/indizes/"
+            #proc = subprocess.Popen(Browser + URL, shell=True, text=True,\
+            #                        stdout=subprocess.PIPE)
+            #try:
+            #    outs, errs = proc.communicate(timeout=10)
+            #except subprocess.TimeoutExpired:
+            #    proc.kill()
+            #    outs, errs = proc.communicate()
+
+            with open(current_file, "w") as file:
+                    file.write(str(r.content).replace('\\n', ''))
 
         return True
 
@@ -63,23 +108,66 @@ def retrieve_indices(current_file):
 
 def convert_indices_bs(filename, idx_date):
 
-    soup = BeautifulSoup(open(filename, encoding="utf8"), 'html.parser')
+    if idx_date == "0":
+        retrieve_indices(filename)
 
-    for match in soup.find_all('div', {'class' : "quotation_table__row__variation"}):
-        match.decompose()
+    with open(filename, 'r', encoding="utf8") as file:
+        html_file = file.read()
+
+    soup = bs(html_file, 'html.parser')
 
     idx_data = []
-    idx_divs = soup.find_all('div', {'class' : "quotation_table"})
+    name_dat = []
+    #idx_divs = soup.find_all('div', {'class' : "quotation_table"})
+    idx_divs = soup.find_all('div', {'class' : "card-content table-responsive"})
+    #print(idx_divs)
+    iteration = 0
+    ind_name = soup.find_all('a', {'class' : "link link--blue"})
+    #print(ind_name)
+    for i in ind_name:
+        if i:
+            data = clean_text(i.text).strip()
+            name = data.split("        ")
+            name_dat.append(name[0])
+
+    idx_list =['DAX', 'SMI', 'TECDAX', 'NASDAQ', 'DOW', 'S&P']
+
     for item in idx_divs:
-        x = item.find_all('div', {'class' : "quotation_table__row"})
+        #print(item)
+        #x = item.find_all('a', {'class' : "last c-inline h-100 last--no-pad px-5"})
+        x = item.find_all(class_ = "last c-inline h-100 last--no-pad px-5")
+        #x = item.find_all('a', {'class' : "link link--blue"})
         for y in x:
+            #print(y)
             if y:
                 data = clean_text(y.text).strip()
                 row = data.split("        ")
-                if len(row) > 1:
-                    row.append(idx_date)
-                    idx_data.append(row)                    
+                #print(row)
+                if len(row) > 0:
+                    curr_name = name_dat[iteration]
+                    if str(curr_name) == "INDUSTRIAL":
+                        curr_name = "Dow"
+                    if str(curr_name) == "DOW":
+                        curr_name = "Dow"
+                    if str(curr_name) == "DOW JONES INDUSTRIAL":
+                        curr_name = "Dow"
+                    if str(curr_name) == "SP 500":
+                        curr_name = "S&P"
+                    if str(curr_name) == "NASDAQ 100":
+                        curr_name = "NASDAQ"
 
+                    if curr_name.lower() in (item.lower() for item in idx_list):
+                        row.insert(0, curr_name)
+                        row.append(idx_date)
+                        if len(str(row[1])) > 0:
+                            row[1] = float(row[1].replace(".", "").replace(",", "."))
+                        else:
+                            row[1] = float( "0")
+                        #print(row)
+                        idx_data.append(row)
+                    iteration += 1
+
+    print(idx_data)
     return pd.DataFrame(idx_data, columns=["ind_title", "ind_num", "ind_date"])
 
 def convert_indices(filename, idx_date):
@@ -94,7 +182,7 @@ def convert_indices(filename, idx_date):
         outs, errs = proc.communicate()
 
     outs = outs.replace('Index','').splitlines()
-    print(outs)
+    #print(outs)
     idx_data = []
 
     idx_list =['DAX', 'SMI', 'TECDAX', 'NASDAQ', 'DOW', 'S&P']
@@ -144,7 +232,8 @@ def get_indices():
     else:
         new = False
 
-    current_ind = convert_indices(current_file, get_filedate(current_file))
+    #current_ind = convert_indices(current_file, get_filedate(current_file))
+    current_ind = convert_indices_bs(current_file, get_filedate(current_file))
 
     if new == True:
         if os.path.exists(datafile):
@@ -195,3 +284,5 @@ def get_indices():
     return current_ind
 
 get_indices()
+#current_file = set_filename('index_data.html')
+#print(convert_indices_bs(current_file, get_filedate(current_file)))
