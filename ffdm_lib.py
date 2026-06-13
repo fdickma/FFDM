@@ -294,6 +294,24 @@ def readStatement(File):
             r'\"(.*)\"\;'                      # Waehrung.
             r'\"Umsatz.*\"\;'                  # Info.
             r'\"(.*)\"')                       # Kategorie.
+        p_spk_2026 = re.compile(
+            r'\"([A-Za-z0-9]*)\"\;'             # Auftragskonto.
+            r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Buchungstag.
+            r'\"(\d{2}\.\d{2}\.\d{2,4})\"\;'   # Valutadatum.
+            r'\"(.*)\"\;'                      # Buchungstext.
+            r'\"(.*)\"\;'                      # Verwendungszweck.
+            r'\"(.*)\"\;'                      # GläubigerID.
+            r'\"(.*)\"\;'                      # Mandatsreferenz.
+            r'\"(.*)\"\;'                      # Kundenreferenz.
+            r'\"(.*)\"\;'                      # Sammlerreferenz.
+            r'\"(.*)\"\;'                      # Lastschrift.
+            r'\"(.*)\"\;'                      # Auslagenersatz.
+            r'\"(.*)\"\;'                      # Begünstigter.
+            r'\"([A-Za-z0-9]*)\"\;'            # Kontonummer.
+            r'\"([A-Za-z0-9\s\S]*)\"\;'            # BLZ.
+            r'\"([-\d.]*\,\d*)\"\;'            # Betrag.
+            r'\"(.*)\"\;'                      # Waehrung.
+            r'\"Umsatz.*\"')                   # Info.
         p_dkb_account = re.compile(
             r'\"([A-Za-z]*\:)\"\;'
             r'\"([A-Za-z]{2}[0-9]*|'
@@ -384,6 +402,21 @@ def readStatement(File):
                 account_entries.append(["SPK", account, date, text, \
                                     check_float(price), curr])
 
+            spk_2026 = p_spk_2026.match(line)
+            if spk_2026 and not line_check:
+                i += 1
+                line_check = True
+                price = str(spk_2026.group(15))
+                price = price.replace('.', '').replace(',', '.')
+                account = get_account(spk_2026.group(1))
+                date = shortDate(spk_2026.group(2))
+                text = spk_2026.group(4) + " " + spk_2026.group(5) + \
+                        " " + spk_2026.group(6) + " " + spk_2026.group(7) + \
+                        " " + spk_2026.group(8) + " " + spk_2026.group(9)
+                curr = str(spk_2026.group(16))
+                account_entries.append(["SPK", account, date, text, \
+                                    check_float(price), curr])
+
             dkb_depot = p_dkb_depot.match(line)
             if dkb_depot and not line_check:
                 i += 1
@@ -455,6 +488,8 @@ def readStatement(File):
                 curr = DefaultCurrency
                 account_entries.append(["DKB", account, date, text, \
                                     check_float(price), curr])
+            if not line_check:
+                print(line)
         rf.close()
     return account_entries, depot_entries
 

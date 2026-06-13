@@ -426,7 +426,7 @@ if __name__ == '__main__':
     spendList=[]
     spendList.append(['Cash','AUSZAHLUNG.|GELDAUTOMAT'])
     spendList.append(['Card','KARTENZAHLUNG'])
-    spendList.append(['Amazon','.*SCHR.*AMAZON.*'])
+    spendList.append(['Amazon','.*SCHR.*AMAZON.*|.*AMZN.*Mktp.*'])
     dataDir=config['Accounts']['Dir']
     accountDir = []
 
