@@ -743,7 +743,7 @@ def edit_depots():
             requestDF[a] = column
         requestDF = requestDF[((requestDF['AssetAmount'] != "None") & \
             (requestDF['AssetID'] != "None"))]
-        requestDF['AssetAmount'] = requestDF['AssetAmount']\
+        requestDF['AssetAmount'] = requestDF['AssetAmount'].astype(float).astype(str)\
                             .str.replace(".", ",", regex=False)
         requestDF['AssetBuyPrice'] = requestDF['AssetBuyPrice'].astype(float)\
                             .map('{:.4f}'.format).str.replace(".", ",", regex=False)
